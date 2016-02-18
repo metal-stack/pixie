@@ -56,7 +56,7 @@ func TestInterop(t *testing.T) {
 			TransferLog: transferLog,
 			// Lower block size to send more packets
 			MaxBlockSize: 500,
-			WriteTimeout: 100 * time.Millisecond,
+			WriteTimeout: 10 * time.Millisecond,
 			// 10% loss rate until we've dropped 5 packets
 			Dial: lossyDialer(10, 5),
 		},
