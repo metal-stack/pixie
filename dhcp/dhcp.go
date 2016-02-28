@@ -69,7 +69,8 @@ type Packet struct {
 	Options Options
 }
 
-func (p *Packet) testString() string {
+// DebugString prints the contents of a DHCP packet for human consumption.
+func (p *Packet) DebugString() string {
 	var b bytes.Buffer
 	bcast := "Unicast"
 	if p.Broadcast {

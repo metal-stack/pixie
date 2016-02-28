@@ -54,7 +54,7 @@ func TestParse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Parsing DHCP packet #%d: %s", i+1, err)
 		}
-		pkts.WriteString(pkt.testString())
+		pkts.WriteString(pkt.DebugString())
 		pkts.WriteString("======\n")
 	}
 
