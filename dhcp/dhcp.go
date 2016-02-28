@@ -161,7 +161,11 @@ func (p *Packet) Marshal() ([]byte, error) {
 	ret.Write([]byte(p.HardwareAddr))
 	ret.Write([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 
-	opts := p.Options
+	opts := make(Options, len(p.Options)+1)
+	for k, v := range p.Options {
+		opts[k] = v
+	}
+	opts[53] = []byte{byte(p.Type)}
 	var err error
 	if optsInSname {
 		opts, err = opts.marshalLimited(ret, 64, true)
