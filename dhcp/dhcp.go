@@ -283,6 +283,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 		return nil, errors.New("packet has no DHCP Message Type")
 	}
 	ret.Type = MessageType(typ)
+	delete(ret.Options, 53)
 	switch ret.Type {
 	case MsgDiscover, MsgRequest, MsgDecline, MsgRelease, MsgInform:
 		if bs[0] != 1 {
