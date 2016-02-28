@@ -73,7 +73,6 @@ func NewReader(r io.Reader) (*Reader, error) {
 			return nil, err
 		}
 	}
-	fmt.Printf("%x\n", header.Magic)
 	switch header.Magic {
 	case 0xa1b2c3d4:
 		// Timestamps are (sec, usec)
