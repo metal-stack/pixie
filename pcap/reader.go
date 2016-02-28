@@ -1,3 +1,4 @@
+// Package pcap implements reading and writing the "classic" libpcap format.
 package pcap
 
 import (
