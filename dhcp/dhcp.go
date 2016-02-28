@@ -75,8 +75,7 @@ func (p *Packet) testString() string {
 	if p.Broadcast {
 		bcast = "Broadcast"
 	}
-	fmt.Fprintf(&b, `=====
-%s
+	fmt.Fprintf(&b, `%s
   %#v
   %s
   MAC: %s
@@ -99,7 +98,6 @@ func (p *Packet) testString() string {
 	for _, n := range opts {
 		fmt.Fprintf(&b, "    %d: %#v\n", n, p.Options[n])
 	}
-	b.WriteString("=====\n")
 	return b.String()
 }
 

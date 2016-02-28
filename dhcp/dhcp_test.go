@@ -55,6 +55,7 @@ func TestParse(t *testing.T) {
 			t.Fatalf("Parsing DHCP packet #%d: %s", i+1, err)
 		}
 		pkts.WriteString(pkt.testString())
+		pkts.WriteString("======\n")
 	}
 
 	expectedFile := "testdata/dhcp.parsed"
