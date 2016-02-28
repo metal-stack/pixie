@@ -27,6 +27,9 @@ type Reader struct {
 	r     io.Reader
 	order binary.ByteOrder
 	tmult int64
+
+	pkt *Packet
+	err error
 }
 
 // Packet is one raw packet and its metadata.
@@ -94,8 +97,26 @@ func NewReader(r io.Reader) (*Reader, error) {
 	return ret, nil
 }
 
-// Next returns the next packet in r.
-func (r *Reader) Next() (*Packet, error) {
+// Packet returns the packet read by the last call to Next.
+func (r *Reader) Packet() *Packet {
+	return r.pkt
+}
+
+// Err returns the first non-EOF error encountered by the Reader.
+func (r *Reader) Err() error {
+	if r.err == io.EOF {
+		return nil
+	}
+	return r.err
+}
+
+// Next advances the Reader to the next packet in the input, which
+// will then be available through the Packet method. It returns false
+// when the Reader stops, either by reaching the end of the input or
+// an error. After Next returns false, the Err method will return any
+// error that occured while reading, except that if it was io.EOF, Err
+// will return nil.
+func (r *Reader) Next() bool {
 	hdr := struct {
 		Sec     uint32
 		SubSec  uint32
@@ -104,17 +125,20 @@ func (r *Reader) Next() (*Packet, error) {
 	}{}
 
 	if err := binary.Read(r.r, r.order, &hdr); err != nil {
-		return nil, err
+		r.err = err
+		return false
 	}
 
 	bs := make([]byte, hdr.Len)
 	if _, err := io.ReadFull(r.r, bs); err != nil {
-		return nil, err
+		r.err = err
+		return false
 	}
 
-	return &Packet{
+	r.pkt = &Packet{
 		Timestamp: time.Unix(int64(hdr.Sec), r.tmult*int64(hdr.SubSec)),
 		Length:    int(hdr.OrigLen),
 		Bytes:     bs,
-	}, nil
+	}
+	return true
 }

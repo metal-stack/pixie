@@ -2,7 +2,6 @@ package pcap
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -23,18 +22,15 @@ func TestFiles(t *testing.T) {
 		if r.LinkType != LinkEthernet {
 			t.Errorf("Expected link type %d, got %d", LinkEthernet, r.LinkType)
 		}
+
 		pkts := []*Packet{}
-	ReadLoop:
-		for {
-			pkt, err := r.Next()
-			if err != nil {
-				if err == io.EOF {
-					break ReadLoop
-				}
-				t.Fatalf("Unexpected error reading packets: %s", err)
-			}
-			pkts = append(pkts, pkt)
+		for r.Next() {
+			pkts = append(pkts, r.Packet())
 		}
+		if r.Err() != nil {
+			t.Fatalf("Reading packets from %s.pcap: %s", fname, r.Err())
+		}
+
 		res := pretty.Sprintf("%# v", pkts)
 		expectedFile := fmt.Sprintf("testdata/%s.parsed", fname)
 		expected, err := ioutil.ReadFile(expectedFile)

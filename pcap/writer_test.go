@@ -3,7 +3,6 @@ package pcap
 import (
 	"bytes"
 	"encoding/binary"
-	"io"
 	"reflect"
 	"testing"
 	"time"
@@ -63,16 +62,11 @@ func TestReadback(t *testing.T) {
 			t.Fatalf("Wrote link type %d, read back %d", LinkEthernet, r.LinkType)
 		}
 
-	ReadLoop:
-		for {
-			pkt, err := r.Next()
-			if err != nil {
-				if err == io.EOF {
-					break ReadLoop
-				}
-				t.Fatalf("Unexpected error reading packets: %s", err)
-			}
-			readBack = append(readBack, pkt)
+		for r.Next() {
+			readBack = append(readBack, r.Packet())
+		}
+		if r.Err() != nil {
+			t.Fatalf("Reading packets back: %s", r.Err())
 		}
 
 		if !reflect.DeepEqual(pkts, readBack) {
