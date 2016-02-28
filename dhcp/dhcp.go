@@ -60,9 +60,9 @@ type Packet struct {
 
 	ClientAddr net.IP // Client's current IP address (it will respond to ARP for this IP)
 	YourAddr   net.IP // Client IP address offered/assigned by server
+	ServerAddr net.IP // Responding server's IP address
 	RelayAddr  net.IP // IP address of DHCP relay agent, if an agent forwarded the request
 
-	BootServerAddr net.IP // "Next bootstrap server" IP address, used for netbooting
 	BootServerName string
 	BootFilename   string
 
@@ -82,14 +82,14 @@ func (p *Packet) testString() string {
   MAC: %s
   ClientIP: %s
   YourIP: %s
+  ServerIP: %s
   RelayIP: %s
 
-  BootServerIP: %s
   BootServerName: %s
   BootFilename: %s
 
   Options:
-`, p.Type, p.TransactionID, bcast, p.HardwareAddr, p.ClientAddr, p.YourAddr, p.RelayAddr, p.BootServerAddr, p.BootServerName, p.BootFilename)
+`, p.Type, p.TransactionID, bcast, p.HardwareAddr, p.ClientAddr, p.YourAddr, p.ServerAddr, p.RelayAddr, p.BootServerName, p.BootFilename)
 
 	var opts []int
 	for n := range p.Options {
@@ -156,7 +156,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 
 	writeIP(ret, p.ClientAddr)
 	writeIP(ret, p.YourAddr)
-	writeIP(ret, p.BootServerAddr)
+	writeIP(ret, p.ServerAddr)
 	writeIP(ret, p.RelayAddr)
 
 	// MAC address + 10 bytes of padding
@@ -236,7 +236,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 
 	ret.ClientAddr = net.IP(bs[12:16])
 	ret.YourAddr = net.IP(bs[16:20])
-	ret.BootServerAddr = net.IP(bs[20:24])
+	ret.ServerAddr = net.IP(bs[20:24])
 	ret.RelayAddr = net.IP(bs[24:28])
 
 	if err := ret.Options.Unmarshal(bs[240:]); err != nil {

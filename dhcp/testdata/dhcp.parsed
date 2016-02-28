@@ -5,9 +5,9 @@ DHCPDISCOVER
   MAC: d0:50:99:4e:05:57
   ClientIP: 0.0.0.0
   YourIP: 0.0.0.0
+  ServerIP: 0.0.0.0
   RelayIP: 0.0.0.0
 
-  BootServerIP: 0.0.0.0
   BootServerName: 
   BootFilename: 
 
@@ -27,9 +27,9 @@ DHCPOFFER
   MAC: d0:50:99:4e:05:57
   ClientIP: 0.0.0.0
   YourIP: 0.0.0.0
+  ServerIP: 0.0.0.0
   RelayIP: 0.0.0.0
 
-  BootServerIP: 0.0.0.0
   BootServerName: 
   BootFilename: 
 
@@ -47,9 +47,9 @@ DHCPOFFER
   MAC: d0:50:99:4e:05:57
   ClientIP: 0.0.0.0
   YourIP: 192.168.16.12
+  ServerIP: 192.168.16.1
   RelayIP: 0.0.0.0
 
-  BootServerIP: 192.168.16.1
   BootServerName: 
   BootFilename: 
 
