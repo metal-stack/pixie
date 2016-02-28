@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"go.universe.tf/netboot/pcap"
@@ -70,4 +71,35 @@ func TestParse(t *testing.T) {
 			t.Fatalf("dhcp.pcap didn't decode to dhcp.parsed (rerun with UPDATE_TESTDATA=1 to get diff)")
 		}
 	}
+}
+
+func TestWriteRead(t *testing.T) {
+	rawPkts, err := udpFromPcap("testdata/dhcp.pcap")
+	if err != nil {
+		t.Fatalf("Getting test packets from pcap: %s", err)
+	}
+
+	var pkts []*Packet
+	for i, rawPkt := range rawPkts {
+		pkt, err := Unmarshal(rawPkt)
+		if err != nil {
+			t.Fatalf("Unmarshalling testdata packet #%d: %s", i+1, err)
+		}
+		pkts = append(pkts, pkt)
+	}
+
+	for _, pkt := range pkts {
+		raw, err := pkt.Marshal()
+		if err != nil {
+			t.Fatalf("Packet marshalling failed: %s\nPacket: %#v", err, pkt)
+		}
+		pkt2, err := Unmarshal(raw)
+		if err != nil {
+			t.Fatalf("Packet unmarshalling failed: %s\nPacket: %#v", err, pkt)
+		}
+		if !reflect.DeepEqual(pkt, pkt2) {
+			t.Fatalf("Packet mutated by write-then-read: %#v", pkt)
+		}
+	}
+
 }

@@ -184,7 +184,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 		}
 	} else {
 		ret.WriteString(p.BootServerName)
-		for i := len(p.BootServerName); i < 64; i++ {
+		for i := len(p.BootServerName); i < 128; i++ {
 			ret.WriteByte(0)
 		}
 	}
