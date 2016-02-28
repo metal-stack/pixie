@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sort"
 )
 
 var magic = []byte{99, 130, 83, 99}
@@ -66,6 +67,40 @@ type Packet struct {
 	BootFilename   string
 
 	Options Options
+}
+
+func (p *Packet) testString() string {
+	var b bytes.Buffer
+	bcast := "Unicast"
+	if p.Broadcast {
+		bcast = "Broadcast"
+	}
+	fmt.Fprintf(&b, `=====
+%s
+  %#v
+  %s
+  MAC: %s
+  ClientIP: %s
+  YourIP: %s
+  RelayIP: %s
+
+  BootServerIP: %s
+  BootServerName: %s
+  BootFilename: %s
+
+  Options:
+`, p.Type, p.TransactionID, bcast, p.HardwareAddr, p.ClientAddr, p.YourAddr, p.RelayAddr, p.BootServerAddr, p.BootServerName, p.BootFilename)
+
+	var opts []int
+	for n := range p.Options {
+		opts = append(opts, n)
+	}
+	sort.Ints(opts)
+	for _, n := range opts {
+		fmt.Fprintf(&b, "    %d: %#v\n", n, p.Options[n])
+	}
+	b.WriteString("=====\n")
+	return b.String()
 }
 
 // Marshal returns the wire encoding of p.
