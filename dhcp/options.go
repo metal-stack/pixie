@@ -2,6 +2,7 @@ package dhcp
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -120,4 +121,12 @@ func (o Options) Byte(n int) (byte, bool) {
 		return 0, false
 	}
 	return v[0], true
+}
+
+func (o Options) Uint16(n int) (uint16, bool) {
+	v := o[n]
+	if v == nil || len(v) != 2 {
+		return 0, false
+	}
+	return binary.BigEndian.Uint16(v[:2]), true
 }
