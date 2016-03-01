@@ -72,6 +72,15 @@ func (o Options) MarshalTo(w io.Writer) error {
 	return nil
 }
 
+// Copy returns a shallow copy of o.
+func (o Options) Copy() Options {
+	ret := make(Options, len(o))
+	for k, v := range o {
+		ret[k] = v
+	}
+	return ret
+}
+
 // marshalLimited serializes o into w. If nBytes > 0, as many options
 // as possible are packed into that many bytes, inserting padding as
 // needed, and the remaining unwritten options are returned.
