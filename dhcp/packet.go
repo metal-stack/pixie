@@ -83,6 +83,26 @@ type Packet struct {
 	Options Options
 }
 
+// TxType determines how the Packet should be sent on the wire, based
+// on its field values.
+//
+// This implements the transmission decision process in section 4.1 of
+// RFC 2131.
+func (p *Packet) TxType() TxType {
+	switch {
+	case p.RelayAddr != nil && p.RelayAddr.IsGlobalUnicast():
+		return TxRelayAddr
+	case p.Type == MsgNack:
+		return TxBroadcast
+	case p.ClientAddr != nil && p.ClientAddr.IsGlobalUnicast():
+		return TxClientAddr
+	case p.Broadcast:
+		return TxBroadcast
+	default:
+		return TxHardwareAddr
+	}
+}
+
 // DebugString prints the contents of a DHCP packet for human consumption.
 func (p *Packet) DebugString() string {
 	var b bytes.Buffer
