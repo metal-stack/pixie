@@ -6,6 +6,10 @@ go:
   - tip
 os:
   - linux
+addons:
+  apt:
+    packages:
+      - atftp
 install:
   - go get github.com/golang/lint/golint
 before_script:
