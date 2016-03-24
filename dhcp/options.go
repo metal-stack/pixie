@@ -138,18 +138,19 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 
 // Byte returns the value of single-byte option n, if the option value
 // is indeed a single byte.
-func (o Options) Byte(n int) (byte, bool) {
-	v := o[n]
-	if v == nil || len(v) != 1 {
+func (o Options) Byte(n int) (v byte, ok bool) {
+	bs := o[n]
+	if bs == nil || len(bs) != 1 {
 		return 0, false
 	}
-	return v[0], true
+	return bs[0], true
 }
 
-func (o Options) Uint16(n int) (uint16, bool) {
-	v := o[n]
-	if v == nil || len(v) != 2 {
+// Uint16 returns the value of option n interpreted as a uint16.
+func (o Options) Uint16(n int) (v uint16, ok bool) {
+	bs := o[n]
+	if bs == nil || len(bs) != 2 {
 		return 0, false
 	}
-	return binary.BigEndian.Uint16(v[:2]), true
+	return binary.BigEndian.Uint16(bs[:2]), true
 }
