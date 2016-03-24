@@ -14,7 +14,10 @@
 
 package dhcp
 
-import "net"
+import (
+	"io"
+	"net"
+)
 
 // TxType describes how a Packet should be sent on the wire.
 type TxType int
@@ -42,6 +45,7 @@ const (
 //
 // Multiple goroutines may invoke methods on a Conn simultaneously.
 type Conn interface {
+	io.Closer
 	// RecvDHCP reads a Packet from the connection. It returns the
 	// packet and the interface it was received on, which may be nil
 	// if interface information cannot be obtained.
