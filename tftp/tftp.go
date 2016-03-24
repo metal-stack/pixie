@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package tftp implements a read-only TFTP server.
-package tftp
+package tftp // import "go.universe.tf/netboot/tftp"
 
 import (
 	"bytes"
