@@ -1,0 +1,16 @@
+language: go
+go:
+  - 1.5
+  - 1.6
+  - tip
+os:
+  - linux
+  - osx
+install:
+  - go get github.com/golang/lint/golint
+before_script:
+script:
+  - GO15VENDOREXPERIMENT=1 go build ...
+  - GO15VENDOREXPERIMENT=1 go test ...
+  - go vet ...
+  - golint ...
