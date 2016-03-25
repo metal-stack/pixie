@@ -20,8 +20,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/kr/pretty"
 )
 
 func TestReadback(t *testing.T) {
@@ -60,7 +58,7 @@ func TestReadback(t *testing.T) {
 
 		for _, pkt := range pkts {
 			if err := w.Put(pkt); err != nil {
-				t.Fatalf(pretty.Sprintf("Writing packet %# v: %s", pkt, err))
+				t.Fatalf("Writing packet %#v: %s", pkt, err)
 			}
 		}
 

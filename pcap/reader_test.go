@@ -15,13 +15,35 @@
 package pcap
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
-
-	"github.com/kr/pretty"
+	"time"
 )
+
+func sprintPackets(pkts []*Packet) string {
+	var buf bytes.Buffer
+
+	for _, pkt := range pkts {
+		buf.WriteString("{\n")
+		p := reflect.ValueOf(pkt).Elem()
+		t := p.Type()
+		for i := 0; i < p.NumField(); i++ {
+			v := p.Field(i).Interface()
+			// Pretty-print Time, so it doesn't have a varying pointer
+			// in it.
+			if t, ok := v.(time.Time); ok {
+				v = t.String()
+			}
+			fmt.Fprintf(&buf, "  %s: %#v,\n", t.Field(i).Name, v)
+		}
+		buf.WriteString("}\n")
+	}
+	return buf.String()
+}
 
 func TestFiles(t *testing.T) {
 	for _, fname := range []string{"usec", "nsec"} {
@@ -44,8 +66,8 @@ func TestFiles(t *testing.T) {
 		if r.Err() != nil {
 			t.Fatalf("Reading packets from %s.pcap: %s", fname, r.Err())
 		}
+		res := sprintPackets(pkts)
 
-		res := pretty.Sprintf("%# v", pkts)
 		expectedFile := fmt.Sprintf("testdata/%s.parsed", fname)
 		expected, err := ioutil.ReadFile(expectedFile)
 		if err != nil {
