@@ -36,7 +36,7 @@ func sprintPackets(pkts []*Packet) string {
 			// Pretty-print Time, so it doesn't have a varying pointer
 			// in it.
 			if t, ok := v.(time.Time); ok {
-				v = t.String()
+				v = t.UnixNano()
 			}
 			fmt.Fprintf(&buf, "  %s: %#v,\n", t.Field(i).Name, v)
 		}
