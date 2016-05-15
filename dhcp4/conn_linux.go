@@ -40,7 +40,7 @@ func init() {
 	platformConn = newLinuxConn
 }
 
-func newLinuxConn(addr string) (Conn, error) {
+func newLinuxConn(addr string) (conn, error) {
 	if addr == "" {
 		addr = ":67"
 	}
@@ -101,45 +101,24 @@ func (c *linuxConn) Close() error {
 	return c.conn.Close()
 }
 
-func (c *linuxConn) SetReadDeadline(t time.Time) error {
-	return c.conn.SetReadDeadline(t)
-}
-
-func (c *linuxConn) RecvDHCP() (*Packet, *net.Interface, error) {
-	var buf [1500]byte
-	for {
-		_, p, cm, err := c.conn.ReadFrom(buf[:])
-		if err != nil {
-			return nil, nil, err
-		}
-		if len(p) < 8 {
-			continue
-		}
-		pkt, err := Unmarshal(p[8:])
-		if err != nil {
-			continue
-		}
-		intf, err := net.InterfaceByIndex(cm.IfIndex)
-		if err != nil {
-			return nil, nil, err
-		}
-		// TODO: possibly more validation that the IPv4 header lines
-		// up with what the packet.
-		return pkt, intf, nil
-	}
-}
-
-func (c *linuxConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
-	b, err := pkt.Marshal()
+func (c *linuxConn) Recv(b []byte) (rb []byte, addr *net.UDPAddr, ifidx int, err error) {
+	hdr, p, cm, err := c.conn.ReadFrom(b)
 	if err != nil {
-		return err
+		return nil, nil, 0, err
 	}
+	if len(p) < 8 {
+		return nil, nil, 0, errors.New("not a UDP packet, too short")
+	}
+	sport := int(binary.BigEndian.Uint16(p[:2]))
+	return p[8:], &net.UDPAddr{IP: hdr.Src, Port: sport}, cm.IfIndex, nil
+}
 
+func (c *linuxConn) Send(b []byte, addr *net.UDPAddr, ifidx int) error {
 	raw := make([]byte, 8+len(b))
 	// src port
 	binary.BigEndian.PutUint16(raw[:2], c.port)
 	// dst port
-	binary.BigEndian.PutUint16(raw[2:4], uint16(dhcpClientPort))
+	binary.BigEndian.PutUint16(raw[2:4], uint16(addr.Port))
 	// length
 	binary.BigEndian.PutUint16(raw[4:6], uint16(8+len(b)))
 	copy(raw[8:], b)
@@ -151,24 +130,22 @@ func (c *linuxConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 		TotalLen: ipv4.HeaderLen + 8 + len(b),
 		TTL:      64,
 		Protocol: 17,
+		Dst:      addr.IP,
 	}
 
-	switch pkt.txType() {
-	case txBroadcast, txHardwareAddr:
-		hdr.Dst = net.IPv4bcast
+	if ifidx > 0 {
 		cm := ipv4.ControlMessage{
-			IfIndex: intf.Index,
+			IfIndex: ifidx,
 		}
 		return c.conn.WriteTo(&hdr, raw, &cm)
-	case txRelayAddr:
-		// Send to the server port, not the client port.
-		binary.BigEndian.PutUint16(raw[2:4], 67)
-		hdr.Dst = pkt.RelayAddr
-		return c.conn.WriteTo(&hdr, raw, nil)
-	case txClientAddr:
-		hdr.Dst = pkt.ClientAddr
-		return c.conn.WriteTo(&hdr, raw, nil)
-	default:
-		return errors.New("unknown TX type for packet")
 	}
+	return c.conn.WriteTo(&hdr, raw, nil)
+}
+
+func (c *linuxConn) SetReadDeadline(t time.Time) error {
+	return c.conn.SetReadDeadline(t)
+}
+
+func (c *linuxConn) SetWriteDeadline(t time.Time) error {
+	return c.conn.SetWriteDeadline(t)
 }

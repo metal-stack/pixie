@@ -23,7 +23,9 @@ import (
 	"time"
 )
 
-func testConn(t *testing.T, c Conn, addr string) {
+func testConn(t *testing.T, impl conn, addr string) {
+	c := &Conn{impl}
+
 	s, err := net.Dial("udp4", addr)
 	if err != nil {
 		t.Fatal(err)
