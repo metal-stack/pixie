@@ -94,7 +94,7 @@ func (p *Packet) TxType() TxType {
 		return TxRelayAddr
 	case p.Type == MsgNack:
 		return TxBroadcast
-	case p.ClientAddr != nil && p.ClientAddr.IsGlobalUnicast():
+	case p.ClientAddr != nil && (p.ClientAddr.IsGlobalUnicast() || p.ClientAddr.IsLoopback()):
 		return TxClientAddr
 	case p.Broadcast:
 		return TxBroadcast

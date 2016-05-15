@@ -17,6 +17,7 @@ package dhcp // import "go.universe.tf/netboot/dhcp"
 import (
 	"io"
 	"net"
+	"time"
 )
 
 // TxType describes how a Packet should be sent on the wire.
@@ -55,4 +56,9 @@ type Conn interface {
 	// RecvDHCP if responding to a DHCP client, or the interface for
 	// which configuration is desired if acting as a client.
 	SendDHCP(pkt *Packet, intf *net.Interface) error
+	// SetReadDeadline sets the deadline for future Read calls.
+	// If the deadline is reached, Read will fail with a timeout
+	// (see type Error) instead of blocking.
+	// A zero value for t means Read will not time out.
+	SetReadDeadline(t time.Time) error
 }
