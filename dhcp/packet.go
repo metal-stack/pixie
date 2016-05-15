@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dhcp implements parsing and serialization of DHCP packets.
 package dhcp
 
 import (
@@ -83,23 +82,22 @@ type Packet struct {
 	Options Options
 }
 
-// TxType determines how the Packet should be sent on the wire, based
-// on its field values.
+// decides how to send Packet on the wire, based on its field values.
 //
 // This implements the transmission decision process in section 4.1 of
 // RFC 2131.
-func (p *Packet) TxType() TxType {
+func (p *Packet) txType() txType {
 	switch {
 	case p.RelayAddr != nil && p.RelayAddr.IsGlobalUnicast():
-		return TxRelayAddr
+		return txRelayAddr
 	case p.Type == MsgNack:
-		return TxBroadcast
+		return txBroadcast
 	case p.ClientAddr != nil && (p.ClientAddr.IsGlobalUnicast() || p.ClientAddr.IsLoopback()):
-		return TxClientAddr
+		return txClientAddr
 	case p.Broadcast:
-		return TxBroadcast
+		return txBroadcast
 	default:
-		return TxHardwareAddr
+		return txHardwareAddr
 	}
 }
 
@@ -227,8 +225,12 @@ func (p *Packet) Marshal() ([]byte, error) {
 	}
 
 	ret.Write(magic)
-	if err := opts.MarshalTo(ret); err != nil {
+	leftover, err := opts.marshalLimited(ret, 0, false)
+	if err != nil {
 		return nil, err
+	}
+	if len(leftover) > 0 {
+		return nil, errors.New("some options not written, but no limit was given (please file a bug)")
 	}
 
 	return ret.Bytes(), nil

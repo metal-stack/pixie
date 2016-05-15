@@ -16,6 +16,7 @@ package dhcp
 
 import (
 	"errors"
+	"io"
 	"net"
 	"time"
 
@@ -23,10 +24,55 @@ import (
 )
 
 // defined as a var so tests can override it.
-var dhcpClientPort = 68
+var (
+	dhcpClientPort = 68
+	platformConn   func(string) (Conn, error)
+)
 
-var platformConn func(string) (Conn, error)
+// txType describes how a Packet should be sent on the wire.
+type txType int
 
+// The various transmission strategies described in RFC 2131. "MUST",
+// "MUST NOT", "SHOULD" and "MAY" are as specified in RFC 2119.
+const (
+	// Packet MUST be broadcast.
+	txBroadcast txType = iota
+	// Packet MUST be unicasted to port 67 of RelayAddr
+	txRelayAddr
+	// Packet MUST be unicasted to port 68 of ClientAddr
+	txClientAddr
+	// Packet SHOULD be unicasted to port 68 of YourAddr, with the
+	// link-layer destination explicitly set to HardwareAddr. You MUST
+	// NOT rely on ARP resolution to discover the link-layer
+	// destination address.
+	//
+	// Conn implementations that cannot explicitly set the link-layer
+	// destination address MAY instead broadcast the packet.
+	txHardwareAddr
+)
+
+// Conn is a DHCP-oriented packet socket.
+//
+// Multiple goroutines may invoke methods on a Conn simultaneously.
+type Conn interface {
+	io.Closer
+	// RecvDHCP reads a Packet from the connection. It returns the
+	// packet and the interface it was received on, which may be nil
+	// if interface information cannot be obtained.
+	RecvDHCP() (pkt *Packet, intf *net.Interface, err error)
+	// SendDHCP sends pkt. The precise transmission mechanism depends
+	// on pkt.txType(). intf should be the net.Interface returned by
+	// RecvDHCP if responding to a DHCP client, or the interface for
+	// which configuration is desired if acting as a client.
+	SendDHCP(pkt *Packet, intf *net.Interface) error
+	// SetReadDeadline sets the deadline for future Read calls.
+	// If the deadline is reached, Read will fail with a timeout
+	// (see type Error) instead of blocking.
+	// A zero value for t means Read will not time out.
+	SetReadDeadline(t time.Time) error
+}
+
+// NewConn creates a Conn bound to the given UDP ip:port.
 func NewConn(addr string) (Conn, error) {
 	if platformConn != nil {
 		c, err := platformConn(addr)
@@ -90,8 +136,8 @@ func (c *portableConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 		return err
 	}
 
-	switch pkt.TxType() {
-	case TxBroadcast, TxHardwareAddr:
+	switch pkt.txType() {
+	case txBroadcast, txHardwareAddr:
 		cm := ipv4.ControlMessage{
 			IfIndex: intf.Index,
 		}
@@ -101,7 +147,7 @@ func (c *portableConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 		}
 		_, err = c.conn.WriteTo(b, &cm, &addr)
 		return err
-	case TxRelayAddr:
+	case txRelayAddr:
 		// Send to the server port, not the client port.
 		addr := net.UDPAddr{
 			IP:   pkt.RelayAddr,
@@ -109,7 +155,7 @@ func (c *portableConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 		}
 		_, err = c.conn.WriteTo(b, nil, &addr)
 		return err
-	case TxClientAddr:
+	case txClientAddr:
 		addr := net.UDPAddr{
 			IP:   pkt.ClientAddr,
 			Port: dhcpClientPort,

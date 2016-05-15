@@ -68,22 +68,15 @@ func (o Options) Unmarshal(bs []byte) error {
 // Marshal returns the wire encoding of o.
 func (o Options) Marshal() ([]byte, error) {
 	var ret bytes.Buffer
-	if err := o.MarshalTo(&ret); err != nil {
+	opts, err := o.marshalLimited(&ret, 0, false)
+	if err != nil {
 		return nil, err
 	}
-	return ret.Bytes(), nil
-}
-
-// MarshalTo serializes o into w.
-func (o Options) MarshalTo(w io.Writer) error {
-	opts, err := o.marshalLimited(w, 0, false)
-	if err != nil {
-		return err
-	}
 	if len(opts) > 0 {
-		return errors.New("some options not written, but no limit was given (please file a bug)")
+		return nil, errors.New("some options not written, but no limit was given (please file a bug)")
 	}
-	return nil
+
+	return ret.Bytes(), nil
 }
 
 // Copy returns a shallow copy of o.

@@ -153,19 +153,19 @@ func (c *linuxConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 		Protocol: 17,
 	}
 
-	switch pkt.TxType() {
-	case TxBroadcast, TxHardwareAddr:
+	switch pkt.txType() {
+	case txBroadcast, txHardwareAddr:
 		hdr.Dst = net.IPv4bcast
 		cm := ipv4.ControlMessage{
 			IfIndex: intf.Index,
 		}
 		return c.conn.WriteTo(&hdr, raw, &cm)
-	case TxRelayAddr:
+	case txRelayAddr:
 		// Send to the server port, not the client port.
 		binary.BigEndian.PutUint16(raw[2:4], 67)
 		hdr.Dst = pkt.RelayAddr
 		return c.conn.WriteTo(&hdr, raw, nil)
-	case TxClientAddr:
+	case txClientAddr:
 		hdr.Dst = pkt.ClientAddr
 		return c.conn.WriteTo(&hdr, raw, nil)
 	default:
