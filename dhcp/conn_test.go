@@ -23,26 +23,8 @@ import (
 	"time"
 )
 
-func TestConnLinux(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skipf("not supported on %s", runtime.GOOS)
-	}
-	if os.Getuid() != 0 {
-		t.Skipf("must be root on %s", runtime.GOOS)
-	}
-
-	// Use a listener to grab a free port, but we don't use it beyond
-	// that.
-	l, err := net.ListenPacket("udp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	c, err := NewLinuxConn(l.LocalAddr().String())
-	if err != nil {
-		t.Fatalf("creating the linuxconn: %s", err)
-	}
-
-	s, err := net.Dial("udp4", l.LocalAddr().String())
+func testConn(t *testing.T, c Conn, addr string) {
+	s, err := net.Dial("udp4", addr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +67,7 @@ func TestConnLinux(t *testing.T) {
 
 	// Test writing
 	p.ClientAddr = net.IPv4(127, 0, 0, 1)
-	dhcpClientPort = uint16(s.LocalAddr().(*net.UDPAddr).Port)
+	dhcpClientPort = s.LocalAddr().(*net.UDPAddr).Port
 	bs, err = p.Marshal()
 	if err != nil {
 		t.Fatalf("marshaling packet: %s", err)
@@ -128,4 +110,44 @@ func TestConnLinux(t *testing.T) {
 	if !reflect.DeepEqual(p, rpkt) {
 		t.Fatalf("DHCP packet not the same as when it was sent")
 	}
+}
+
+func TestPortableConn(t *testing.T) {
+	// Use a listener to grab a free port, but we don't use it beyond
+	// that.
+	l, err := net.ListenPacket("udp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := l.LocalAddr().String()
+	l.Close()
+
+	c, err := newPortableConn(addr)
+	if err != nil {
+		t.Fatalf("creating the conn: %s", err)
+	}
+
+	testConn(t, c, addr)
+}
+
+func TestLinuxConn(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skipf("not supported on %s", runtime.GOOS)
+	}
+	if os.Getuid() != 0 {
+		t.Skipf("must be root on %s", runtime.GOOS)
+	}
+
+	// Use a listener to grab a free port, but we don't use it beyond
+	// that.
+	l, err := net.ListenPacket("udp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err := newLinuxConn(l.LocalAddr().String())
+	if err != nil {
+		t.Fatalf("creating the linuxconn: %s", err)
+	}
+
+	testConn(t, c, l.LocalAddr().String())
 }

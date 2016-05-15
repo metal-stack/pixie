@@ -31,15 +31,16 @@ const (
 	udpProtocolNumber = 17
 )
 
-// defined as a var so tests can override it.
-var dhcpClientPort = uint16(68)
-
 type linuxConn struct {
 	port uint16
 	conn *ipv4.RawConn
 }
 
-func NewLinuxConn(addr string) (Conn, error) {
+func init() {
+	platformConn = newLinuxConn
+}
+
+func newLinuxConn(addr string) (Conn, error) {
 	if addr == "" {
 		addr = ":67"
 	}
@@ -116,7 +117,6 @@ func (c *linuxConn) RecvDHCP() (*Packet, *net.Interface, error) {
 		}
 		pkt, err := Unmarshal(p[8:])
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		intf, err := net.InterfaceByIndex(cm.IfIndex)
@@ -139,7 +139,7 @@ func (c *linuxConn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 	// src port
 	binary.BigEndian.PutUint16(raw[:2], c.port)
 	// dst port
-	binary.BigEndian.PutUint16(raw[2:4], dhcpClientPort)
+	binary.BigEndian.PutUint16(raw[2:4], uint16(dhcpClientPort))
 	// length
 	binary.BigEndian.PutUint16(raw[4:6], uint16(8+len(b)))
 	copy(raw[8:], b)
