@@ -82,10 +82,15 @@ func NewConn(addr string) (*Conn, error) {
 	return &Conn{c}, nil
 }
 
+// Close closes the DHCP socket.
+// Any blocked Read or Write operations will be unblocked and return errors.
 func (c *Conn) Close() error {
 	return c.conn.Close()
 }
 
+// RecvDHCP reads a Packet from the connection. It returns the
+// packet and the interface it was received on, which may be nil
+// if interface information cannot be obtained.
 func (c *Conn) RecvDHCP() (*Packet, *net.Interface, error) {
 	var buf [1500]byte
 	for {
@@ -107,6 +112,10 @@ func (c *Conn) RecvDHCP() (*Packet, *net.Interface, error) {
 	}
 }
 
+// SendDHCP sends pkt. The precise transmission mechanism depends
+// on pkt.txType(). intf should be the net.Interface returned by
+// RecvDHCP if responding to a DHCP client, or the interface for
+// which configuration is desired if acting as a client.
 func (c *Conn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 	b, err := pkt.Marshal()
 	if err != nil {
@@ -137,12 +146,20 @@ func (c *Conn) SendDHCP(pkt *Packet, intf *net.Interface) error {
 	}
 }
 
+// SetReadDeadline sets the deadline for future Read calls.  If the
+// deadline is reached, Read will fail with a timeout (see net.Error)
+// instead of blocking.  A zero value for t means Read will not time
+// out.
 func (c *Conn) SetReadDeadline(t time.Time) error {
 	return c.conn.SetReadDeadline(t)
 }
 
+// SetWriteDeadline sets the deadline for future Write calls.  If the
+// deadline is reached, Write will fail with a timeout (see net.Error)
+// instead of blocking.  A zero value for t means Write will not time
+// out.
 func (c *Conn) SetWriteDeadline(t time.Time) error {
-	return c.conn.SetReadDeadline(t)
+	return c.conn.SetWriteDeadline(t)
 }
 
 type portableConn struct {
