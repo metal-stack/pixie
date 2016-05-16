@@ -125,11 +125,11 @@ func (p *Packet) DebugString() string {
 
 	var opts []int
 	for n := range p.Options {
-		opts = append(opts, n)
+		opts = append(opts, int(n))
 	}
 	sort.Ints(opts)
 	for _, n := range opts {
-		fmt.Fprintf(&b, "    %d: %#v\n", n, p.Options[n])
+		fmt.Fprintf(&b, "    %d: %#v\n", n, p.Options[Option(n)])
 	}
 	return b.String()
 }
@@ -146,8 +146,8 @@ func (p *Packet) Marshal() ([]byte, error) {
 		return nil, errors.New("sname must be <= 64 bytes")
 	}
 	optsInFile, optsInSname := false, false
-	v, ok := p.Options.Byte(52)
-	if ok {
+	v, err := p.Options.Byte(OptOverload)
+	if err == nil {
 		optsInFile, optsInFile = v&1 != 0, v&2 != 0
 	}
 	if optsInFile && p.BootFilename != "" {
@@ -199,7 +199,6 @@ func (p *Packet) Marshal() ([]byte, error) {
 		opts[k] = v
 	}
 	opts[53] = []byte{byte(p.Type)}
-	var err error
 	if optsInSname {
 		opts, err = opts.marshalLimited(ret, 64, true)
 		if err != nil {
@@ -286,8 +285,8 @@ func Unmarshal(bs []byte) (*Packet, error) {
 	// meaning from BOOTP, or can store extra DHCP options if the main
 	// options section specifies the "Option overload" option.
 	file, sname := false, false
-	v, ok := ret.Options.Byte(52)
-	if ok {
+	v, err := ret.Options.Byte(OptOverload)
+	if err == nil {
 		file, sname = v&1 != 0, v&2 != 0
 	}
 	if sname {
@@ -310,17 +309,17 @@ func Unmarshal(bs []byte) (*Packet, error) {
 		if !ok {
 			return nil, fmt.Errorf("unterminated 'file' string")
 		}
-		ret.BootServerName = s
+		ret.BootFilename = s
 	}
 
 	// DHCP packets must all have at least the "DHCP Message Type"
 	// option.
-	typ, ok := ret.Options.Byte(53)
-	if !ok {
-		return nil, errors.New("packet has no DHCP Message Type")
+	typ, err := ret.Options.Byte(OptDHCPMessageType)
+	if err != nil {
+		return nil, fmt.Errorf("getting DHCP Message type: %s", err)
 	}
 	ret.Type = MessageType(typ)
-	delete(ret.Options, 53)
+	delete(ret.Options, OptDHCPMessageType)
 	switch ret.Type {
 	case MsgDiscover, MsgRequest, MsgDecline, MsgRelease, MsgInform:
 		if bs[0] != 1 {

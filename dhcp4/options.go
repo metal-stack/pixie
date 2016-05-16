@@ -20,16 +20,61 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sort"
 )
 
+// Option is a DHCP option.
+type Option byte
+
+// Some of the more commonly seen DHCP options. Refer to
+// http://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xhtml
+// for the full authoritative list.
+const (
+	OptSubnetMask         Option = 1  // IPMask
+	OptTimeOffset                = 2  // int32
+	OptRouters                   = 3  // IPs
+	OptDNSServers                = 6  // IPs
+	OptHostname                  = 12 // string
+	OptBootFileSize              = 13 // uint16
+	OptDomainName                = 15 // string
+	OptBroadcastAddr             = 28 // IP
+	OptNTPServers                = 42 // IP
+	OptVendorSpecific            = 43 // []byte
+	OptRequestedIP               = 50 // IP
+	OptLeaseTime                 = 51 // uint32
+	OptOverload                  = 52 // byte
+	OptServerIdentifier          = 54 // IP
+	OptRequestedOptions          = 55 // []byte
+	OptMessage                   = 56 // string
+	OptMaximumMessageSize        = 57 // uint16
+	OptRenewalTime               = 58 // uint32
+	OptRebindingTime             = 59 // uint32
+	OptVendorIdentifier          = 60 // string
+	OptClientIdentifier          = 61 // string
+	OptFQDN                      = 81 // string
+
+	// You shouldn't need to use the following directly. Instead,
+	// refer to the fields in the Packet struct, and Marshal/Unmarshal
+	// will handle encoding for you.
+
+	OptTFTPServer      = 66 // string
+	OptBootFile        = 67 // string
+	OptDHCPMessageType = 53 // byte
+)
+
 // Options stores DHCP options.
-type Options map[int][]byte
+type Options map[Option][]byte
+
+var (
+	errOptionNotPresent = errors.New("option not present in Options")
+	errOptionWrongSize  = errors.New("option value is the wrong size")
+)
 
 // Unmarshal parses DHCP options into o.
 func (o Options) Unmarshal(bs []byte) error {
 	for len(bs) > 0 {
-		opt := int(bs[0])
+		opt := Option(bs[0])
 		switch opt {
 		case 0:
 			// Padding byte
@@ -97,13 +142,13 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 		if n <= 0 || n >= 255 {
 			return nil, fmt.Errorf("invalid DHCP option number %d", n)
 		}
-		ks = append(ks, n)
+		ks = append(ks, int(n))
 	}
 	sort.Ints(ks)
 
 	ret := make(Options)
 	for _, n := range ks {
-		opt := o[n]
+		opt := o[Option(n)]
 		if len(opt) > 255 {
 			return nil, fmt.Errorf("DHCP option %d has value >255 bytes", n)
 		}
@@ -111,7 +156,7 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 		// If space is limited, verify that we can fit the option plus
 		// the final end-of-options marker.
 		if nBytes > 0 && ((skip52 && n == 52) || len(opt)+3 > nBytes) {
-			ret[n] = opt
+			ret[Option(n)] = opt
 			continue
 		}
 
@@ -129,21 +174,108 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 	return ret, nil
 }
 
-// Byte returns the value of single-byte option n, if the option value
-// is indeed a single byte.
-func (o Options) Byte(n int) (v byte, ok bool) {
+// String returns the value of option n as a byte slice.
+func (o Options) Bytes(n Option) ([]byte, error) {
 	bs := o[n]
-	if bs == nil || len(bs) != 1 {
-		return 0, false
+	if bs == nil {
+		return nil, errOptionNotPresent
 	}
-	return bs[0], true
+	return bs, nil
 }
 
-// Uint16 returns the value of option n interpreted as a uint16.
-func (o Options) Uint16(n int) (v uint16, ok bool) {
-	bs := o[n]
-	if bs == nil || len(bs) != 2 {
-		return 0, false
+// String returns the value of option n as a string.
+func (o Options) String(n Option) (string, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return "", err
 	}
-	return binary.BigEndian.Uint16(bs[:2]), true
+	return string(bs), err
+}
+
+// Byte returns the value of option n as a byte.
+func (o Options) Byte(n Option) (byte, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return 0, err
+	}
+	if len(bs) != 1 {
+		return 0, errOptionWrongSize
+	}
+	return bs[0], nil
+}
+
+// Uint16 returns the value of option n as a uint16.
+func (o Options) Uint16(n Option) (uint16, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return 0, err
+	}
+	if len(bs) != 2 {
+		return 0, errOptionWrongSize
+	}
+	return binary.BigEndian.Uint16(bs), nil
+}
+
+// Uint32 returns the value of option n as a uint32.
+func (o Options) Uint32(n Option) (uint32, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return 0, err
+	}
+	if len(bs) != 4 {
+		return 0, errOptionWrongSize
+	}
+	return binary.BigEndian.Uint32(bs), nil
+}
+
+// Int32 returns the value of option n as an int32.
+func (o Options) Int32(n Option) (int32, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return 0, err
+	}
+	if len(bs) != 4 {
+		return 0, errOptionWrongSize
+	}
+	return int32(binary.BigEndian.Uint32(bs)), nil
+}
+
+// IPs returns the value of option n as a list of IPv4 addresses.
+func (o Options) IPs(n Option) ([]net.IP, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return nil, err
+	}
+	if len(bs) < 4 || len(bs)%4 != 0 {
+		return nil, errOptionWrongSize
+	}
+	ret := make([]net.IP, len(bs)/4)
+	for i := 0; i < len(bs); i += 4 {
+		ret = append(ret, net.IP(bs[i:i+4]))
+	}
+	return ret, nil
+}
+
+// IP returns the value of option n as an IPv4 address.
+func (o Options) IP(n Option) (net.IP, error) {
+	ips, err := o.IPs(n)
+	if err != nil {
+		return nil, err
+	}
+	if len(ips) != 1 {
+		return nil, errOptionWrongSize
+	}
+	return ips[0], nil
+}
+
+// IPMask returns the value of option n as a net.IPMask.
+func (o Options) IPMask(n Option) (net.IPMask, error) {
+	bs := o[n]
+	if bs == nil {
+		return nil, fmt.Errorf("option %d not found", n)
+	}
+	if len(bs) != 4 {
+		return nil, fmt.Errorf("option %d is the wrong size for an IPMask", n)
+	}
+	return net.IPMask(bs), nil
 }

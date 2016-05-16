@@ -23,22 +23,22 @@ func TestOptionReading(t *testing.T) {
 		3: []byte{0, 1},
 	}
 
-	b, ok := o.Byte(2)
-	if !ok {
-		t.Fatalf("Option 2 should be a valid byte")
+	b, err := o.Byte(2)
+	if err != nil {
+		t.Fatalf("Option 2 should be a valid byte, but got: %s", err)
 	}
 	if b != 3 {
 		t.Fatalf("Wanted value 3 for option 2, got %d", b)
 	}
 
-	b, ok = o.Byte(3)
-	if ok {
+	b, err = o.Byte(3)
+	if err == nil {
 		t.Fatalf("Option 3 shouldn't be a valid byte")
 	}
 
-	u, ok := o.Uint16(3)
-	if !ok {
-		t.Fatalf("Option 3 should be a valid byte")
+	u, err := o.Uint16(3)
+	if err != nil {
+		t.Fatalf("Option 3 should be a valid byte, but got: %s", err)
 	}
 	if u != 1 {
 		t.Fatalf("Wanted value 1 for option 3, got %d", u)
