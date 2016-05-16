@@ -14,34 +14,172 @@
 
 package dhcp
 
-import "testing"
+import (
+	"net"
+	"testing"
+)
 
-func TestOptionReading(t *testing.T) {
+func TestOptionByte(t *testing.T) {
 	o := Options{
-		1: []byte{1, 2, 3},
-		2: []byte{3},
-		3: []byte{0, 1},
+		1: []byte{3},
+		2: []byte{1, 2, 3},
 	}
 
-	b, err := o.Byte(2)
+	b, err := o.Byte(1)
 	if err != nil {
-		t.Fatalf("Option 2 should be a valid byte, but got: %s", err)
+		t.Fatal(err)
 	}
 	if b != 3 {
-		t.Fatalf("Wanted value 3 for option 2, got %d", b)
+		t.Fatalf("wanted value 3, got %d", b)
 	}
 
-	b, err = o.Byte(3)
+	b, err = o.Byte(2)
 	if err == nil {
-		t.Fatalf("Option 3 shouldn't be a valid byte")
+		t.Fatalf("option shouldn't be a valid byte")
+	}
+}
+
+func TestOptionUint16(t *testing.T) {
+	o := Options{
+		1: []byte{1, 2},
+		2: []byte{1, 2, 3},
 	}
 
-	u, err := o.Uint16(3)
+	u, err := o.Uint16(1)
 	if err != nil {
-		t.Fatalf("Option 3 should be a valid byte, but got: %s", err)
+		t.Fatal(err)
 	}
-	if u != 1 {
-		t.Fatalf("Wanted value 1 for option 3, got %d", u)
+	if u != 258 {
+		t.Fatalf("wanted value 258, got %d", u)
+	}
+
+	u, err = o.Uint16(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid uint16")
+	}
+}
+
+func TestOptionUint32(t *testing.T) {
+	o := Options{
+		1: []byte{1, 2, 3, 4},
+		2: []byte{1, 2, 3},
+	}
+
+	u, err := o.Uint32(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u != 16909060 {
+		t.Fatalf("wanted value 16909060, got %d", u)
+	}
+
+	u, err = o.Uint32(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid uint32")
+	}
+}
+
+func TestOptionInt32(t *testing.T) {
+	o := Options{
+		1: []byte{0xff, 0xff, 0xff, 0xff},
+		2: []byte{1, 2, 3},
+	}
+
+	u, err := o.Int32(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u != -1 {
+		t.Fatalf("wanted value -1, got %d", u)
+	}
+
+	u, err = o.Int32(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid int32")
+	}
+}
+
+func TestOptionIPs(t *testing.T) {
+	o := Options{
+		1: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		2: []byte{1, 2, 3, 4, 5, 6},
+		3: []byte{1, 2, 3},
+	}
+
+	ips, err := o.IPs(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ips) != 2 {
+		t.Fatal("wrong number of IPs")
+	}
+	if !ips[0].Equal(net.IPv4(1, 2, 3, 4)) {
+		t.Fatalf("wrong first IP, got %s", ips[0])
+	}
+	if !ips[1].Equal(net.IPv4(5, 6, 7, 8)) {
+		t.Fatalf("wrong second IP, got %s", ips[0])
+	}
+
+	ips, err = o.IPs(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
+	}
+
+	ips, err = o.IPs(3)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
+	}
+}
+
+func TestOptionIP(t *testing.T) {
+	o := Options{
+		1: []byte{1, 2, 3, 4},
+		2: []byte{1, 2, 3, 4, 5, 6},
+		3: []byte{1, 2, 3},
+	}
+
+	ip, err := o.IP(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ip.Equal(net.IPv4(1, 2, 3, 4)) {
+		t.Fatalf("wrong first IP, got %s", ip)
+	}
+
+	ip, err = o.IP(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
+	}
+
+	ip, err = o.IP(3)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
+	}
+}
+
+func TestOptionIPMask(t *testing.T) {
+	o := Options{
+		1: []byte{1, 2, 3, 4},
+		2: []byte{1, 2, 3, 4, 5, 6},
+		3: []byte{1, 2, 3},
+	}
+
+	ipmask, err := o.IPMask(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !net.IP(ipmask).Equal(net.IP(net.IPv4Mask(1, 2, 3, 4))) {
+		t.Fatalf("wrong first IP, got %s", ipmask)
+	}
+
+	ipmask, err = o.IPMask(2)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
+	}
+
+	ipmask, err = o.IPMask(3)
+	if err == nil {
+		t.Fatal("option shouldn't be a valid IPs")
 	}
 }
 

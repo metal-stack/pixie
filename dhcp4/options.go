@@ -174,7 +174,7 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 	return ret, nil
 }
 
-// String returns the value of option n as a byte slice.
+// Bytes returns the value of option n as a byte slice.
 func (o Options) Bytes(n Option) ([]byte, error) {
 	bs := o[n]
 	if bs == nil {
@@ -249,7 +249,7 @@ func (o Options) IPs(n Option) ([]net.IP, error) {
 	if len(bs) < 4 || len(bs)%4 != 0 {
 		return nil, errOptionWrongSize
 	}
-	ret := make([]net.IP, len(bs)/4)
+	ret := make([]net.IP, 0, len(bs)/4)
 	for i := 0; i < len(bs); i += 4 {
 		ret = append(ret, net.IP(bs[i:i+4]))
 	}
