@@ -330,6 +330,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 			return nil, fmt.Errorf("BOOTP message type (%d) doesn't match DHCP message type (%s", bs[0], ret.Type)
 		}
 	default:
+		return nil, fmt.Errorf("Unknown DHCP message type %d", ret.Type)
 	}
 
 	return ret, nil
