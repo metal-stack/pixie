@@ -93,7 +93,10 @@ func (o Options) Unmarshal(bs []byte) error {
 			// is going to be an error, until I get a bug report about
 			// something that actually does it.
 			if _, ok := o[opt]; ok {
-				return fmt.Errorf("packet has duplicate option %d (please file a bug with a pcap!)", opt)
+				// Okay fine option 56 can be duped.
+				if opt != 56 {
+					return fmt.Errorf("packet has duplicate option %d (please file a bug with a pcap!)", opt)
+				}
 			}
 			if len(bs) < 2 {
 				return fmt.Errorf("option %d has no length byte", opt)
