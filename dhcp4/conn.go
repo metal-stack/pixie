@@ -167,6 +167,9 @@ type portableConn struct {
 }
 
 func newPortableConn(addr string) (conn, error) {
+	if addr == "" {
+		addr = ":67"
+	}
 	c, err := net.ListenPacket("udp4", addr)
 	if err != nil {
 		return nil, err
@@ -192,7 +195,7 @@ func (c *portableConn) Recv(b []byte) (rb []byte, addr *net.UDPAddr, ifidx int, 
 }
 
 func (c *portableConn) Send(b []byte, addr *net.UDPAddr, ifidx int) error {
-	if ifidx > 0 {
+	if ifidx <= 0 {
 		_, err := c.conn.WriteTo(b, nil, addr)
 		return err
 	}
