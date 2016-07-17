@@ -42,7 +42,7 @@ func init() {
 
 func newLinuxConn(addr string) (conn, error) {
 	if addr == "" {
-		addr = ":67"
+		addr = "0.0.0.0:67"
 	}
 	udpAddr, err := net.ResolveUDPAddr("udp4", addr)
 	if err != nil {
