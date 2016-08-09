@@ -148,7 +148,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 	optsInFile, optsInSname := false, false
 	v, err := p.Options.Byte(OptOverload)
 	if err == nil {
-		optsInFile, optsInFile = v&1 != 0, v&2 != 0
+		optsInFile, optsInSname = v&1 != 0, v&2 != 0
 	}
 	if optsInFile && p.BootFilename != "" {
 		return nil, errors.New("DHCP option 52 says to use the 'file' field for options, but BootFilename is not empty")
@@ -217,8 +217,8 @@ func (p *Packet) Marshal() ([]byte, error) {
 			return nil, err
 		}
 	} else {
-		ret.WriteString(p.BootServerName)
-		for i := len(p.BootServerName); i < 128; i++ {
+		ret.WriteString(p.BootFilename)
+		for i := len(p.BootFilename); i < 128; i++ {
 			ret.WriteByte(0)
 		}
 	}
