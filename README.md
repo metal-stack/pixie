@@ -2,18 +2,21 @@
 
 [![license](https://img.shields.io/github/license/google/netboot.svg?maxAge=2592000)](https://github.com/google/netboot/blob/master/LICENSE) [![Travis](https://img.shields.io/travis/google/netboot.svg?maxAge=2592000)](https://travis-ci.org/google/netboot)  [![api](https://img.shields.io/badge/api-unstable-red.svg)](https://godoc.org/go.universe.tf/netboot)
 
-The canonical import path for this repository is `go.universe.tf/netboot`:
-
-```go
-import (
-    "go.universe.tf/netboot/tftp"
-    "go.universe.tf/netboot/dhcp4"
-    "go.universe.tf/netboot/pcap"
-)
-```
-
 This repository contains Go implementations of network protocols used
 in booting machines over the network, as well as software that make
 use of those implementations.
 
 This is not an official Google project.
+
+The canonical import path for Go packages in this repository is `go.universe.tf/netboot`.
+
+## Libraries
+
+- [pcap](https://godoc.org/go.universe.tf/netboot/pcap): Pure Go implementation of reading and writing pcap files.
+- [dhcp4](https://godoc.org/go.universe.tf/netboot/pcap): DHCPv4 library providing the low-level bits of a DHCP client/server (packet marshaling, RFC-compliant packet transmission semantics).
+- [tftp](https://godoc.org/go.universe.tf/netboot/pcap): Read-only TFTP server implementation.
+- [pixiecore](https://godoc.org/go.universe.tf/netboot/pixiecore): the functionality of Pixiecore (see below), in library form. Every stability warning in this repository applies double for this package.
+
+## Programs
+
+- [Pixiecore](https://github.com/google/netboot/tree/master/pixiecore): an all-in-one tool for easy netbooting.
