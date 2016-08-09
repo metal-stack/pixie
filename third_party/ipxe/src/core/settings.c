@@ -331,6 +331,7 @@ struct settings * autovivify_child_settings ( struct settings *parent,
 				&new_child->autovivified.refcnt );
 	settings = &new_child->autovivified.generic.settings;
 	register_settings ( settings, parent, new_child->name );
+	ref_put ( settings->refcnt );
 	return settings;
 }
 
@@ -450,6 +451,8 @@ static void reprioritise_settings ( struct settings *settings ) {
 	list_for_each_entry ( tmp, &parent->children, siblings ) {
 		tmp_priority = fetch_intz_setting ( tmp, &priority_setting );
 		if ( priority > tmp_priority )
+			break;
+		if ( settings->order > tmp->order )
 			break;
 	}
 	list_add_tail ( &settings->siblings, &tmp->siblings );
@@ -1784,7 +1787,7 @@ const struct setting_type setting_type_ipv6 __setting_type = {
 };
 
 /** IPv6 settings scope */
-const struct settings_scope ipv6_scope;
+const struct settings_scope dhcpv6_scope;
 
 /**
  * Integer setting type indices
