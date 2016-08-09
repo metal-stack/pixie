@@ -1,0 +1,4 @@
+cmd/pixiecore-gpl/pixiecore-gpl
+cmd/pixiecore/pixiecore
+pcap/pcap.test
+dhcp4/dhcp4.test
