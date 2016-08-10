@@ -13,8 +13,8 @@ The canonical import path for Go packages in this repository is `go.universe.tf/
 ## Libraries
 
 - [pcap](https://godoc.org/go.universe.tf/netboot/pcap): Pure Go implementation of reading and writing pcap files.
-- [dhcp4](https://godoc.org/go.universe.tf/netboot/pcap): DHCPv4 library providing the low-level bits of a DHCP client/server (packet marshaling, RFC-compliant packet transmission semantics).
-- [tftp](https://godoc.org/go.universe.tf/netboot/pcap): Read-only TFTP server implementation.
+- [dhcp4](https://godoc.org/go.universe.tf/netboot/dhcp4): DHCPv4 library providing the low-level bits of a DHCP client/server (packet marshaling, RFC-compliant packet transmission semantics).
+- [tftp](https://godoc.org/go.universe.tf/netboot/tftp): Read-only TFTP server implementation.
 - [pixiecore](https://godoc.org/go.universe.tf/netboot/pixiecore): the functionality of Pixiecore (see below), in library form. Every stability warning in this repository applies double for this package.
 
 ## Programs
