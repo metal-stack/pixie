@@ -16,6 +16,7 @@ package pixiecore
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -68,17 +69,36 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		s.httpError(w, r, http.StatusNotFound, "no bootspec found for %q", mach.MAC)
 		return
 	}
-	if spec.Kernel == "" {
-		// TODO: maybe don't send this error over the network?
-		s.logHTTP(r, "invalid bootspec for %q: missing kernel", mach.MAC)
+	script, err := ipxeScript(spec, r.Host)
+	if err != nil {
+		s.logHTTP(r, "failed to assemble ipxe script: %s", err)
 		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
-		return
 	}
 
-	// All is well, assemble the iPXE script.
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write(script)
+}
 
-	urlPrefix := fmt.Sprintf("http://%s/_/file?name=", r.Host)
+func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	f, err := s.Booter.ReadBootFile(ID(name))
+	if err != nil {
+		s.logHTTP(r, "error getting requested file %q: %s", name, err)
+		http.Error(w, "couldn't get file", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+	if _, err = io.Copy(w, f); err != nil {
+		s.logHTTP(r, "copy of file %q failed: %s", name, err)
+	}
+}
 
+func ipxeScript(spec *Spec, serverHost string) ([]byte, error) {
+	if spec.Kernel == "" {
+		return nil, errors.New("spec is missing Kernel")
+	}
+
+	urlPrefix := fmt.Sprintf("http://%s/_/file?name=", serverHost)
 	var b bytes.Buffer
 	b.WriteString("#!ipxe\n")
 	fmt.Fprintf(&b, "kernel --name kernel %s%s\n", urlPrefix, url.QueryEscape(string(spec.Kernel)))
@@ -98,26 +118,9 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		case ID:
 			fmt.Fprintf(&b, "%s=%s%s ", k, urlPrefix, url.QueryEscape(string(val)))
 		default:
-			s.logHTTP(r, "invalid bootspec for %q: unknown cmdline type for key %q", mach.MAC, k)
-			http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("unsupported cmdline type %T for key %q", v, k)
 		}
 	}
 	b.WriteByte('\n')
-	w.Header().Set("Content-Type", "text/plain")
-	b.WriteTo(w)
-}
-
-func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
-	name := r.URL.Query().Get("name")
-	f, err := s.Booter.ReadBootFile(ID(name))
-	if err != nil {
-		s.logHTTP(r, "error getting requested file %q: %s", name, err)
-		http.Error(w, "couldn't get file", http.StatusInternalServerError)
-		return
-	}
-	defer f.Close()
-	if _, err = io.Copy(w, f); err != nil {
-		s.logHTTP(r, "copy of file %q failed: %s", name, err)
-	}
+	return b.Bytes(), nil
 }
