@@ -89,8 +89,7 @@ func (c *Conn) Close() error {
 }
 
 // RecvDHCP reads a Packet from the connection. It returns the
-// packet and the interface it was received on, which may be nil
-// if interface information cannot be obtained.
+// packet and the interface it was received on.
 func (c *Conn) RecvDHCP() (*Packet, *net.Interface, error) {
 	var buf [1500]byte
 	for {
