@@ -1,4 +1,4 @@
-// Copyright © 2016 David Anderson <dave@natulte.net>
+// Copyright 2016 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package cli
 
 import "github.com/spf13/cobra"
 
-var quickCmd = &cobra.Command{
-	Use:   "quick recipe [settings...]",
-	Short: "Boot an OS from a list",
-	Long: `This ends up working the same as the simple boot command, but saves
-you having to find the kernels and ramdisks for popular OSes.
-
-TODO: better help here
-`,
+var bootCmd = &cobra.Command{
+	Use:   "boot kernel [initrd...]",
+	Short: "Boot a kernel and optional init ramdisks",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			fatalf("you must specify at least a recipe")
+			fatalf("you must specify at least a kernel")
 		}
-		recipe := args[0]
-		todo("run in quick mode with recipe=%s", recipe)
+		kernel := args[0]
+		initrd := args[1:]
+		cmdline, err := cmd.Flags().GetString("cmdline")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+		todo("run in static mode with kernel=%s, initrd=%v, cmdline=%q", kernel, initrd, cmdline)
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(quickCmd)
-
-	// TODO: some kind of caching support where quick OSes get
-	// downloaded locally, so you don't have to fetch from a remote
-	// server on every boot attempt.
+	rootCmd.AddCommand(bootCmd)
+	bootCmd.Flags().StringP("cmdline", "c", "", "Kernel commandline arguments")
 }

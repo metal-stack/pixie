@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package cli
 
 import "github.com/spf13/cobra"
 
@@ -29,6 +29,6 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 	Run: func(cmd *cobra.Command, args []string) { todo("api called") }}
 
 func init() {
-	RootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(apiCmd)
 	// TODO: SSL cert flags for both client and server auth.
 }

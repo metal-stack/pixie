@@ -12,59 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pixiecore
+package cli
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 
-	"go.universe.tf/netboot/pixiecore/cmd"
+	"go.universe.tf/netboot/pixiecore"
 )
 
-type hellyeah struct{}
+// This is just a very temporary test booter that boots everything
+// into tinycore linux, always.
 
-func (hellyeah) BootSpec(Machine) (*Spec, error) {
-	return &Spec{
-		Kernel: ID("k"),
-		Initrd: []ID{"0", "1"},
+type tinycore struct{}
+
+func (tinycore) BootSpec(m pixiecore.Machine) (*pixiecore.Spec, error) {
+	return &pixiecore.Spec{
+		Kernel: pixiecore.ID("k"),
+		Initrd: []pixiecore.ID{"1", "2"},
 	}, nil
 }
 
-func (hellyeah) ReadBootFile(p ID) (io.ReadCloser, error) {
+func (tinycore) ReadBootFile(id pixiecore.ID) (io.ReadCloser, error) {
 	var url string
-	switch p {
+	switch id {
 	case "k":
 		url = "http://tinycorelinux.net/7.x/x86/release/distribution_files/vmlinuz64"
-	case "0":
-		url = "http://tinycorelinux.net/7.x/x86/release/distribution_files/rootfs.gz"
 	case "1":
+		url = "http://tinycorelinux.net/7.x/x86/release/distribution_files/rootfs.gz"
+	case "2":
 		url = "http://tinycorelinux.net/7.x/x86/release/distribution_files/modules64.gz"
 	}
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("GET %q failed: %s", url, resp.Status)
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("%s: %s", url, http.StatusText(resp.StatusCode))
 	}
 	return resp.Body, nil
 }
 
-func (hellyeah) WriteBootFile(ID, io.Reader) error {
+func (tinycore) WriteBootFile(id pixiecore.ID, body io.Reader) error {
 	return nil
-}
-
-// CLI runs the Pixiecore commandline.
-//
-// Takes a map of ipxe bootloader binaries for various architectures.
-func CLI(ipxe map[Firmware][]byte) {
-	s := &Server{
-		Booter: hellyeah{},
-		Ipxe:   ipxe,
-	}
-	fmt.Println(s.Serve())
-
-	cmd.Execute()
 }
