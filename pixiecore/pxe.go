@@ -23,90 +23,104 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+// TODO: this may actually be the BINL protocol, a
+// Microsoft-proprietary fork of PXE that is more universally
+// supported in UEFI than PXE itself. Need to comb through the
+// TianoCore EDK2 source code to figure out if what this is doing is
+// actually BINL, and if so rename everything.
+
 func (s *Server) servePXE(conn net.PacketConn) {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		fmt.Println(err)
+		// TODO: fatal errors that return from one of the handler
+		// goroutines should plumb the error back to the
+		// coordinating goroutine, so that it can do an orderly
+		// shutdown and return the error from Serve(). This "log +
+		// randomly stop a piece of pixiecore" is a terrible
+		// kludge.
+		s.logf("couldn't get interface metadata on PXE PacketConn: %s", err)
 		return
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("receiving PXE packet: %s", err)
 			return
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
 		if err != nil {
-			fmt.Println("not a DHCP packet")
+			s.logf("PXE request from %s not usable: %s", addr, err)
 			continue
 		}
 
 		fwtype, err := s.validatePXE(pkt)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("PXE request from %s not usable: %s", addr, err)
 			continue
 		}
 
 		intf, err := net.InterfaceByIndex(msg.IfIndex)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
 			continue
 		}
 
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			fmt.Printf("Couldn't find an IP address to use to reply to %s: %s\n", addr, err)
+			s.logf("want to boot %s on %s, but couldn't find a unicast source address on that interface: %s", addr, intf.Name, err)
 			continue
 		}
 
 		resp, err := s.offerPXE(pkt, serverIP, fwtype)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("failed to construct PXE response for %s: %s", addr, err)
 			continue
 		}
 
 		bs, err := resp.Marshal()
 		if err != nil {
-			fmt.Println(err)
+			s.logf("failed to marshal PXE response for %s: %s", addr, err)
 		}
 
 		if _, err := l.WriteTo(bs, &ipv4.ControlMessage{
 			IfIndex: msg.IfIndex,
 		}, addr); err != nil {
-			fmt.Println(err)
+			s.logf("failed to send PXE response to %s: %s", addr, err)
 		}
 	}
 }
 
 func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	if pkt.Type != dhcp4.MsgRequest {
-		return 0, errors.New("not DHCPREQUEST")
+		return 0, errors.New("not a DHCPREQUEST packet")
 	}
 
+	if pkt.Options[93] == nil {
+		return 0, errors.New("not a PXE boot request (missing option 93)")
+	}
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return 0, fmt.Errorf("malformed arch: %s", err)
+		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
 	}
 	fwtype = Firmware(fwt)
 	if s.Ipxe[fwtype] == nil {
-		return 0, fmt.Errorf("unsupported firmware type %d", fwtype)
+		return 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
 	}
 
 	guid := pkt.Options[97]
 	switch len(guid) {
 	case 0:
-		// A missing GUID is invalid according to the spec, however
-		// there are PXE ROMs in the wild that omit the GUID and still
-		// expect to boot.
+		// Accept missing GUIDs even though it's a spec violation,
+		// same as in dhcp.go.
 	case 17:
 		if guid[0] != 0 {
-			return 0, errors.New("malformed GUID (leading byte must be zero)")
+			return 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
 		}
 	default:
-		return 0, errors.New("malformed GUID (wrong size)")
+		return 0, errors.New("malformed client GUID (option 97), wrong size")
 	}
 
 	return fwtype, nil
@@ -114,9 +128,8 @@ func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 
 func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (resp *dhcp4.Packet, err error) {
 	resp = &dhcp4.Packet{
-		Type:          dhcp4.MsgAck,
-		TransactionID: pkt.TransactionID,
-		//Broadcast:      true,
+		Type:           dhcp4.MsgAck,
+		TransactionID:  pkt.TransactionID,
 		HardwareAddr:   pkt.HardwareAddr,
 		ClientAddr:     pkt.ClientAddr,
 		RelayAddr:      pkt.RelayAddr,
@@ -126,22 +139,11 @@ func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (
 		Options: dhcp4.Options{
 			dhcp4.OptServerIdentifier: serverIP,
 			dhcp4.OptVendorIdentifier: []byte("PXEClient"),
-			//dhcp4.OptTFTPServer:       []byte(serverIP.String()),
-			//dhcp4.OptBootFile:         []byte(fmt.Sprintf("%d", fwtype)),
 		},
 	}
 	if pkt.Options[97] != nil {
 		resp.Options[97] = pkt.Options[97]
 	}
-	// pxe := dhcp4.Options{
-	// 	// PXE Boot Server Discovery Control - bypass, just boot from filename.
-	// 	6: []byte{8},
-	// }
-	// bs, err := pxe.Marshal()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
-	// }
-	// resp.Options[43] = bs
 
 	return resp, nil
 }

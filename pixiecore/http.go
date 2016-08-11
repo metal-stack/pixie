@@ -24,17 +24,22 @@ import (
 	"strconv"
 )
 
+func (s *Server) httpError(w http.ResponseWriter, r *http.Request, status int, format string, args ...interface{}) {
+	s.logHTTP(r, format, args...)
+	http.Error(w, fmt.Sprintf(format, args...), status)
+}
+
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	args := r.URL.Query()
 	mac, err := net.ParseMAC(args.Get("mac"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid MAC address %q: %s\n", args.Get("mac"), err), http.StatusBadRequest)
+		s.httpError(w, r, http.StatusBadRequest, "invalid MAC address %q: %s\n", args.Get("mac"), err)
 		return
 	}
 
 	i, err := strconv.Atoi(args.Get("arch"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid architecture %q: %s\n", args.Get("arch"), err), http.StatusBadRequest)
+		s.httpError(w, r, http.StatusBadRequest, "invalid architecture %q: %s\n", args.Get("arch"), err)
 		return
 
 	}
@@ -42,7 +47,7 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	switch arch {
 	case ArchIA32, ArchX64:
 	default:
-		http.Error(w, fmt.Sprintf("Unknown architecture %q\n", arch), http.StatusBadRequest)
+		s.httpError(w, r, http.StatusBadRequest, "Unknown architecture %q\n", arch)
 		return
 	}
 
@@ -53,20 +58,24 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	spec, err := s.Booter.BootSpec(mach)
 	if err != nil {
 		// TODO: maybe don't send this error over the network?
-		http.Error(w, fmt.Sprintf("Error getting bootspec for %#v: %s\n", mach, err), http.StatusInternalServerError)
+		s.logHTTP(r, "error getting bootspec for %#v: %s", mach, err)
+		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
 		return
 	}
 	if spec == nil {
-		// TODO: consider making ipxe abort netbooting so it can fall
-		// through to other boot options - unsure if that's possible.
-		http.Error(w, fmt.Sprintf("Should not boot %q\n", mach.MAC), http.StatusServiceUnavailable)
+		// TODO: make ipxe abort netbooting so it can fall through to
+		// other boot options - unsure if that's possible.
+		s.httpError(w, r, http.StatusNotFound, "no bootspec found for %q", mach.MAC)
 		return
 	}
 	if spec.Kernel == "" {
 		// TODO: maybe don't send this error over the network?
-		http.Error(w, fmt.Sprintf("Invalid bootspec for %q: missing kernel\n", mach.MAC), http.StatusInternalServerError)
+		s.logHTTP(r, "invalid bootspec for %q: missing kernel", mach.MAC)
+		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
 		return
 	}
+
+	// All is well, assemble the iPXE script.
 
 	urlPrefix := fmt.Sprintf("http://%s/_/file?name=", r.Host)
 
@@ -89,8 +98,8 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		case ID:
 			fmt.Fprintf(&b, "%s=%s%s ", k, urlPrefix, url.QueryEscape(string(val)))
 		default:
-			// TODO: maybe don't send this error over the network?
-			http.Error(w, fmt.Sprintf("Invalid bootspec for %q: unknown cmdline type\n", mach.MAC), http.StatusInternalServerError)
+			s.logHTTP(r, "invalid bootspec for %q: unknown cmdline type for key %q", mach.MAC, k)
+			http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -103,13 +112,12 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	f, err := s.Booter.ReadBootFile(ID(name))
 	if err != nil {
-		// TODO: maybe don't send this error over the network?
-		http.Error(w, fmt.Sprintf("%s\n", err), http.StatusInternalServerError)
+		s.logHTTP(r, "error getting requested file %q: %s", name, err)
+		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
 	defer f.Close()
 	if _, err = io.Copy(w, f); err != nil {
-		// TODO: logger
-		fmt.Println("Copy failed:", err)
+		s.logHTTP(r, "copy of file %q failed: %s", name, err)
 	}
 }

@@ -17,7 +17,6 @@ package pixiecore
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -29,10 +28,18 @@ import (
 func (s *Server) serveTFTP(l net.PacketConn) {
 	ts := tftp.Server{
 		Handler: s.handleTFTP,
-		InfoLog: func(msg string) { fmt.Println(msg) },
+		InfoLog: func(msg string) { s.logf(msg) },
 	}
 	err := ts.Serve(l)
-	fmt.Printf("Serving TFTP failed: %s\n", err)
+	if err != nil {
+		// TODO: fatal errors that return from one of the handler
+		// goroutines should plumb the error back to the
+		// coordinating goroutine, so that it can do an orderly
+		// shutdown and return the error from Serve(). This "log +
+		// randomly stop a piece of pixiecore" is a terrible
+		// kludge.
+		s.logf("TFTP server shut down unexpectedly: %s", err)
+	}
 }
 
 func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, int64, error) {

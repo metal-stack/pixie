@@ -26,45 +26,51 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
-			fmt.Println(err)
+			s.logf("receiving DHCP packet: %s", err)
+			// TODO: fatal errors that return from one of the handler
+			// goroutines should plumb the error back to the
+			// coordinating goroutine, so that it can do an orderly
+			// shutdown and return the error from Serve(). This "log +
+			// randomly stop a piece of pixiecore" is a terrible
+			// kludge.
 			return
 		}
 		if intf == nil {
-			fmt.Println("no interface")
-			continue
+			s.logf("received DHCP packet with no interface information (this is a violation of dhcp4.Conn's contract)")
+			return
 		}
 
 		mach, isIpxe, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("DHCP packet from %s not usable: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 		if spec == nil {
-			fmt.Println("no spec")
+			s.logf("booter gave no spec for %s, ignoring boot request", pkt.HardwareAddr)
 			continue
 		}
 
 		// Machine should be booted.
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("want to boot %s on %s, but couldn't find a unicast source address on that interface: %s", pkt.HardwareAddr, intf.Name, err)
 			continue
 		}
 
 		resp, err := s.offerDHCP(pkt, mach, serverIP, isIpxe, fwtype)
 		if err != nil {
-			fmt.Println(err)
+			s.logf("failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
 		if err = conn.SendDHCP(resp, intf); err != nil {
-			fmt.Println(err)
+			s.logf("failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 	}
@@ -72,16 +78,19 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) {
 
 func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwtype Firmware, err error) {
 	if pkt.Type != dhcp4.MsgDiscover {
-		return mach, false, 0, errors.New("not DHCPDISCOVER")
+		return mach, false, 0, errors.New("not a DHCPDISCOVER packet")
 	}
 
+	if pkt.Options[93] == nil {
+		return mach, false, 0, errors.New("not a PXE boot request (missing option 93)")
+	}
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return mach, false, 0, fmt.Errorf("malformed arch: %s", err)
+		return mach, false, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
 	}
 	fwtype = Firmware(fwt)
 	if s.Ipxe[fwtype] == nil {
-		return mach, false, 0, fmt.Errorf("unsupported firmware type %d", fwtype)
+		return mach, false, 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
 	}
 
 	guid := pkt.Options[97]
@@ -89,13 +98,15 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwt
 	case 0:
 		// A missing GUID is invalid according to the spec, however
 		// there are PXE ROMs in the wild that omit the GUID and still
-		// expect to boot.
+		// expect to boot. The only thing we do with the GUID is
+		// mirror it back to the client if it's there, so we might as
+		// well accept these buggy ROMs.
 	case 17:
 		if guid[0] != 0 {
-			return mach, false, 0, errors.New("malformed GUID (leading byte must be zero)")
+			return mach, false, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
 		}
 	default:
-		return mach, false, 0, errors.New("malformed GUID (wrong size)")
+		return mach, false, 0, errors.New("malformed client GUID (option 97), wrong size")
 	}
 
 	// iPXE options
@@ -103,7 +114,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwt
 		bs := pkt.Options[175]
 		for len(bs) > 0 {
 			if len(bs) < 2 || len(bs)-2 < int(bs[1]) {
-				return mach, false, 0, errors.New("Malformed iPXE option")
+				return mach, false, 0, errors.New("malformed iPXE option")
 			}
 			switch bs[0] {
 			case 19:
@@ -138,9 +149,6 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, isI
 	if pkt.Options[97] != nil {
 		resp.Options[97] = pkt.Options[97]
 	}
-
-	// TODO: for maximum support, need to also send a BINL response to
-	// UEFI clients, or they might ignore this ProxyDHCP response.
 
 	if isIpxe {
 		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
@@ -210,5 +218,5 @@ func interfaceIP(intf *net.Interface) (net.IP, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("interface %s has no usable server addresses", intf.Name)
+	return nil, errors.New("no usable source address")
 }
