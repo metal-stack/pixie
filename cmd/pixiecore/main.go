@@ -14,8 +14,19 @@
 
 package main
 
-import "go.universe.tf/netboot/pixiecore"
+import (
+	"go.universe.tf/netboot/pixiecore"
+	"go.universe.tf/netboot/third_party/ipxe"
+)
 
 func main() {
-	pixiecore.CLI(nil)
+	pxe := ipxe.MustAsset("undionly.kpxe")
+	efi32 := ipxe.MustAsset("ipxe-i386.efi")
+	efi64 := ipxe.MustAsset("ipxe-x86_64.efi")
+
+	pixiecore.CLI(map[pixiecore.Firmware][]byte{
+		pixiecore.FirmwareX86PC: pxe,
+		pixiecore.FirmwareEFI32: efi32,
+		pixiecore.FirmwareEFI64: efi64,
+	})
 }
