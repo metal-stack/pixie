@@ -17,6 +17,7 @@ package cli
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -34,13 +35,18 @@ var Ipxe = map[pixiecore.Firmware][]byte{}
 //
 // Takes a map of ipxe bootloader binaries for various architectures.
 func CLI() {
+	// The ipxe firmware flags need to be set outside init(), so that
+	// the default flag value is computed appropriately based on
+	// whether the caller preseeded Ipxe.
+	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareX86PC), "ipxe-bios", "iPXE binary for BIOS/UNDI")
+	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI32), "ipxe-efi32", "iPXE binary for 32-bit UEFI")
+	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI64), "ipxe-efi64", "iPXE binary for 64-bit UEFI")
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
 }
-
-var cfgFile string
 
 // This represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -51,6 +57,32 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
 }
+
+type ipxeFirmwareFlag pixiecore.Firmware
+
+func (iff ipxeFirmwareFlag) String() string {
+	if Ipxe[pixiecore.Firmware(iff)] != nil {
+		return "<builtin>"
+	}
+	return ""
+}
+
+func (iff ipxeFirmwareFlag) Set(v string) error {
+	bs, err := ioutil.ReadFile(v)
+	if err != nil {
+		return fmt.Errorf("couldn't read ipxe binary %q: %s", v, err)
+	}
+
+	Ipxe[pixiecore.Firmware(iff)] = bs
+
+	return nil
+}
+
+func (ipxeFirmwareFlag) Type() string {
+	return "filename"
+}
+
+var cfgFile string
 
 func init() {
 	cobra.OnInitialize(initConfig)
