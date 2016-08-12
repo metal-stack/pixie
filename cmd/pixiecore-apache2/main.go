@@ -17,5 +17,5 @@ package main
 import "go.universe.tf/netboot/pixiecore/cli"
 
 func main() {
-	cli.CLI(nil)
+	cli.CLI()
 }

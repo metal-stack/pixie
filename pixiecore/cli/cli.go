@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cli implements the commandline interface for Pixiecore.
 package cli
 
 import (
@@ -23,10 +24,16 @@ import (
 	"go.universe.tf/netboot/pixiecore"
 )
 
+// Ipxe is the set of ipxe binaries for supported firmwares.
+//
+// Can be set externally before calling CLI(), and set/extended by
+// commandline processing in CLI().
+var Ipxe = map[pixiecore.Firmware][]byte{}
+
 // CLI runs the Pixiecore commandline.
 //
 // Takes a map of ipxe bootloader binaries for various architectures.
-func CLI(ipxe map[pixiecore.Firmware][]byte) {
+func CLI() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

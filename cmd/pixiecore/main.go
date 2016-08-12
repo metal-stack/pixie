@@ -21,13 +21,8 @@ import (
 )
 
 func main() {
-	pxe := ipxe.MustAsset("undionly.kpxe")
-	efi32 := ipxe.MustAsset("ipxe-i386.efi")
-	efi64 := ipxe.MustAsset("ipxe-x86_64.efi")
-
-	cli.CLI(map[pixiecore.Firmware][]byte{
-		pixiecore.FirmwareX86PC: pxe,
-		pixiecore.FirmwareEFI32: efi32,
-		pixiecore.FirmwareEFI64: efi64,
-	})
+	cli.Ipxe[pixiecore.FirmwareX86PC] = ipxe.MustAsset("undionly.kpxe")
+	cli.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustAsset("ipxe-i386.efi")
+	cli.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustAsset("ipxe-x86_64.efi")
+	cli.CLI()
 }

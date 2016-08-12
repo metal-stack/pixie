@@ -50,7 +50,7 @@ var bootCmd = &cobra.Command{
 
 		s := &pixiecore.Server{
 			Booter: pixiecore.StaticBooter(spec),
-			Ipxe:   nil, // TODO
+			Ipxe:   Ipxe,
 			Log:    func(msg string) { fmt.Println(msg) },
 		}
 		fmt.Println(s.Serve())
