@@ -27,19 +27,6 @@ import (
 //
 // Takes a map of ipxe bootloader binaries for various architectures.
 func CLI(ipxe map[pixiecore.Firmware][]byte) {
-	s := &pixiecore.Server{
-		Booter: pixiecore.StaticBooter(&pixiecore.Spec{
-			Kernel: pixiecore.ID("http://tinycorelinux.net/7.x/x86/release/distribution_files/vmlinuz64"),
-			Initrd: []pixiecore.ID{
-				"http://tinycorelinux.net/7.x/x86/release/distribution_files/rootfs.gz",
-				"http://tinycorelinux.net/7.x/x86/release/distribution_files/modules64.gz",
-			},
-		}),
-		Ipxe: ipxe,
-		Log:  func(msg string) { fmt.Println(msg) },
-	}
-	fmt.Println(s.Serve())
-
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)

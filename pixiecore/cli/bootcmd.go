@@ -14,7 +14,12 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+	"go.universe.tf/netboot/pixiecore"
+)
 
 var bootCmd = &cobra.Command{
 	Use:   "boot kernel [initrd...]",
@@ -24,16 +29,36 @@ var bootCmd = &cobra.Command{
 			fatalf("you must specify at least a kernel")
 		}
 		kernel := args[0]
-		initrd := args[1:]
+		initrds := args[1:]
 		cmdline, err := cmd.Flags().GetString("cmdline")
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
-		todo("run in static mode with kernel=%s, initrd=%v, cmdline=%q", kernel, initrd, cmdline)
+		bootmsg, err := cmd.Flags().GetString("bootmsg")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+
+		spec := &pixiecore.Spec{
+			Kernel:  pixiecore.ID(kernel),
+			Cmdline: map[string]interface{}{cmdline: ""},
+			Message: bootmsg,
+		}
+		for _, initrd := range initrds {
+			spec.Initrd = append(spec.Initrd, pixiecore.ID(initrd))
+		}
+
+		s := &pixiecore.Server{
+			Booter: pixiecore.StaticBooter(spec),
+			Ipxe:   nil, // TODO
+			Log:    func(msg string) { fmt.Println(msg) },
+		}
+		fmt.Println(s.Serve())
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(bootCmd)
-	bootCmd.Flags().StringP("cmdline", "c", "", "Kernel commandline arguments")
+	bootCmd.Flags().String("cmdline", "", "Kernel commandline arguments")
+	bootCmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
 }
