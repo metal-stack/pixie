@@ -42,6 +42,10 @@ func CLI() {
 	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI32), "ipxe-efi32", "iPXE binary for 32-bit UEFI")
 	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI64), "ipxe-efi64", "iPXE binary for 64-bit UEFI")
 
+	if v1compatCLI() {
+		return
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
@@ -53,9 +57,6 @@ var rootCmd = &cobra.Command{
 	Use:   "pixiecore",
 	Short: "All-in-one network booting",
 	Long:  `Pixiecore is a tool to make network booting easy.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 type ipxeFirmwareFlag pixiecore.Firmware
