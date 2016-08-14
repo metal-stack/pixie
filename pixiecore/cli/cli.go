@@ -32,8 +32,6 @@ import (
 var Ipxe = map[pixiecore.Firmware][]byte{}
 
 // CLI runs the Pixiecore commandline.
-//
-// Takes a map of ipxe bootloader binaries for various architectures.
 func CLI() {
 	// The ipxe firmware flags need to be set outside init(), so that
 	// the default flag value is computed appropriately based on
