@@ -35,11 +35,11 @@ var (
 
 func main() {
 	flag.Parse()
-	http.HandleFunc("/v1/boot/", API)
+	http.HandleFunc("/v1/boot/", api)
 	http.ListenAndServe(":"+strconv.Itoa(*port), nil)
 }
 
-func API(w http.ResponseWriter, r *http.Request) {
+func api(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Serving boot config for %s", filepath.Base(r.URL.Path))
 	resp := struct {
 		K string   `json:"kernel"`
