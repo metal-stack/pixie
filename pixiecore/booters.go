@@ -16,9 +16,7 @@ package pixiecore
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -30,8 +28,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-
-	"golang.org/x/crypto/nacl/secretbox"
 )
 
 // StaticBooter boots all machines with the same Spec.
@@ -188,11 +184,11 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	ret := Spec{
 		Message: r.Message,
 	}
-	if ret.Kernel, err = b.signURL(r.Kernel); err != nil {
+	if ret.Kernel, err = signURL(r.Kernel, &b.key); err != nil {
 		return nil, err
 	}
 	for _, img := range r.Initrd {
-		initrd, err := b.signURL(img)
+		initrd, err := signURL(img, &b.key)
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +213,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 }
 
 func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, error) {
-	urlStr, err := b.getURL(id)
+	urlStr, err := getURL(id, &b.key)
 	if err != nil {
 		return nil, err
 	}
@@ -228,12 +224,20 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, error) {
 	}
 	var ret io.ReadCloser
 	if u.Scheme == "file" {
-		ret, err = b.readLocal(u)
+		ret, err = os.Open(u.Path)
 	} else {
 		// urlStr will get reparsed by http.Get, which is mildly
 		// wasteful, but the code looks nicer than constructing a
 		// Request.
-		ret, err = b.readRemote(urlStr)
+		resp, err := http.Get(urlStr)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("GET %q failed: %s", urlStr, resp.Status)
+		}
+
+		ret, err = resp.Body, nil
 	}
 	if err != nil {
 		return nil, err
@@ -242,7 +246,7 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, error) {
 }
 
 func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
-	u, err := b.getURL(id)
+	u, err := getURL(id, &b.key)
 	if err != nil {
 		return err
 	}
@@ -296,7 +300,7 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("invalid url for cmdline key %q: %s", k, err)
 			}
-			encoded, err := b.signURL(urlStr)
+			encoded, err := signURL(urlStr, &b.key)
 			if err != nil {
 				return "", err
 			}
@@ -306,57 +310,4 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 		}
 	}
 	return strings.Join(ret, " "), nil
-}
-
-func (b *apibooter) signURL(u string) (ID, error) {
-	var nonce [24]byte
-	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
-		return "", fmt.Errorf("could not read randomness for signing nonce: %s", err)
-	}
-
-	out := nonce[:]
-
-	// Secretbox is authenticated encryption. In theory we only need
-	// symmetric authentication, but secretbox is stupidly simple to
-	// use and hard to get wrong, and the encryption overhead should
-	// be tiny for such a small URL unless you're trying to
-	// simultaneously netboot a million machines. This is one case
-	// where convenience and certainty that you got it right trumps
-	// pure efficiency.
-	out = secretbox.Seal(out, []byte(u), &nonce, &b.key)
-	return ID(base64.URLEncoding.EncodeToString(out)), nil
-}
-
-func (b *apibooter) getURL(signedStr ID) (string, error) {
-	signed, err := base64.URLEncoding.DecodeString(string(signedStr))
-	if err != nil {
-		return "", err
-	}
-	if len(signed) < 24 {
-		return "", errors.New("signed blob too short to be valid")
-	}
-
-	var nonce [24]byte
-	copy(nonce[:], signed)
-	out, ok := secretbox.Open(nil, []byte(signed[24:]), &nonce, &b.key)
-	if !ok {
-		return "", errors.New("signature verification failed")
-	}
-
-	return string(out), nil
-}
-
-func (b *apibooter) readLocal(u *url.URL) (io.ReadCloser, error) {
-	return os.Open(u.Path)
-}
-
-func (b *apibooter) readRemote(u string) (io.ReadCloser, error) {
-	resp, err := http.Get(u)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("GET %q failed: %s", u, resp.Status)
-	}
-	return resp.Body, nil
 }
