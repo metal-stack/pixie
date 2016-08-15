@@ -11,11 +11,12 @@ addons:
     packages:
       - atftp
 install:
+  - go get github.com/Masterminds/glide
   - go get github.com/golang/lint/golint
 before_script:
 script:
-  - GO15VENDOREXPERIMENT=1 go get -t ./...
+  - glide install
   - GO15VENDOREXPERIMENT=1 go build ./...
-  - GO15VENDOREXPERIMENT=1 go test ./...
-  - go vet ./...
-  - golint ./...
+  - GO15VENDOREXPERIMENT=1 go test $(glide novendor)
+  - go vet $(glide novendor)
+  - golint $(glide novendor)
