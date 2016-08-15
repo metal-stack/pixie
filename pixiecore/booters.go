@@ -165,7 +165,6 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 		Cmdline interface{} `json:"cmdline"`
 		Message string      `json:"message"`
 	}{}
-
 	if err = json.NewDecoder(body).Decode(&r); err != nil {
 		return nil, err
 	}
@@ -198,7 +197,6 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	if r.Cmdline != nil {
 		switch c := r.Cmdline.(type) {
 		case string:
-			ret.Cmdline = c
 		case map[string]interface{}:
 			ret.Cmdline, err = b.constructCmdline(c)
 			if err != nil {
@@ -208,6 +206,15 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 			return nil, fmt.Errorf("API server returned unknown type %T for kernel cmdline", r.Cmdline)
 		}
 	}
+
+	f := func(u string) (string, error) {
+		id, err := signURL(u, &b.key)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("{{ ID %q }}", id), nil
+	}
+	ret.Cmdline, err = expandCmdline(ret.Cmdline, template.FuncMap{"URL": f})
 
 	return &ret, nil
 }
@@ -290,7 +297,7 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 		case bool:
 			ret = append(ret, k)
 		case string:
-			ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+			ret = append(ret, fmt.Sprintf("%s=%q", k, v))
 		case map[string]interface{}:
 			urlStr, ok := v["url"].(string)
 			if !ok {
@@ -300,11 +307,7 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("invalid url for cmdline key %q: %s", k, err)
 			}
-			encoded, err := signURL(urlStr, &b.key)
-			if err != nil {
-				return "", err
-			}
-			ret = append(ret, fmt.Sprintf("%s=%s", k, encoded))
+			ret = append(ret, fmt.Sprintf("%s={{ URL %q }}", k, urlStr))
 		default:
 			return "", fmt.Errorf("unsupported value kind %T for cmdline key %q", m[k], k)
 		}
