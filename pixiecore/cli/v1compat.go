@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"go.universe.tf/netboot/pixiecore"
 )
@@ -35,7 +36,7 @@ func v1compatCLI() bool {
 	listenAddr := fs.String("listen-addr", "", "Address to listen on (default all)")
 
 	apiServer := fs.String("api", "", "Path to the boot API server")
-	//apiTimeout := fs.Duration("api-timeout", 5*time.Second, "Timeout on boot API server requests")
+	apiTimeout := fs.Duration("api-timeout", 5*time.Second, "Timeout on boot API server requests")
 
 	kernelFile := fs.String("kernel", "", "Path to the linux kernel file to boot")
 	initrdFile := fs.String("initrd", "", "Comma-separated list of initrds to pass to the kernel")
@@ -73,7 +74,16 @@ func v1compatCLI() bool {
 		}
 
 		log.Printf("Starting Pixiecore in API mode, with server %s", *apiServer)
-		todo("API mode not ready yet")
+		booter, err := pixiecore.APIBooter(*apiServer, *apiTimeout)
+		if err != nil {
+			fatalf("Failed to create API booter: %s", err)
+		}
+		s := &pixiecore.Server{
+			Booter: booter,
+			Ipxe:   Ipxe,
+			Log:    func(msg string) { fmt.Println(msg) },
+		}
+		fmt.Println(s.Serve())
 
 	case *kernelFile != "":
 		if *apiServer != "" {
