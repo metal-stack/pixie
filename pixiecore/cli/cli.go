@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package cli implements the commandline interface for Pixiecore.
-package cli
+package cli // import "go.universe.tf/netboot/pixiecore/cli"
 
 import (
 	"fmt"
