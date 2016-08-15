@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"text/template"
 )
 
 func (s *Server) httpError(w http.ResponseWriter, r *http.Request, status int, format string, args ...interface{}) {
@@ -42,7 +43,6 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.httpError(w, r, http.StatusBadRequest, "invalid architecture %q: %s\n", args.Get("arch"), err)
 		return
-
 	}
 	arch := Architecture(i)
 	switch arch {
@@ -109,18 +109,16 @@ func ipxeScript(spec *Spec, serverHost string) ([]byte, error) {
 	for i := range spec.Initrd {
 		fmt.Fprintf(&b, "initrd=initrd%d ", i)
 	}
-	for k, v := range spec.Cmdline {
-		switch val := v.(type) {
-		case string:
-			fmt.Fprintf(&b, "%s=%s ", k, val)
-		case int, int32, int64, uint32, uint64:
-			fmt.Fprintf(&b, "%s=%d ", k, v)
-		case ID:
-			fmt.Fprintf(&b, "%s=%s%s ", k, urlPrefix, url.QueryEscape(string(val)))
-		default:
-			return nil, fmt.Errorf("unsupported cmdline type %T for key %q", v, k)
-		}
+
+	f := func(id string) string {
+		return fmt.Sprintf("http://%s/_/file?name=%s", serverHost, url.QueryEscape(id))
 	}
+	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
+	if err != nil {
+		return nil, fmt.Errorf("expanding cmdline %q: %s", spec.Cmdline, err)
+	}
+	b.WriteString(cmdline)
+
 	b.WriteByte('\n')
 	return b.Bytes(), nil
 }

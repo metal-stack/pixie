@@ -102,14 +102,19 @@ func v1compatCLI() bool {
 		}
 		spec := &pixiecore.Spec{
 			Kernel:  pixiecore.ID(*kernelFile),
-			Cmdline: map[string]interface{}{*kernelCmdline: ""},
+			Cmdline: *kernelCmdline,
 		}
 		for _, initrd := range initrds {
 			spec.Initrd = append(spec.Initrd, pixiecore.ID(initrd))
 		}
 
+		booter, err := pixiecore.StaticBooter(spec)
+		if err != nil {
+			fatalf("Couldn't make static booter: %s", err)
+		}
+
 		s := &pixiecore.Server{
-			Booter:   pixiecore.StaticBooter(spec),
+			Booter:   booter,
 			Ipxe:     Ipxe,
 			Log:      func(msg string) { fmt.Println(msg) },
 			Address:  *listenAddr,

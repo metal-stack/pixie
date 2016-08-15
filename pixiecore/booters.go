@@ -25,8 +25,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"golang.org/x/crypto/nacl/secretbox"
@@ -35,12 +37,11 @@ import (
 // StaticBooter boots all machines with the same Spec.
 //
 // IDs in spec should be either local file paths, or HTTP/HTTPS URLs.
-func StaticBooter(spec *Spec) Booter {
+func StaticBooter(spec *Spec) (Booter, error) {
 	ret := &staticBooter{
 		kernel: string(spec.Kernel),
 		spec: &Spec{
 			Kernel:  "kernel",
-			Cmdline: map[string]interface{}{},
 			Message: spec.Message,
 		},
 	}
@@ -48,16 +49,18 @@ func StaticBooter(spec *Spec) Booter {
 		ret.initrd = append(ret.initrd, string(initrd))
 		ret.spec.Initrd = append(ret.spec.Initrd, ID(fmt.Sprintf("initrd-%d", i)))
 	}
-	for k, v := range spec.Cmdline {
-		if id, ok := v.(ID); ok {
-			ret.otherIDs = append(ret.otherIDs, string(id))
-			ret.spec.Cmdline[k] = ID(fmt.Sprintf("other-%d", len(ret.otherIDs)-1))
-		} else {
-			ret.spec.Cmdline[k] = v
-		}
-	}
 
-	return ret
+	f := func(id string) string {
+		ret.otherIDs = append(ret.otherIDs, id)
+		return fmt.Sprintf("{{ ID other-%d }}", len(ret.otherIDs)-1)
+	}
+	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
+	if err != nil {
+		return nil, err
+	}
+	ret.spec.Cmdline = cmdline
+
+	return ret, nil
 }
 
 type staticBooter struct {
@@ -199,7 +202,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	if r.Cmdline != nil {
 		switch c := r.Cmdline.(type) {
 		case string:
-			ret.Cmdline[c] = ""
+			ret.Cmdline = c
 		case map[string]interface{}:
 			ret.Cmdline, err = b.constructCmdline(c)
 			if err != nil {
@@ -270,33 +273,39 @@ func (b *apibooter) makeURLAbsolute(urlStr string) (string, error) {
 	return u.String(), nil
 }
 
-func (b *apibooter) constructCmdline(m map[string]interface{}) (map[string]interface{}, error) {
-	ret := map[string]interface{}{}
-	for k, vi := range m {
-		switch v := vi.(type) {
+func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
+	var c []string
+	for k := range m {
+		c = append(c, k)
+	}
+	sort.Strings(c)
+
+	var ret []string
+	for _, k := range c {
+		switch v := m[k].(type) {
 		case bool:
-			ret[k] = ""
+			ret = append(ret, k)
 		case string:
-			ret[k] = v
+			ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 		case map[string]interface{}:
 			urlStr, ok := v["url"].(string)
 			if !ok {
-				return nil, fmt.Errorf("cmdline key %q has object value with no 'url' attribute", k)
+				return "", fmt.Errorf("cmdline key %q has object value with no 'url' attribute", k)
 			}
 			urlStr, err := b.makeURLAbsolute(urlStr)
 			if err != nil {
-				return nil, fmt.Errorf("invalid url for cmdline key %q: %s", k, err)
+				return "", fmt.Errorf("invalid url for cmdline key %q: %s", k, err)
 			}
 			encoded, err := b.signURL(urlStr)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
-			ret[k] = encoded
+			ret = append(ret, fmt.Sprintf("%s=%s", k, encoded))
 		default:
-			return nil, fmt.Errorf("unsupported value kind %T for cmdline key %q", vi, k)
+			return "", fmt.Errorf("unsupported value kind %T for cmdline key %q", m[k], k)
 		}
 	}
-	return ret, nil
+	return strings.Join(ret, " "), nil
 }
 
 func (b *apibooter) signURL(u string) (ID, error) {

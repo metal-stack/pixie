@@ -15,10 +15,13 @@
 package pixiecore
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"strings"
+	"text/template"
 
 	"go.universe.tf/netboot/dhcp4"
 )
@@ -62,11 +65,29 @@ type Spec struct {
 	Kernel ID
 	// Optional init ramdisks for linux kernels
 	Initrd []ID
-	// Optional kernel commandline arguments. Values can be strings,
-	// numbers, or IDs. IDs get translated to an HTTP(S) URL.
-	Cmdline map[string]interface{}
+	// Optional kernel commandline. This string is evaluated as a
+	// text/template template, in which "ID(x)" function is
+	// available. Invoking ID(x) returns a URL that will call
+	// Booter.ReadBootFile(x) when fetched.
+	Cmdline string
 	// Message to print on the client machine before booting.
 	Message string
+}
+
+func expandCmdline(tpl string, funcs template.FuncMap) (string, error) {
+	tmpl, err := template.New("cmdline").Option("missingkey=error").Funcs(funcs).Parse(tpl)
+	if err != nil {
+		return "", fmt.Errorf("parsing cmdline %q: %s", tpl, err)
+	}
+	var out bytes.Buffer
+	if err = tmpl.Execute(&out, nil); err != nil {
+		return "", fmt.Errorf("expanding cmdline template %q: %s", tpl, err)
+	}
+	cmdline := strings.TrimSpace(out.String())
+	if strings.Contains(cmdline, "\n") {
+		return "", fmt.Errorf("cmdline %q contains a newline", cmdline)
+	}
+	return cmdline, nil
 }
 
 // A Booter provides boot instructions and files for machines.
