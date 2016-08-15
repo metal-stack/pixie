@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dhcp provides building blocks for DHCP clients and servers.
+// Package dhcp4 provides building blocks for DHCP clients and servers.
 package dhcp4 // import "go.universe.tf/netboot/dhcp4"
