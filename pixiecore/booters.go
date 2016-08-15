@@ -197,6 +197,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	if r.Cmdline != nil {
 		switch c := r.Cmdline.(type) {
 		case string:
+			ret.Cmdline = c
 		case map[string]interface{}:
 			ret.Cmdline, err = b.constructCmdline(c)
 			if err != nil {
@@ -208,13 +209,20 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	f := func(u string) (string, error) {
-		id, err := signURL(u, &b.key)
+		urlStr, err := b.makeURLAbsolute(u)
+		if err != nil {
+			return "", fmt.Errorf("invalid url %q for cmdline: %s", urlStr, err)
+		}
+		id, err := signURL(urlStr, &b.key)
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("{{ ID %q }}", id), nil
 	}
 	ret.Cmdline, err = expandCmdline(ret.Cmdline, template.FuncMap{"URL": f})
+	if err != nil {
+		return nil, err
+	}
 
 	return &ret, nil
 }
@@ -302,10 +310,6 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 			urlStr, ok := v["url"].(string)
 			if !ok {
 				return "", fmt.Errorf("cmdline key %q has object value with no 'url' attribute", k)
-			}
-			urlStr, err := b.makeURLAbsolute(urlStr)
-			if err != nil {
-				return "", fmt.Errorf("invalid url for cmdline key %q: %s", k, err)
 			}
 			ret = append(ret, fmt.Sprintf("%s={{ URL %q }}", k, urlStr))
 		default:
