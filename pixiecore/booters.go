@@ -48,7 +48,7 @@ func StaticBooter(spec *Spec) (Booter, error) {
 
 	f := func(id string) string {
 		ret.otherIDs = append(ret.otherIDs, id)
-		return fmt.Sprintf("{{ ID other-%d }}", len(ret.otherIDs)-1)
+		return fmt.Sprintf("{{ ID \"other-%d\" }}", len(ret.otherIDs)-1)
 	}
 	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
 	if err != nil {
