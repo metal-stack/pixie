@@ -79,9 +79,14 @@ func v1compatCLI() bool {
 			fatalf("Failed to create API booter: %s", err)
 		}
 		s := &pixiecore.Server{
-			Booter: booter,
-			Ipxe:   Ipxe,
-			Log:    func(msg string) { fmt.Println(msg) },
+			Booter:   booter,
+			Ipxe:     Ipxe,
+			Log:      func(msg string) { fmt.Println(msg) },
+			Address:  *listenAddr,
+			HTTPPort: *portHTTP,
+			DHCPPort: *portDHCP,
+			TFTPPort: *portTFTP,
+			PXEPort:  *portPXE,
 		}
 		fmt.Println(s.Serve())
 
