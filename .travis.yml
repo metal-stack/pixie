@@ -19,4 +19,4 @@ script:
   - GO15VENDOREXPERIMENT=1 go build $(glide novendor)
   - GO15VENDOREXPERIMENT=1 go test $(glide novendor)
   - go vet $(glide novendor)
-  - golint $(glide novendor)
+  - glide novendor | xargs -n1 golint
