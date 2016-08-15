@@ -6,10 +6,9 @@ go:
   - tip
 os:
   - linux
-addons:
-  apt:
-    packages:
-      - atftp
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y atftp
 install:
   - go get github.com/Masterminds/glide
   - go get github.com/golang/lint/golint
