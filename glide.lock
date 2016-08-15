@@ -1,5 +1,5 @@
 hash: 03601eebacfd9fcac492ebdfbc1b8ecbe7acc5142ab6f1b0f248c9720f166702
-updated: 2016-08-14T17:40:59.745556939-07:00
+updated: 2016-08-14T19:16:55.913485472-07:00
 imports:
 - name: github.com/BurntSushi/toml
   version: 99064174e013895bbd9b025c31100bd1d9b590ca
@@ -46,6 +46,9 @@ imports:
 - name: golang.org/x/crypto
   version: a548aac93ed489257b9d959b40fe1e8c1e20778c
   subpackages:
+  - nacl/secretbox
+  - poly1305
+  - salsa20/salsa
   - ssh
   - curve25519
   - ed25519

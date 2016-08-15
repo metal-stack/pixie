@@ -14,7 +14,13 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"time"
+
+	"github.com/spf13/cobra"
+	"go.universe.tf/netboot/pixiecore"
+)
 
 var apiCmd = &cobra.Command{
 	Use:   "api server",
@@ -26,9 +32,29 @@ or tell it what to boot.
 
 It is your responsibility to implement or run a server that implements
 the Pixiecore boot API. The specification can be found at <TODO>.`,
-	Run: func(cmd *cobra.Command, args []string) { todo("api called") }}
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			fatalf("you must specify an API URL")
+		}
+		server := args[0]
+		timeout, err := cmd.Flags().GetDuration("api-request-timeout")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+		booter, err := pixiecore.APIBooter(server, timeout)
+		if err != nil {
+			fatalf("Failed to create API booter: %s", err)
+		}
+		s := &pixiecore.Server{
+			Booter: booter,
+			Ipxe:   Ipxe,
+			Log:    func(msg string) { fmt.Println(msg) },
+		}
+		fmt.Println(s.Serve())
+	}}
 
 func init() {
 	rootCmd.AddCommand(apiCmd)
+	apiCmd.Flags().Duration("api-request-timeout", 5*time.Second, "Timeout for request to the API server")
 	// TODO: SSL cert flags for both client and server auth.
 }
