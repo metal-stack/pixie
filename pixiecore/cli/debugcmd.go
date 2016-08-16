@@ -17,6 +17,9 @@ package cli
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -41,9 +44,27 @@ var (
 			}
 		},
 	}
+	tcpdumpCmd = &cobra.Command{
+		Use:   "tcpdump interface pcap-file",
+		Short: "Run tcpdump to capture some parts of a boot exchange, for debugging",
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) != 2 {
+				fatalf("Need exactly 2 argument, the interface to capture on and the pcap file to write")
+			}
+			filter := "port 67 or port 68 or port 69 or port 4011"
+			args = []string{"-w", args[1], "-e", "-i", args[0]}
+			c := exec.Command("tcpdump", append(args, strings.Split(filter, " ")...)...)
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			if err := c.Run(); err != nil {
+				fatalf("Running tcpdump: %s", err)
+			}
+		},
+	}
 )
 
 func init() {
 	debugCmd.AddCommand(dumpIpxeCmd)
+	debugCmd.AddCommand(tcpdumpCmd)
 	rootCmd.AddCommand(debugCmd)
 }
