@@ -153,6 +153,8 @@ type Server struct {
 	DHCPPort int
 	TFTPPort int
 	PXEPort  int
+
+	errs chan error
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to
@@ -194,11 +196,30 @@ func (s *Server) Serve() error {
 		return err
 	}
 
-	// TODO: have something here for orderly shutdown when things go wrong.
+	// 5 buffer slots, one for each goroutine, plus one for
+	// Shutdown(). We only ever pull the first error out, but shutdown
+	// will likely generate some spurious errors from the other
+	// goroutines, and we want them to be able to dump them without
+	// blocking.
+	s.errs = make(chan error, 5)
 
-	go s.serveDHCP(dhcp)
-	go s.servePXE(pxe)
-	go s.serveTFTP(tftp)
-	go s.serveHTTP(http)
-	select {}
+	go func() { s.errs <- s.serveDHCP(dhcp) }()
+	go func() { s.errs <- s.servePXE(pxe) }()
+	go func() { s.errs <- s.serveTFTP(tftp) }()
+	go func() { s.errs <- s.serveHTTP(http) }()
+
+	// Wait for either a fatal error, or Shutdown().
+	err = <-s.errs
+	dhcp.Close()
+	tftp.Close()
+	pxe.Close()
+	http.Close()
+	return err
+}
+
+func (s *Server) Shutdown() {
+	select {
+	case s.errs <- nil:
+	default:
+	}
 }

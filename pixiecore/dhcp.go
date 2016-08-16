@@ -22,22 +22,14 @@ import (
 	"go.universe.tf/netboot/dhcp4"
 )
 
-func (s *Server) serveDHCP(conn *dhcp4.Conn) {
+func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
-			s.log("DHCP", "Receiving packet: %s", err)
-			// TODO: fatal errors that return from one of the handler
-			// goroutines should plumb the error back to the
-			// coordinating goroutine, so that it can do an orderly
-			// shutdown and return the error from Serve(). This "log +
-			// randomly stop a piece of pixiecore" is a terrible
-			// kludge.
-			return
+			return fmt.Errorf("Receiving DHCP packet: %s", err)
 		}
 		if intf == nil {
-			s.log("DHCP", "Received packet with no interface information (this is a violation of dhcp4.Conn's contract, please file a bug)")
-			return
+			return fmt.Errorf("Received DHCP packet with no interface information (this is a violation of dhcp4.Conn's contract, please file a bug)")
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {

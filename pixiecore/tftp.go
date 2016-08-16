@@ -26,7 +26,7 @@ import (
 	"go.universe.tf/netboot/tftp"
 )
 
-func (s *Server) serveTFTP(l net.PacketConn) {
+func (s *Server) serveTFTP(l net.PacketConn) error {
 	ts := tftp.Server{
 		Handler:     s.handleTFTP,
 		InfoLog:     func(msg string) { s.debug("TFTP", msg) },
@@ -34,14 +34,9 @@ func (s *Server) serveTFTP(l net.PacketConn) {
 	}
 	err := ts.Serve(l)
 	if err != nil {
-		// TODO: fatal errors that return from one of the handler
-		// goroutines should plumb the error back to the
-		// coordinating goroutine, so that it can do an orderly
-		// shutdown and return the error from Serve(). This "log +
-		// randomly stop a piece of pixiecore" is a terrible
-		// kludge.
-		s.log("TFTP", "Server shut down unexpectedly: %s", err)
+		return fmt.Errorf("TFTP server shut down: %s", err)
 	}
+	return nil
 }
 
 func (s *Server) logTFTPTransfer(clientAddr net.Addr, path string, err error) {

@@ -26,20 +26,14 @@ import (
 	"text/template"
 )
 
-func (s *Server) serveHTTP(l net.Listener) {
+func (s *Server) serveHTTP(l net.Listener) error {
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/_/ipxe", s.handleIpxe)
 	httpMux.HandleFunc("/_/file", s.handleFile)
 	if err := http.Serve(l, httpMux); err != nil {
-		s.log("HTTP", "%s", err)
-		// TODO: fatal errors that return from one of the handler
-		// goroutines should plumb the error back to the
-		// coordinating goroutine, so that it can do an orderly
-		// shutdown and return the error from Serve(). This "log +
-		// randomly stop a piece of pixiecore" is a terrible
-		// kludge.
-		return
+		return fmt.Errorf("HTTP server shut down: %s", err)
 	}
+	return nil
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {

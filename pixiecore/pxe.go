@@ -29,25 +29,17 @@ import (
 // TianoCore EDK2 source code to figure out if what this is doing is
 // actually BINL, and if so rename everything.
 
-func (s *Server) servePXE(conn net.PacketConn) {
+func (s *Server) servePXE(conn net.PacketConn) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		// TODO: fatal errors that return from one of the handler
-		// goroutines should plumb the error back to the
-		// coordinating goroutine, so that it can do an orderly
-		// shutdown and return the error from Serve(). This "log +
-		// randomly stop a piece of pixiecore" is a terrible
-		// kludge.
-		s.log("PXE", "Couldn't get interface metadata on PXE port: %s", err)
-		return
+		return fmt.Errorf("Couldn't get interface metadata on PXE port: %s", err)
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			s.log("PXE", "Receiving packet: %s", err)
-			return
+			return fmt.Errorf("Receiving packet: %s", err)
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
@@ -86,6 +78,7 @@ func (s *Server) servePXE(conn net.PacketConn) {
 		bs, err := resp.Marshal()
 		if err != nil {
 			s.log("PXE", "Failed to marshal PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
+			continue
 		}
 
 		if _, err := l.WriteTo(bs, &ipv4.ControlMessage{
