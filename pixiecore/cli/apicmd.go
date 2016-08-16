@@ -41,6 +41,15 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+		timestamps, err := cmd.Flags().GetBool("log-timestamps")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+
 		booter, err := pixiecore.APIBooter(server, timeout)
 		if err != nil {
 			fatalf("Failed to create API booter: %s", err)
@@ -48,9 +57,15 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		s := &pixiecore.Server{
 			Booter: booter,
 			Ipxe:   Ipxe,
-			Log:    logStdout,
-			Debug:  debugLog,
+			Log:    logWithStdFmt,
 		}
+		if timestamps {
+			s.Log = logWithStdLog
+		}
+		if debug {
+			s.Debug = s.Log
+		}
+
 		fmt.Println(s.Serve())
 	}}
 

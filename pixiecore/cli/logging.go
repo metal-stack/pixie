@@ -16,17 +16,20 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"sync"
 )
 
 var logSync sync.Mutex
 
-func logStdout(subsys, msg string) {
+func logWithStdLog(subsys, msg string) {
+	logSync.Lock()
+	defer logSync.Unlock()
+	log.Printf("[%s] %s", subsys, msg)
+}
+
+func logWithStdFmt(subsys, msg string) {
 	logSync.Lock()
 	defer logSync.Unlock()
 	fmt.Printf("[%s] %s\n", subsys, msg)
-}
-
-func debugLog(subsys, msg string) {
-	logStdout("DEBUG-"+subsys, msg)
 }

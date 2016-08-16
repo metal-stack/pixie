@@ -84,23 +84,13 @@ func (ipxeFirmwareFlag) Type() string {
 	return "filename"
 }
 
-var cfgFile string
-
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
+	rootCmd.PersistentFlags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 }
 
 func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-		if err := viper.ReadInConfig(); err != nil {
-			fmt.Printf("Error reading configuration file %q: %s\n", viper.ConfigFileUsed(), err)
-			os.Exit(1)
-		}
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-
 	viper.SetEnvPrefix("pixiecore")
 	viper.AutomaticEnv() // read in environment variables that match
 }

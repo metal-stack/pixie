@@ -38,6 +38,14 @@ var bootCmd = &cobra.Command{
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
+		timestamps, err := cmd.Flags().GetBool("log-timestamps")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
 
 		spec := &pixiecore.Spec{
 			Kernel:  pixiecore.ID(kernel),
@@ -56,9 +64,15 @@ var bootCmd = &cobra.Command{
 		s := &pixiecore.Server{
 			Booter: booter,
 			Ipxe:   Ipxe,
-			Log:    logStdout,
-			Debug:  debugLog,
+			Log:    logWithStdFmt,
 		}
+		if timestamps {
+			s.Log = logWithStdLog
+		}
+		if debug {
+			s.Debug = s.Log
+		}
+
 		fmt.Println(s.Serve())
 	},
 }

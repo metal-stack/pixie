@@ -42,7 +42,7 @@ func v1compatCLI() bool {
 	initrdFile := fs.String("initrd", "", "Comma-separated list of initrds to pass to the kernel")
 	kernelCmdline := fs.String("cmdline", "", "Additional arguments for the kernel commandline")
 
-	//debug := fs.Bool("debug", false, "Log more things that aren't directly related to booting a recognized client")
+	debug := fs.Bool("debug", false, "Log more things that aren't directly related to booting a recognized client")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		// This error path includes passing -h or --help. We want the
@@ -81,13 +81,15 @@ func v1compatCLI() bool {
 		s := &pixiecore.Server{
 			Booter:   booter,
 			Ipxe:     Ipxe,
-			Log:      logStdout,
-			Debug:    debugLog,
+			Log:      logWithStdLog,
 			Address:  *listenAddr,
 			HTTPPort: *portHTTP,
 			DHCPPort: *portDHCP,
 			TFTPPort: *portTFTP,
 			PXEPort:  *portPXE,
+		}
+		if *debug {
+			s.Debug = logWithStdLog
 		}
 		fmt.Println(s.Serve())
 
@@ -117,13 +119,15 @@ func v1compatCLI() bool {
 		s := &pixiecore.Server{
 			Booter:   booter,
 			Ipxe:     Ipxe,
-			Log:      logStdout,
-			Debug:    debugLog,
+			Log:      logWithStdLog,
 			Address:  *listenAddr,
 			HTTPPort: *portHTTP,
 			DHCPPort: *portDHCP,
 			TFTPPort: *portTFTP,
 			PXEPort:  *portPXE,
+		}
+		if *debug {
+			s.Debug = logWithStdLog
 		}
 		fmt.Println(s.Serve())
 
