@@ -48,7 +48,8 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		s := &pixiecore.Server{
 			Booter: booter,
 			Ipxe:   Ipxe,
-			Log:    func(msg string) { fmt.Println(msg) },
+			Log:    logStdout,
+			Debug:  debugLog,
 		}
 		fmt.Println(s.Serve())
 	}}

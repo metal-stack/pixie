@@ -26,29 +26,55 @@ import (
 	"text/template"
 )
 
-func (s *Server) httpError(w http.ResponseWriter, r *http.Request, status int, format string, args ...interface{}) {
-	s.logHTTP(r, format, args...)
-	http.Error(w, fmt.Sprintf(format, args...), status)
+func (s *Server) serveHTTP(l net.Listener) {
+	httpMux := http.NewServeMux()
+	httpMux.HandleFunc("/_/ipxe", s.handleIpxe)
+	httpMux.HandleFunc("/_/file", s.handleFile)
+	if err := http.Serve(l, httpMux); err != nil {
+		s.log("HTTP", "%s", err)
+		// TODO: fatal errors that return from one of the handler
+		// goroutines should plumb the error back to the
+		// coordinating goroutine, so that it can do an orderly
+		// shutdown and return the error from Serve(). This "log +
+		// randomly stop a piece of pixiecore" is a terrible
+		// kludge.
+		return
+	}
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
-	args := r.URL.Query()
-	mac, err := net.ParseMAC(args.Get("mac"))
-	if err != nil {
-		s.httpError(w, r, http.StatusBadRequest, "invalid MAC address %q: %s\n", args.Get("mac"), err)
+	macStr := r.URL.Query().Get("mac")
+	if macStr == "" {
+		s.debug("HTTP", "Bad request %q from %s, missing MAC address", r.URL, r.RemoteAddr)
+		http.Error(w, "missing MAC address parameter", http.StatusBadRequest)
+		return
+	}
+	archStr := r.URL.Query().Get("arch")
+	if archStr == "" {
+		s.debug("HTTP", "Bad request %q from %s, missing architecture", r.URL, r.RemoteAddr)
+		http.Error(w, "missing architecture parameter", http.StatusBadRequest)
 		return
 	}
 
-	i, err := strconv.Atoi(args.Get("arch"))
+	mac, err := net.ParseMAC(macStr)
 	if err != nil {
-		s.httpError(w, r, http.StatusBadRequest, "invalid architecture %q: %s\n", args.Get("arch"), err)
+		s.debug("HTTP", "Bad request %q from %s, invalid MAC address %q (%s)", r.URL, r.RemoteAddr, macStr, err)
+		http.Error(w, "invalid MAC address", http.StatusBadRequest)
+		return
+	}
+
+	i, err := strconv.Atoi(archStr)
+	if err != nil {
+		s.debug("HTTP", "Bad request %q from %s, invalid architecture %q (%s)", r.URL, r.RemoteAddr, archStr, err)
+		http.Error(w, "invalid architecture", http.StatusBadRequest)
 		return
 	}
 	arch := Architecture(i)
 	switch arch {
 	case ArchIA32, ArchX64:
 	default:
-		s.httpError(w, r, http.StatusBadRequest, "Unknown architecture %q\n", arch)
+		s.debug("HTTP", "Bad request %q from %s, unknown architecture %q", r.URL, r.RemoteAddr, arch)
+		http.Error(w, "unknown architecture", http.StatusBadRequest)
 		return
 	}
 
@@ -58,39 +84,48 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 	spec, err := s.Booter.BootSpec(mach)
 	if err != nil {
-		// TODO: maybe don't send this error over the network?
-		s.logHTTP(r, "error getting bootspec for %#v: %s", mach, err)
+		s.log("HTTP", "Couldn't get a bootspec for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
 		return
 	}
 	if spec == nil {
 		// TODO: make ipxe abort netbooting so it can fall through to
 		// other boot options - unsure if that's possible.
-		s.httpError(w, r, http.StatusNotFound, "no bootspec found for %q", mach.MAC)
+		s.debug("HTTP", "No boot spec for %s (query %q from %s), ignoring boot request", mac, r.URL, r.RemoteAddr)
+		http.Error(w, "you don't netboot", http.StatusNotFound)
 		return
 	}
 	script, err := ipxeScript(spec, r.Host)
 	if err != nil {
-		s.logHTTP(r, "failed to assemble ipxe script: %s", err)
-		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
+		s.log("HTTP", "Failed to assemble ipxe script for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
+		http.Error(w, "couldn't get a boot script", http.StatusInternalServerError)
+		return
 	}
 
+	s.log("HTTP", "Sending ipxe boot script to %s", r.RemoteAddr)
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(script)
 }
 
 func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
+	if name == "" {
+		s.debug("HTTP", "Bad request %q from %s, missing filename", r.URL, r.RemoteAddr)
+		http.Error(w, "missing filename", http.StatusBadRequest)
+	}
+
 	f, err := s.Booter.ReadBootFile(ID(name))
 	if err != nil {
-		s.logHTTP(r, "error getting requested file %q: %s", name, err)
+		s.log("HTTP", "Error getting file %q (query %q from %s)", name, r.URL, r.RemoteAddr)
 		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
 	defer f.Close()
 	if _, err = io.Copy(w, f); err != nil {
-		s.logHTTP(r, "copy of file %q failed: %s", name, err)
+		s.log("HTTP", "Copy of %q to %s (query %q) failed: %s", name, r.RemoteAddr, r.URL, err)
+		return
 	}
+	s.log("HTTP", "Sent file %q to %s", name, r.RemoteAddr)
 }
 
 func ipxeScript(spec *Spec, serverHost string) ([]byte, error) {

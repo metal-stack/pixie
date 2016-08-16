@@ -26,7 +26,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
-			s.logf("receiving DHCP packet: %s", err)
+			s.log("DHCP", "Receiving packet: %s", err)
 			// TODO: fatal errors that return from one of the handler
 			// goroutines should plumb the error back to the
 			// coordinating goroutine, so that it can do an orderly
@@ -36,54 +36,65 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) {
 			return
 		}
 		if intf == nil {
-			s.logf("received DHCP packet with no interface information (this is a violation of dhcp4.Conn's contract)")
+			s.log("DHCP", "Received packet with no interface information (this is a violation of dhcp4.Conn's contract, please file a bug)")
 			return
 		}
 
+		if err = s.isBootDHCP(pkt); err != nil {
+			s.debug("DHCP", "Ignoring packet from %s: %s", pkt.HardwareAddr, err)
+			continue
+		}
 		mach, isIpxe, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
-			s.logf("DHCP packet from %s not usable: %s", pkt.HardwareAddr, err)
+			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {
-			s.logf("couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
+			s.log("DHCP", "Couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 		if spec == nil {
-			s.logf("booter gave no spec for %s, ignoring boot request", pkt.HardwareAddr)
+			s.debug("DHCP", "No boot spec for %s, ignoring boot request", pkt.HardwareAddr)
 			continue
 		}
+
+		s.log("DHCP", "Offering to boot %s", pkt.HardwareAddr)
 
 		// Machine should be booted.
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.logf("want to boot %s on %s, but couldn't find a unicast source address on that interface: %s", pkt.HardwareAddr, intf.Name, err)
+			s.log("DHCP", "Want to boot %s on %s, but couldn't get a source address: %s", pkt.HardwareAddr, intf.Name, err)
 			continue
 		}
 
 		resp, err := s.offerDHCP(pkt, mach, serverIP, isIpxe, fwtype)
 		if err != nil {
-			s.logf("failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.log("DHCP", "Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
 		if err = conn.SendDHCP(resp, intf); err != nil {
-			s.logf("failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.log("DHCP", "Failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 	}
 }
 
-func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwtype Firmware, err error) {
+func (s *Server) isBootDHCP(pkt *dhcp4.Packet) error {
 	if pkt.Type != dhcp4.MsgDiscover {
-		return mach, false, 0, errors.New("not a DHCPDISCOVER packet")
+		return fmt.Errorf("packet is %s, not %s", pkt.Type, dhcp4.MsgDiscover)
 	}
 
 	if pkt.Options[93] == nil {
-		return mach, false, 0, errors.New("not a PXE boot request (missing option 93)")
+		return errors.New("not a PXE boot request (missing option 93)")
 	}
+
+	return nil
+}
+
+func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
 		return mach, false, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
@@ -218,5 +229,5 @@ func interfaceIP(intf *net.Interface) (net.IP, error) {
 		}
 	}
 
-	return nil, errors.New("no usable source address")
+	return nil, errors.New("no usable unicast address configured on interface")
 }

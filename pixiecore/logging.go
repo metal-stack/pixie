@@ -15,22 +15,27 @@
 package pixiecore
 
 import (
+	"encoding/base64"
 	"fmt"
-	"net/http"
 )
 
-func (s *Server) logf(format string, args ...interface{}) {
+func (s *Server) log(subsystem, format string, args ...interface{}) {
 	if s.Log == nil {
 		return
 	}
-	s.Log(fmt.Sprintf(format, args...))
+	s.Log(subsystem, fmt.Sprintf(format, args...))
 }
 
-// logHTTP logs a message with some context about the HTTP request
-// that caused the statement to be logged.
-func (s *Server) logHTTP(r *http.Request, format string, args ...interface{}) {
-	if s.Log != nil {
-		pfx := fmt.Sprintf("HTTP request for %s from %s: ", r.URL, r.RemoteAddr)
-		s.logf(pfx+format, args...)
+func (s *Server) debug(subsystem, format string, args ...interface{}) {
+	if s.Debug == nil {
+		return
 	}
+	s.Debug(subsystem, fmt.Sprintf(format, args...))
+}
+
+func (s *Server) debugPacket(subsystem string, layer int, packet []byte) {
+	if s.Debug == nil {
+		return
+	}
+	s.Debug(subsystem, fmt.Sprintf("PKT %d %s END", layer, base64.StdEncoding.EncodeToString(packet)))
 }

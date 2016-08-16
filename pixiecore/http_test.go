@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 )
 
@@ -30,6 +31,8 @@ type booterFunc func(Machine) (*Spec, error)
 func (b booterFunc) BootSpec(m Machine) (*Spec, error)         { return b(m) }
 func (b booterFunc) ReadBootFile(id ID) (io.ReadCloser, error) { return nil, errors.New("no") }
 func (b booterFunc) WriteBootFile(id ID, r io.Reader) error    { return errors.New("no") }
+
+var logSync sync.Mutex
 
 func TestIpxe(t *testing.T) {
 	booter := func(m Machine) (*Spec, error) {
@@ -43,9 +46,11 @@ func TestIpxe(t *testing.T) {
 			Message: "Hello from the test!",
 		}, nil
 	}
+	log := func(subsystem, msg string) { t.Logf("[%s] %s", subsystem, msg) }
 	s := &Server{
 		Booter: booterFunc(booter),
-		Log:    func(msg string) { fmt.Println(msg) },
+		Log:    log,
+		Debug:  log,
 	}
 
 	// Successful boot
@@ -150,9 +155,11 @@ func (b readBootFile) ReadBootFile(id ID) (io.ReadCloser, error) {
 func (b readBootFile) WriteBootFile(id ID, r io.Reader) error { return errors.New("no") }
 
 func TestFile(t *testing.T) {
+	log := func(subsystem, msg string) { t.Logf("[%s] %s", subsystem, msg) }
 	s := &Server{
 		Booter: readBootFile("stuff"),
-		Log:    func(msg string) { fmt.Println(msg) },
+		Log:    log,
+		Debug:  log,
 	}
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/_/file?name=test", nil)

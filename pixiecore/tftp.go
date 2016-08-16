@@ -17,6 +17,7 @@ package pixiecore
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -27,8 +28,9 @@ import (
 
 func (s *Server) serveTFTP(l net.PacketConn) {
 	ts := tftp.Server{
-		Handler: s.handleTFTP,
-		InfoLog: func(msg string) { s.logf(msg) },
+		Handler:     s.handleTFTP,
+		InfoLog:     func(msg string) { s.debug("TFTP", msg) },
+		TransferLog: s.logTFTPTransfer,
 	}
 	err := ts.Serve(l)
 	if err != nil {
@@ -38,7 +40,15 @@ func (s *Server) serveTFTP(l net.PacketConn) {
 		// shutdown and return the error from Serve(). This "log +
 		// randomly stop a piece of pixiecore" is a terrible
 		// kludge.
-		s.logf("TFTP server shut down unexpectedly: %s", err)
+		s.log("TFTP", "Server shut down unexpectedly: %s", err)
+	}
+}
+
+func (s *Server) logTFTPTransfer(clientAddr net.Addr, path string, err error) {
+	if err != nil {
+		s.log("TFTP", "Send of %q to %s failed: %s", path, clientAddr, err)
+	} else {
+		s.log("TFTP", "Sent %q to %s", path, clientAddr)
 	}
 }
 
@@ -50,7 +60,7 @@ func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, in
 
 	bs, ok := s.Ipxe[Firmware(i)]
 	if !ok {
-		return nil, 0, errors.New("not found")
+		return nil, 0, fmt.Errorf("unknown firmware type %d", i)
 	}
 
 	return ioutil.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil

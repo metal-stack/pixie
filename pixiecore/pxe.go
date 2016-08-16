@@ -39,68 +39,64 @@ func (s *Server) servePXE(conn net.PacketConn) {
 		// shutdown and return the error from Serve(). This "log +
 		// randomly stop a piece of pixiecore" is a terrible
 		// kludge.
-		s.logf("couldn't get interface metadata on PXE PacketConn: %s", err)
+		s.log("PXE", "Couldn't get interface metadata on PXE port: %s", err)
 		return
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			s.logf("receiving PXE packet: %s", err)
+			s.log("PXE", "Receiving packet: %s", err)
 			return
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
 		if err != nil {
-			s.logf("PXE request from %s not usable: %s", addr, err)
+			s.debug("PXE", "Packet from %s is not a DHCP packet: %s", addr, err)
 			continue
 		}
 
+		if err = s.isBootDHCP(pkt); err != nil {
+			s.debug("PXE", "Ignoring packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
+		}
 		fwtype, err := s.validatePXE(pkt)
 		if err != nil {
-			s.logf("PXE request from %s not usable: %s", addr, err)
+			s.log("PXE", "Unusable packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
 			continue
 		}
 
 		intf, err := net.InterfaceByIndex(msg.IfIndex)
 		if err != nil {
-			s.logf("Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
+			s.log("PXE", "Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
 			continue
 		}
 
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.logf("want to boot %s on %s, but couldn't find a unicast source address on that interface: %s", addr, intf.Name, err)
+			s.log("PXE", "Want to boot %s (%s) on %s, but couldn't get a source address: %s", pkt.HardwareAddr, addr, intf.Name, err)
 			continue
 		}
 
 		resp, err := s.offerPXE(pkt, serverIP, fwtype)
 		if err != nil {
-			s.logf("failed to construct PXE response for %s: %s", addr, err)
+			s.log("PXE", "Failed to construct PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
 			continue
 		}
 
 		bs, err := resp.Marshal()
 		if err != nil {
-			s.logf("failed to marshal PXE response for %s: %s", addr, err)
+			s.log("PXE", "Failed to marshal PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
 		}
 
 		if _, err := l.WriteTo(bs, &ipv4.ControlMessage{
 			IfIndex: msg.IfIndex,
 		}, addr); err != nil {
-			s.logf("failed to send PXE response to %s: %s", addr, err)
+			s.log("PXE", "Failed to send PXE response to %s (%s): %s", pkt.HardwareAddr, addr, err)
 		}
 	}
 }
 
 func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
-	if pkt.Type != dhcp4.MsgRequest {
-		return 0, errors.New("not a DHCPREQUEST packet")
-	}
-
-	if pkt.Options[93] == nil {
-		return 0, errors.New("not a PXE boot request (missing option 93)")
-	}
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
 		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)

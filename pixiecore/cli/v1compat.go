@@ -81,7 +81,8 @@ func v1compatCLI() bool {
 		s := &pixiecore.Server{
 			Booter:   booter,
 			Ipxe:     Ipxe,
-			Log:      func(msg string) { fmt.Println(msg) },
+			Log:      logStdout,
+			Debug:    debugLog,
 			Address:  *listenAddr,
 			HTTPPort: *portHTTP,
 			DHCPPort: *portDHCP,
@@ -116,7 +117,8 @@ func v1compatCLI() bool {
 		s := &pixiecore.Server{
 			Booter:   booter,
 			Ipxe:     Ipxe,
-			Log:      func(msg string) { fmt.Println(msg) },
+			Log:      logStdout,
+			Debug:    debugLog,
 			Address:  *listenAddr,
 			HTTPPort: *portHTTP,
 			DHCPPort: *portDHCP,

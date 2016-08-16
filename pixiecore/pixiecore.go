@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"strings"
 	"text/template"
 
@@ -29,7 +28,7 @@ import (
 const (
 	portDHCP = 67
 	portTFTP = 69
-	portHTTP = 81
+	portHTTP = 80
 	portPXE  = 4011
 )
 
@@ -143,11 +142,10 @@ type Server struct {
 
 	// Log receives logs on Pixiecore's operation. If nil, logging
 	// is suppressed.
-	//
-	// TODO: until Trace is better defined and plumbed through, we use
-	// Log extensively, which may make it too noisy for normal
-	// use. Need to decide what, if anything, we should do about that.
-	Log func(msg string)
+	Log func(subsystem, msg string)
+	// Debug receives extensive logging on Pixiecore's internals. Very
+	// useful for debugging, but very verbose.
+	Debug func(subsystem, msg string)
 
 	// These ports can technically be set for testing, but the
 	// protocols burned in firmware on the client side hardcode these,
@@ -155,16 +153,6 @@ type Server struct {
 	DHCPPort int
 	TFTPPort int
 	PXEPort  int
-
-	// Trace receives huge amounts of detail about what Pixiecore is
-	// doing, including raw packets it sent/received. This should be
-	// nil unless you intend to provide a bug report.
-	//
-	// TODO: figure out the format this logs in, and write a
-	// decoder. It'll likely include bits of pcap for packets
-	// received, interleaved with what bits of Pixiecore thought about
-	// them, so that you get a timeline complete with wire traffic.
-	Trace io.Writer
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to
@@ -198,15 +186,19 @@ func (s *Server) Serve() error {
 		tftp.Close()
 		return err
 	}
+	http, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPPort))
+	if err != nil {
+		dhcp.Close()
+		tftp.Close()
+		pxe.Close()
+		return err
+	}
 
 	// TODO: have something here for orderly shutdown when things go wrong.
 
 	go s.serveDHCP(dhcp)
 	go s.servePXE(pxe)
 	go s.serveTFTP(tftp)
-	http.HandleFunc("/_/ipxe", s.handleIpxe)
-	http.HandleFunc("/_/file", s.handleFile)
-	http.ListenAndServe(fmt.Sprintf("%s:%d", s.Address, s.HTTPPort), nil)
-
-	return nil
+	go s.serveHTTP(http)
+	select {}
 }
