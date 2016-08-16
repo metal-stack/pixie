@@ -3,6 +3,7 @@ go_import_path: go.universe.tf/netboot
 go:
   - 1.5
   - 1.6
+  - 1.7
   - tip
 os:
   - linux
