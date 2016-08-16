@@ -32,6 +32,8 @@ import (
 var Ipxe = map[pixiecore.Firmware][]byte{}
 
 // CLI runs the Pixiecore commandline.
+//
+// This function always exits back to the OS when finished.
 func CLI() {
 	// The ipxe firmware flags need to be set outside init(), so that
 	// the default flag value is computed appropriately based on
@@ -48,6 +50,7 @@ func CLI() {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
+	os.Exit(0)
 }
 
 // This represents the base command when called without any subcommands
