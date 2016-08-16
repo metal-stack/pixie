@@ -116,7 +116,7 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 
 	f, err := s.Booter.ReadBootFile(ID(name))
 	if err != nil {
-		s.log("HTTP", "Error getting file %q (query %q from %s)", name, r.URL, r.RemoteAddr)
+		s.log("HTTP", "Error getting file %q (query %q from %s): %s", name, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
