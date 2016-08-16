@@ -35,13 +35,6 @@ var Ipxe = map[pixiecore.Firmware][]byte{}
 //
 // This function always exits back to the OS when finished.
 func CLI() {
-	// The ipxe firmware flags need to be set outside init(), so that
-	// the default flag value is computed appropriately based on
-	// whether the caller preseeded Ipxe.
-	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareX86PC), "ipxe-bios", "iPXE binary for BIOS/UNDI")
-	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI32), "ipxe-efi32", "iPXE binary for 32-bit UEFI")
-	rootCmd.PersistentFlags().Var(ipxeFirmwareFlag(pixiecore.FirmwareEFI64), "ipxe-efi64", "iPXE binary for 64-bit UEFI")
-
 	if v1compatCLI() {
 		return
 	}
@@ -60,36 +53,6 @@ var rootCmd = &cobra.Command{
 	Long:  `Pixiecore is a tool to make network booting easy.`,
 }
 
-type ipxeFirmwareFlag pixiecore.Firmware
-
-func (iff ipxeFirmwareFlag) String() string {
-	if Ipxe[pixiecore.Firmware(iff)] != nil {
-		return "<builtin>"
-	}
-	return ""
-}
-
-func (iff ipxeFirmwareFlag) Set(v string) error {
-	bs, err := ioutil.ReadFile(v)
-	if err != nil {
-		return fmt.Errorf("couldn't read ipxe binary %q: %s", v, err)
-	}
-
-	Ipxe[pixiecore.Firmware(iff)] = bs
-
-	return nil
-}
-
-func (ipxeFirmwareFlag) Type() string {
-	return "filename"
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
-	rootCmd.PersistentFlags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
-}
-
 func initConfig() {
 	viper.SetEnvPrefix("pixiecore")
 	viper.AutomaticEnv() // read in environment variables that match
@@ -102,4 +65,91 @@ func fatalf(msg string, args ...interface{}) {
 
 func todo(msg string, args ...interface{}) {
 	fatalf("TODO: "+msg, args...)
+}
+
+func serverConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
+	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
+	cmd.Flags().IPP("listen-addr", "l", nil, "IPv4 address to listen on")
+	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
+	cmd.Flags().String("ipxe-bios", "", "path to an iPXE binary for BIOS/UNDI")
+	cmd.Flags().String("ipxe-efi32", "", "path to an iPXE binary for 32-bit UEFI")
+	cmd.Flags().String("ipxe-efi64", "", "path to an iPXE binary for 64-bit UEFI")
+}
+
+func mustFile(path string) []byte {
+	bs, err := ioutil.ReadFile(path)
+	if err != nil {
+		fatalf("couldn't read file %q: %s", path, err)
+	}
+
+	return bs
+}
+
+func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
+	debug, err := cmd.Flags().GetBool("debug")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	timestamps, err := cmd.Flags().GetBool("log-timestamps")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	addr, err := cmd.Flags().GetIP("listen-addr")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	httpPort, err := cmd.Flags().GetInt("port")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	ipxeBios, err := cmd.Flags().GetString("ipxe-bios")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	ipxeEFI32, err := cmd.Flags().GetString("ipxe-efi32")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	ipxeEFI64, err := cmd.Flags().GetString("ipxe-efi64")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+
+	if addr != nil && addr.To4() == nil {
+		fatalf("Listen address must be IPv4")
+	}
+	if httpPort <= 0 {
+		fatalf("HTTP port must be >0")
+	}
+
+	ret := &pixiecore.Server{
+		Ipxe:     map[pixiecore.Firmware][]byte{},
+		Log:      logWithStdFmt,
+		HTTPPort: httpPort,
+	}
+	for fwtype, bs := range Ipxe {
+		ret.Ipxe[fwtype] = bs
+	}
+	if ipxeBios != "" {
+		ret.Ipxe[pixiecore.FirmwareX86PC] = mustFile(ipxeBios)
+	}
+	if ipxeEFI32 != "" {
+		ret.Ipxe[pixiecore.FirmwareEFI32] = mustFile(ipxeEFI32)
+	}
+	if ipxeEFI64 != "" {
+		ret.Ipxe[pixiecore.FirmwareEFI64] = mustFile(ipxeEFI64)
+	}
+
+	if timestamps {
+		ret.Log = logWithStdLog
+	}
+	if debug {
+		ret.Debug = ret.Log
+	}
+	if addr != nil {
+		ret.Address = addr.String()
+	}
+
+	return ret
 }

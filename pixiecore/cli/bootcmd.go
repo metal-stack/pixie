@@ -38,14 +38,6 @@ var bootCmd = &cobra.Command{
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
-		debug, err := cmd.Flags().GetBool("debug")
-		if err != nil {
-			fatalf("Error reading flag: %s", err)
-		}
-		timestamps, err := cmd.Flags().GetBool("log-timestamps")
-		if err != nil {
-			fatalf("Error reading flag: %s", err)
-		}
 
 		spec := &pixiecore.Spec{
 			Kernel:  pixiecore.ID(kernel),
@@ -61,17 +53,8 @@ var bootCmd = &cobra.Command{
 			fatalf("Couldn't make static booter: %s", err)
 		}
 
-		s := &pixiecore.Server{
-			Booter: booter,
-			Ipxe:   Ipxe,
-			Log:    logWithStdFmt,
-		}
-		if timestamps {
-			s.Log = logWithStdLog
-		}
-		if debug {
-			s.Debug = s.Log
-		}
+		s := serverFromFlags(cmd)
+		s.Booter = booter
 
 		fmt.Println(s.Serve())
 	},
@@ -79,6 +62,7 @@ var bootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(bootCmd)
+	serverConfigFlags(bootCmd)
 	bootCmd.Flags().String("cmdline", "", "Kernel commandline arguments")
 	bootCmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
 }

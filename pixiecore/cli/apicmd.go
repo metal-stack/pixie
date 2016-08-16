@@ -41,36 +41,20 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
-		debug, err := cmd.Flags().GetBool("debug")
-		if err != nil {
-			fatalf("Error reading flag: %s", err)
-		}
-		timestamps, err := cmd.Flags().GetBool("log-timestamps")
-		if err != nil {
-			fatalf("Error reading flag: %s", err)
-		}
 
 		booter, err := pixiecore.APIBooter(server, timeout)
 		if err != nil {
 			fatalf("Failed to create API booter: %s", err)
 		}
-		s := &pixiecore.Server{
-			Booter: booter,
-			Ipxe:   Ipxe,
-			Log:    logWithStdFmt,
-		}
-		if timestamps {
-			s.Log = logWithStdLog
-		}
-		if debug {
-			s.Debug = s.Log
-		}
+		s := serverFromFlags(cmd)
+		s.Booter = booter
 
 		fmt.Println(s.Serve())
 	}}
 
 func init() {
 	rootCmd.AddCommand(apiCmd)
+	serverConfigFlags(apiCmd)
 	apiCmd.Flags().Duration("api-request-timeout", 5*time.Second, "Timeout for request to the API server")
 	// TODO: SSL cert flags for both client and server auth.
 }
