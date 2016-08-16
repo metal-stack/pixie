@@ -102,6 +102,7 @@ func (s *Server) ListenAndServe(addr string) error {
 		return err
 	}
 	defer l.Close()
+	s.infoLog("TFTP listening on %s", l.LocalAddr())
 	return s.Serve(l)
 }
 
@@ -115,7 +116,6 @@ func (s *Server) Serve(l net.PacketConn) error {
 	if err := l.SetDeadline(time.Time{}); err != nil {
 		return err
 	}
-	s.infoLog("TFTP listening on %s", l.LocalAddr())
 	buf := make([]byte, 512)
 	for {
 		n, addr, err := l.ReadFrom(buf)
