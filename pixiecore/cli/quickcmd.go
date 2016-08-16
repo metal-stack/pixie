@@ -34,7 +34,7 @@ TODO: better help here
 }
 
 func init() {
-	rootCmd.AddCommand(quickCmd)
+	//rootCmd.AddCommand(quickCmd)
 
 	// TODO: some kind of caching support where quick OSes get
 	// downloaded locally, so you don't have to fetch from a remote
