@@ -217,6 +217,7 @@ func (s *Server) Serve() error {
 	return err
 }
 
+// Shutdown causes Serve() to exit, cleaning up behind itself.
 func (s *Server) Shutdown() {
 	select {
 	case s.errs <- nil:
