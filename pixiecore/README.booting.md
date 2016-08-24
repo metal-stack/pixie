@@ -5,18 +5,7 @@ binary, which together can take a PXE ROM from nothing to booting
 Linux. They are: ProxyDHCP, PXE, TFTP, and HTTP. Let's walk through
 the boot process for a PXE ROM.
 
-![Boot process graph](http://g.gravizo.com/g?
-  digraph G {
-    ProxyDHCP1 [label="ProxyDHCP"];
-    ProxyDHCP2 [label="ProxyDHCP (iPXE)"];
-    
-    ProxyDHCP1 -> PXE [label=< <i>UEFI</i> >, fontsize=11];
-    ProxyDHCP1 -> TFTP [label=< <i>BIOS</i> >, fontsize=11];
-    PXE -> TFTP;
-    TFTP -> ProxyDHCP2;
-    ProxyDHCP2 -> HTTP;
-  }
-)
+![Boot process](bootgraph.svg)
 
 ## Step 1: DHCP/ProxyDHCP
 
