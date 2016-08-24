@@ -1,98 +1,88 @@
-NOTE THAT THIS IS NOT YET READY AT ALL, THIS README WAS JUST COPIED
-OVER TO THIS NEW VERSION, THE CODE SUPPORTS NONE OF THIS RIGHT
-NOW. Come back later if you want working software.
+# Pixiecore
 
-[![software](https://img.shields.io/badge/software-unstable-red.svg)](https://github.com/google/netboot/pixiecore)
-[![software2](https://img.shields.io/badge/software-unready-red.svg)](https://github.com/google/netboot/pixiecore)
-[![production](https://img.shields.io/badge/production-avoid-red.svg)](https://github.com/google/netboot/pixiecore)
+Pixiecore is an all-in-one tool to manage network booting of
+machines. It can be used either as a simple tool for ad-hoc network
+boots, or as a building block of machine management infrastructure.
 
-# Pixiecore, PXE booting for people in a hurry
+[![license](https://img.shields.io/github/license/google/netboot.svg?maxAge=2592000)](https://github.com/google/netboot/blob/master/LICENSE) [![Travis](https://img.shields.io/travis/google/netboot.svg?maxAge=2592000)](https://travis-ci.org/google/netboot)  [![api](https://img.shields.io/badge/api-unstable-red.svg)](https://godoc.org/go.universe.tf/netboot) [![cli](https://img.shields.io/badge/cli-stable-green.svg)](https://godoc.org/go.universe.tf/netboot)
 
-```
-There once was a protocol called PXE,
-Whose specification was overly tricksy.
-A committee refined it
-Into a big Turing tarpit,
-And now you're using it to boot your PC.
-```
+## Why?
 
 Booting a Linux system over the network is quite tedious. You have to
-set up a TFTP server, configure your DHCP server to recognize PXE
+set up a TFTP server, reconfigure your DHCP server to recognize PXE
 clients, and send them the right set of magical options to get them to
 boot, often fighting rubbish PXE ROM implementations.
 
 Pixiecore aims to simplify this process, by packing the whole process
 into a single binary that can cooperate with your network's existing
-DHCP server.
+DHCP server. You don't need to reconfigure anything else in the
+network.
 
-Pixiecore can be used either as a simple "just boot into this OS
-image" tool, or as a building block of a machine management system
-with its API mode.
+## Installation
 
-[![Build Status](https://travis-ci.org/danderson/pixiecore.svg?branch=master)](https://travis-ci.org/danderson/pixiecore)
+Install Pixiecore via `go get`:
 
-## Pixiecore in static mode ("I just want to boot 5 machines")
+```shell
+go get go.universe.tf/netboot/cmd/pixiecore
+```
+
+## Using Pixiecore in static mode ("I just want to boot a machine")
 
 Run the pixiecore binary, passing it a kernel and initrd, and
-optionally some extra kernel commandline arguments.
-
-Here's a couple of examples. If you feel like a screencast instead,
-there's a
-[very short demo](https://www.youtube.com/watch?v=xjdTOt5YDQM).
-
-### Tiny Core Linux
-
-Tiny Core Linux is a positively tiny distro, clocking in at 10M in the
-configuration we'll be using (it can go lower than that). Let's set
-ourselves up such that any PXE booting machine on the network boots
-into a TinyCore ramdisk:
+optionally some extra kernel commandline arguments. For example,
+here's how you make all machines in your network netboot into the
+alpha release of CoreOS, with automatic login:
 
 ```shell
-# Fetch the kernel and the 2 cpio files that form the filesystem.
-wget http://tinycorelinux.net/7.x/x86/release/distribution_files/{vmlinuz64,modules64.gz,rootfs.gz}
-
-# In the real world, you would AUTHENTICATE YOUR DOWNLOADS here. TCL sadly
-# only distributes images over HTTP, so it's anyone's guess what you
-# just downloaded.
-
-# Go!
-pixiecore -kernel vmlinuz64 -initrd rootfs.gz,core.gz,modules64.gz
+sudo pixiecore boot \
+  https://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz \
+  https://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz \
+  --cmdline='coreos.autologin'
 ```
 
-That's it. Any machine that tries to netboot on this network will now
-boot into a TinyCore ramdisk.
+That's it! Any machine that tries to boot from the network will now
+boot into CoreOS.
 
-Notice that we passed multiple cpio archives to `-initrd`. All
-provided archives will be merged on boot to form the final
-ramdisk. This is quite handy for things like providing OEM
-configuration without having to respin the upstream initrd image.
-
-### CoreOS
-
-Pixiecore was originally written as a component in an automated
-installation system for CoreOS on bare metal. For this example, let's
-set up a netboot for the alpha CoreOS release:
+That's a bit slow to boot, because Pixiecore is refetching the images
+from core-os.net each time a machine tries to boot. We can also
+download the files and use those:
 
 ```shell
-# Grab the PXE images and verify them
-wget http://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz
-wget http://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz
-
-# In the real world, you would AUTHENTICATE YOUR DOWNLOADS
-# here. CoreOS distributes image signatures, but that only really
-# helps if you already know the right GPG key.
-
-# Go!
-pixiecore -kernel coreos_production_pxe.vmlinuz -initrd coreos_production_pxe_image.cpio.gz --cmdline coreos.autologin
+wget https://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz \
+wget https://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz \
+sudo pixiecore boot \
+  coreos_production_pxe.vmlinuz \
+  coreos_production_pxe_image.cpio.gz
+  --cmdline='coreos.autologin'
 ```
 
-Notice that we're passing an extra commandline argument to make CoreOS
-automatically log in once it's booted.
+Sometimes, you want to give extra files to the booting OS. For
+example, CoreOS lets you pass a Cloud Init file via the
+`cloud-config-url` kernel commandline parameter. That's fine if you
+have a URL, but what if you have a local file?
+
+For this, Pixiecore lets you specify that you want an additional file
+served over HTTP to the booting OS, via a template function. Let's
+grab a [cloud-config.yml](https://goo.gl/7HzZf2) that sets the
+hostname to `pixiecore-test`, and serve it:
+
+```shell
+wget -O my-cloud-config.yml https://goo.gl/7HzZf2
+sudo pixiecore boot \
+  coreos_production_pxe.vmlinuz \
+  coreos_production_pxe_image.cpio.gz
+  --cmdline='coreos.autologin cloud-config-url={{ ID "./my-cloud-config.yml" }}'
+```
+
+Pixiecore will transform the template invocation into a URL that, when
+fetched, serves `my-cloud-config.yml`. Similarly to the kernel and
+initrd arguments, you can also pass a URL to the `ID` template
+function.
 
 ## Pixiecore in API mode
 
 Think of Pixiecore in API mode as a "PXE to HTTP" translator. Whenever
-Pixiecore sees a machine trying to PXE boot, it will ask a remote HTTP
+Pixiecore sees a machine trying to netboot, it will ask a remote HTTP
 API (which you implement) what to do. The API server can tell
 Pixiecore to ignore the machine, or tell it to boot into a given
 kernel/initrd/commandline.
@@ -101,9 +91,14 @@ Effectively, Pixiecore in API mode lets you pretend that your machines
 speak a simple JSON protocol when trying to netboot. This makes it
 _far_ easier to play with netbooting in your own software.
 
-To start Pixiecore in API mode, pass it the HTTP API endpoint through
-the `-api` flag. The endpoint you provide must implement the Pixiecore
-boot API, as described in the [API spec](README.api.md).
+To start Pixiecore in API mode, pass it the URL of your API endpoint:
+
+```shell
+sudo pixiecore api https://foo.example/pixiecore
+```
+
+The endpoint you provide must implement the Pixiecore boot API, as
+described in the [API spec](README.api.md).
 
 You can find a sample API server implementation in the `example`
 subdirectory. The code is not production-grade, but gives a short
@@ -120,7 +115,7 @@ Because Pixiecore needs to listen for DHCP traffic, it has to run with
 the host network stack.
 
 ```shell
-sudo docker run -v .:/image --net=host danderson/pixiecore -kernel /image/coreos_production_pxe.vmlinuz -initrd /image/coreos_production_pxe_image.cpio.gz
+sudo docker run -v .:/image --net=host danderson/pixiecore boot /image/coreos_production_pxe.vmlinuz /image/coreos_production_pxe_image.cpio.gz
 ```
 
 ## How it works
@@ -267,16 +262,3 @@ Pixiecore's behavior implements "SHOULD" instead of "MUST": if a
 client request has a GUID, Pixiecore's response will respond with a
 GUID. If the client request has no GUID, Pixiecore omits option 97 in
 its response.
-
-## Development
-
-You can use [Vagrant](https://www.vagrantup.com/) to quickly setup a test environment:
-
-    (HOST)$ vagrant up --provider=libvirt pxeserver
-    (HOST)$ vagrant ssh pxeserver
-    (PXESERVER)$ wget http://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe.vmlinuz
-    (PXESERVER)$ wget http://alpha.release.core-os.net/amd64-usr/current/coreos_production_pxe_image.cpio.gz
-    (PXESERVER)$ pixiecore -debug -kernel coreos_production_pxe.vmlinuz -initrd coreos_production_pxe_image.cpio.gz --cmdline coreos.autologin
-    ### In another terminal
-    (HOST)$ vagrant up --provider=libvirt pxeclient1
-
