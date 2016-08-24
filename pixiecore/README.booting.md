@@ -5,7 +5,7 @@ binary, which together can take a PXE ROM from nothing to booting
 Linux. They are: ProxyDHCP, PXE, TFTP, and HTTP. Let's walk through
 the boot process for a PXE ROM.
 
-![Boot process](bootgraph.svg)
+![Boot process](https://cdn.rawgit.com/google/netboot/master/pixiecore/bootgraph.svg)
 
 ## Step 1: DHCP/ProxyDHCP
 
