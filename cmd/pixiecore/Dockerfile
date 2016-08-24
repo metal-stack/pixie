@@ -8,6 +8,7 @@ RUN \
   apk -U add ca-certificates git go gcc musl-dev &&\
   apk upgrade &&\
   cd /tmp/go/src/go.universe.tf/netboot &&\
+  ls -l &&\
   go get -v . &&\
   cd cmd/pixiecore &&\
   go build . &&\
