@@ -6,7 +6,7 @@ Linux. They are: ProxyDHCP, PXE, TFTP, and HTTP. Let's walk through
 the boot process for a PXE ROM.
 
 ![Boot process graph](http://g.gravizo.com/g?
-digraph G {
+  digraph G {
     ProxyDHCP1 [label="ProxyDHCP"];
     ProxyDHCP2 [label="ProxyDHCP (iPXE)"];
     
@@ -15,7 +15,7 @@ digraph G {
     PXE -> TFTP;
     TFTP -> ProxyDHCP2;
     ProxyDHCP2 -> HTTP;
-}
+  }
 )
 
 ## Step 1: DHCP/ProxyDHCP
