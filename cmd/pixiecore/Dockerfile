@@ -7,8 +7,12 @@ RUN \
   echo "http://dl-4.alpinelinux.org/alpine/edge/community" >>/etc/apk/repositories &&\
   apk -U add ca-certificates git go gcc musl-dev &&\
   apk upgrade &&\
-  go get go.universe.tf/netboot/cmd/pixiecore &&\
-  cp /tmp/go/bin/pixiecore /pixiecore &&\
+  cd /tmp/go/src/go.universe.tf/netboot &&\
+  go get -v . &&\
+  cd cmd/pixiecore &&\
+  go build . &&\
+  cp pixiecore /pixiecore &&\
+  cd / &&\
   rm -rf /tmp/go &&\
   apk del git go gcc musl-dev &&\
   rm -rf /var/cache/apk/*
