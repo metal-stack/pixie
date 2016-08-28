@@ -154,6 +154,12 @@ type Server struct {
 	TFTPPort int
 	PXEPort  int
 
+	// Listen for DHCP traffic without binding to the DHCP port. This
+	// enables coexistence of Pixiecore with another DHCP server.
+	//
+	// Currently only supported on Linux.
+	DHCPNoBind bool
+
 	errs chan error
 }
 
@@ -173,7 +179,12 @@ func (s *Server) Serve() error {
 		s.HTTPPort = portHTTP
 	}
 
-	dhcp, err := dhcp4.NewConn(fmt.Sprintf("%s:%d", s.Address, s.DHCPPort))
+	newDHCP := dhcp4.NewConn
+	if s.DHCPNoBind {
+		newDHCP = dhcp4.NewSnooperConn
+	}
+
+	dhcp, err := newDHCP(fmt.Sprintf("%s:%d", s.Address, s.DHCPPort))
 	if err != nil {
 		return err
 	}

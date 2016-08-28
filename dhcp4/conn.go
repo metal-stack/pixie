@@ -26,7 +26,6 @@ import (
 // defined as a var so tests can override it.
 var (
 	dhcpClientPort = 68
-	platformConn   func(string) (conn, error)
 )
 
 // txType describes how a Packet should be sent on the wire.
@@ -68,13 +67,6 @@ type Conn struct {
 
 // NewConn creates a Conn bound to the given UDP ip:port.
 func NewConn(addr string) (*Conn, error) {
-	if platformConn != nil {
-		c, err := platformConn(addr)
-		if err == nil {
-			return &Conn{c}, nil
-		}
-	}
-	// Always try falling back to the portable implementation
 	c, err := newPortableConn(addr)
 	if err != nil {
 		return nil, err

@@ -73,9 +73,10 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 	cmd.Flags().IPP("listen-addr", "l", net.IPv4zero, "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
-	cmd.Flags().String("ipxe-bios", "", "path to an iPXE binary for BIOS/UNDI")
-	cmd.Flags().String("ipxe-efi32", "", "path to an iPXE binary for 32-bit UEFI")
-	cmd.Flags().String("ipxe-efi64", "", "path to an iPXE binary for 64-bit UEFI")
+	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
+	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
+	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
+	cmd.Flags().String("ipxe-efi64", "", "Path to an iPXE binary for 64-bit UEFI")
 }
 
 func mustFile(path string) []byte {
@@ -104,6 +105,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	dhcpNoBind, err := cmd.Flags().GetBool("dhcp-no-bind")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 	ipxeBios, err := cmd.Flags().GetString("ipxe-bios")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
@@ -125,9 +130,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	}
 
 	ret := &pixiecore.Server{
-		Ipxe:     map[pixiecore.Firmware][]byte{},
-		Log:      logWithStdFmt,
-		HTTPPort: httpPort,
+		Ipxe:       map[pixiecore.Firmware][]byte{},
+		Log:        logWithStdFmt,
+		HTTPPort:   httpPort,
+		DHCPNoBind: dhcpNoBind,
 	}
 	for fwtype, bs := range Ipxe {
 		ret.Ipxe[fwtype] = bs

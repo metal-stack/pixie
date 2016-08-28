@@ -36,8 +36,16 @@ type linuxConn struct {
 	conn *ipv4.RawConn
 }
 
-func init() {
-	platformConn = newLinuxConn
+// NewSnooperConn creates a Conn that listens on the given UDP ip:port.
+//
+// Unlike NewConn, NewSnooperConn does not bind to the ip:port,
+// enabling the Conn to coexist with other services on the machine.
+func NewSnooperConn(addr string) (*Conn, error) {
+	c, err := newLinuxConn(addr)
+	if err != nil {
+		return nil, err
+	}
+	return &Conn{c}, nil
 }
 
 func newLinuxConn(addr string) (conn, error) {
