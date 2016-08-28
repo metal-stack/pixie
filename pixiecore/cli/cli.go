@@ -18,6 +18,7 @@ package cli // import "go.universe.tf/netboot/pixiecore/cli"
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -70,7 +71,7 @@ func todo(msg string, args ...interface{}) {
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
-	cmd.Flags().IPP("listen-addr", "l", nil, "IPv4 address to listen on")
+	cmd.Flags().IPP("listen-addr", "l", net.IPv4zero, "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().String("ipxe-bios", "", "path to an iPXE binary for BIOS/UNDI")
 	cmd.Flags().String("ipxe-efi32", "", "path to an iPXE binary for 32-bit UEFI")
