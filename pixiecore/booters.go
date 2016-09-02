@@ -154,7 +154,9 @@ func (b *apibooter) getAPIResponse(hw net.HardwareAddr) (io.ReadCloser, error) {
 
 func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	body, err := b.getAPIResponse(m.MAC)
-	defer body.Close()
+	if body != nil {
+		defer body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
