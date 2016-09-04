@@ -179,13 +179,11 @@ Provide a proxied cloud-config and an unproxied other URL.
 ### Example API server
 
 There is a very small example API server implementation in the
-`example` subdirectory. This sample server is not production-quality
+`api-example` subdirectory. This sample server is not production-quality
 code (e.g. it uses panic for error handling), but should be a
-reasonable starting point nonetheless. It implements a reduced form of
-Pixiecore's static mode: you give it a kernel, initrd and commandline
-as flags, and it serves those for all boot requests it
-receives. Unlike Pixiecore's builtin static mode, the sample server
-can only boot one initrd image.
+reasonable starting point nonetheless. It will instruct pixecore
+to boot Tiny Core Linux' kernel and initrd(s),
+directly from upstream servers.
 
 ## Deprecated features
 
