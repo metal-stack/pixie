@@ -57,7 +57,7 @@ URLs provided by the API server can be absolute, or just a naked
 path. In the latter case, the path is resolved with reference to the
 API server URL that Pixiecore is using - although note that the path
 is _not_ rooted within Pixiecore's API path. For example, if you
-provide `/foo` as a URL to Pixiecore running with `-api
+provide `/foo` as a URL to Pixiecore running with `api
 http://bar.com/baz`, Pixiecore will fetch `http://bar.com/foo`, _not_
 `http://bar.com/baz/foo`.
 
