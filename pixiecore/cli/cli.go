@@ -18,7 +18,6 @@ package cli // import "go.universe.tf/netboot/pixiecore/cli"
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -71,7 +70,7 @@ func todo(msg string, args ...interface{}) {
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
-	cmd.Flags().IPP("listen-addr", "l", net.IPv4zero, "IPv4 address to listen on")
+	cmd.Flags().StringP("listen-addr", "l", "", "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
 	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
@@ -97,7 +96,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
-	addr, err := cmd.Flags().GetIP("listen-addr")
+	addr, err := cmd.Flags().GetString("listen-addr")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
@@ -122,9 +121,6 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		fatalf("Error reading flag: %s", err)
 	}
 
-	if addr != nil && addr.To4() == nil {
-		fatalf("Listen address must be IPv4")
-	}
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
 	}
@@ -154,8 +150,8 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if debug {
 		ret.Debug = ret.Log
 	}
-	if addr != nil {
-		ret.Address = addr.String()
+	if addr != "" {
+		ret.Address = addr
 	}
 
 	return ret

@@ -102,7 +102,12 @@ type Booter interface {
 	// the client machine's request.
 	BootSpec(m Machine) (*Spec, error)
 	// Get the bytes corresponding to an ID given in Spec.
-	ReadBootFile(id ID) (io.ReadCloser, error)
+	//
+	// Additionally returns the total number of bytes in the
+	// ReadCloser, or -1 if the size is unknown. Be warned, returning
+	// -1 will make the boot process orders of magnitude slower due to
+	// poor ipxe behavior.
+	ReadBootFile(id ID) (io.ReadCloser, int64, error)
 	// Write the given Reader to an ID given in Spec.
 	WriteBootFile(id ID, body io.Reader) error
 }
@@ -213,6 +218,8 @@ func (s *Server) Serve() error {
 	// goroutines, and we want them to be able to dump them without
 	// blocking.
 	s.errs = make(chan error, 5)
+
+	s.debug("Init", "Starting Pixiecore goroutines")
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()

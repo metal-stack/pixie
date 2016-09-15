@@ -43,7 +43,7 @@ func mustWrite(dir, path, contents string) {
 	}
 }
 
-func mustRead(f io.ReadCloser, err error) string {
+func mustRead(f io.ReadCloser, sz int64, err error) string {
 	if err != nil {
 		panic(err)
 	}
@@ -51,6 +51,9 @@ func mustRead(f io.ReadCloser, err error) string {
 	bs, err := ioutil.ReadAll(f)
 	if err != nil {
 		panic(err)
+	}
+	if sz >= 0 && int64(len(bs)) != sz {
+		panic(fmt.Errorf("sz = %d, but ReadCloser has %d bytes", sz, len(bs)))
 	}
 	return string(bs)
 }

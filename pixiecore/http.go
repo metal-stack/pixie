@@ -108,13 +108,16 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing filename", http.StatusBadRequest)
 	}
 
-	f, err := s.Booter.ReadBootFile(ID(name))
+	f, sz, err := s.Booter.ReadBootFile(ID(name))
 	if err != nil {
 		s.log("HTTP", "Error getting file %q (query %q from %s): %s", name, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
 	defer f.Close()
+	if sz >= 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(sz, 10))
+	}
 	if _, err = io.Copy(w, f); err != nil {
 		s.log("HTTP", "Copy of %q to %s (query %q) failed: %s", name, r.RemoteAddr, r.URL, err)
 		return

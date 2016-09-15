@@ -28,9 +28,11 @@ import (
 
 type booterFunc func(Machine) (*Spec, error)
 
-func (b booterFunc) BootSpec(m Machine) (*Spec, error)         { return b(m) }
-func (b booterFunc) ReadBootFile(id ID) (io.ReadCloser, error) { return nil, errors.New("no") }
-func (b booterFunc) WriteBootFile(id ID, r io.Reader) error    { return errors.New("no") }
+func (b booterFunc) BootSpec(m Machine) (*Spec, error) { return b(m) }
+func (b booterFunc) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
+	return nil, -1, errors.New("no")
+}
+func (b booterFunc) WriteBootFile(id ID, r io.Reader) error { return errors.New("no") }
 
 var logSync sync.Mutex
 
@@ -149,8 +151,9 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 type readBootFile string
 
 func (b readBootFile) BootSpec(m Machine) (*Spec, error) { return nil, nil }
-func (b readBootFile) ReadBootFile(id ID) (io.ReadCloser, error) {
-	return ioutil.NopCloser(bytes.NewBuffer([]byte(fmt.Sprintf("%s %s", id, b)))), nil
+func (b readBootFile) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
+	d := fmt.Sprintf("%s %s", id, b)
+	return ioutil.NopCloser(bytes.NewBuffer([]byte(d))), int64(len(d)), nil
 }
 func (b readBootFile) WriteBootFile(id ID, r io.Reader) error { return errors.New("no") }
 

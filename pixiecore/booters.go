@@ -71,22 +71,31 @@ func (s *staticBooter) BootSpec(m Machine) (*Spec, error) {
 	return s.spec, nil
 }
 
-func (s *staticBooter) serveFile(path string) (io.ReadCloser, error) {
+func (s *staticBooter) serveFile(path string) (io.ReadCloser, int64, error) {
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 		resp, err := http.Get(path)
 		if err != nil {
-			return nil, err
+			return nil, -1, err
 		}
 		if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
-			return nil, fmt.Errorf("%s: %s", path, http.StatusText(resp.StatusCode))
+			return nil, -1, fmt.Errorf("%s: %s", path, http.StatusText(resp.StatusCode))
 		}
-		return resp.Body, nil
+		return resp.Body, resp.ContentLength, nil
 	}
-	return os.Open(path)
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, -1, err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, -1, err
+	}
+	return f, fi.Size(), nil
 }
 
-func (s *staticBooter) ReadBootFile(id ID) (io.ReadCloser, error) {
+func (s *staticBooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 	path := string(id)
 	switch {
 	case path == "kernel":
@@ -95,19 +104,19 @@ func (s *staticBooter) ReadBootFile(id ID) (io.ReadCloser, error) {
 	case strings.HasPrefix(path, "initrd-"):
 		i, err := strconv.Atoi(string(path[7:]))
 		if err != nil || i < 0 || i >= len(s.initrd) {
-			return nil, fmt.Errorf("no file with ID %q", id)
+			return nil, -1, fmt.Errorf("no file with ID %q", id)
 		}
 		return s.serveFile(s.initrd[i])
 
 	case strings.HasPrefix(path, "other-"):
 		i, err := strconv.Atoi(string(path[6:]))
 		if err != nil || i < 0 || i >= len(s.otherIDs) {
-			return nil, fmt.Errorf("no file with ID %q", id)
+			return nil, -1, fmt.Errorf("no file with ID %q", id)
 		}
 		return s.serveFile(s.otherIDs[i])
 	}
 
-	return nil, fmt.Errorf("no file with ID %q", id)
+	return nil, -1, fmt.Errorf("no file with ID %q", id)
 }
 
 func (s *staticBooter) WriteBootFile(ID, io.Reader) error {
@@ -229,18 +238,22 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	return &ret, nil
 }
 
-func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, error) {
+func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 	urlStr, err := getURL(id, &b.key)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	u, err := url.Parse(urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("%q is not an URL", urlStr)
+		return nil, -1, fmt.Errorf("%q is not an URL", urlStr)
 	}
-	var ret io.ReadCloser
+	var (
+		ret io.ReadCloser
+		sz  int64 = -1
+	)
 	if u.Scheme == "file" {
+		// TODO serveFile
 		ret, err = os.Open(u.Path)
 	} else {
 		// urlStr will get reparsed by http.Get, which is mildly
@@ -248,18 +261,18 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, error) {
 		// Request.
 		resp, err := http.Get(urlStr)
 		if err != nil {
-			return nil, err
+			return nil, -1, err
 		}
 		if resp.StatusCode != 200 {
-			return nil, fmt.Errorf("GET %q failed: %s", urlStr, resp.Status)
+			return nil, -1, fmt.Errorf("GET %q failed: %s", urlStr, resp.Status)
 		}
 
-		ret, err = resp.Body, nil
+		ret, sz, err = resp.Body, resp.ContentLength, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
-	return ret, nil
+	return ret, sz, nil
 }
 
 func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
