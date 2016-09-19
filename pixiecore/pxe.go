@@ -69,6 +69,8 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 			continue
 		}
 
+		s.machineEvent(pkt.HardwareAddr, machineStatePXE, "Sent PXE configuration")
+
 		resp, err := s.offerPXE(pkt, serverIP, fwtype)
 		if err != nil {
 			s.log("PXE", "Failed to construct PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
@@ -124,7 +126,7 @@ func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (
 		RelayAddr:      pkt.RelayAddr,
 		ServerAddr:     serverIP,
 		BootServerName: serverIP.String(),
-		BootFilename:   fmt.Sprintf("%d", fwtype),
+		BootFilename:   fmt.Sprintf("%s/%d", pkt.HardwareAddr, fwtype),
 		Options: dhcp4.Options{
 			dhcp4.OptServerIdentifier: serverIP,
 			dhcp4.OptVendorIdentifier: []byte("PXEClient"),

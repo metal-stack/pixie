@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 	"text/template"
 
 	"go.universe.tf/netboot/dhcp4"
@@ -138,8 +139,12 @@ type Server struct {
 	Booter Booter
 
 	// Address to listen on, or empty for all interfaces.
-	Address  string
+	Address string
+	// HTTP port for boot services.
 	HTTPPort int
+	// HTTP port for human-readable information. Can be the same as
+	// HTTPPort.
+	HTTPStatusPort int
 
 	// Ipxe lists the supported bootable Firmwares, and their
 	// associated ipxe binary.
@@ -165,7 +170,14 @@ type Server struct {
 	// Currently only supported on Linux.
 	DHCPNoBind bool
 
+	// Read UI assets from this path, rather than use the builtin UI
+	// assets. Used for development of Pixiecore.
+	UIAssetsDir string
+
 	errs chan error
+
+	eventsMu sync.Mutex
+	events   map[string][]machineEvent
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to
@@ -211,20 +223,39 @@ func (s *Server) Serve() error {
 		pxe.Close()
 		return err
 	}
+	var statusHTTP net.Listener
+	if s.HTTPStatusPort != 0 && s.HTTPStatusPort != s.HTTPPort {
+		statusHTTP, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPStatusPort))
+		if err != nil {
+			dhcp.Close()
+			tftp.Close()
+			pxe.Close()
+			http.Close()
+			return err
+		}
+	}
 
+	s.events = make(map[string][]machineEvent)
 	// 5 buffer slots, one for each goroutine, plus one for
 	// Shutdown(). We only ever pull the first error out, but shutdown
 	// will likely generate some spurious errors from the other
 	// goroutines, and we want them to be able to dump them without
 	// blocking.
-	s.errs = make(chan error, 5)
+	s.errs = make(chan error, 6)
 
 	s.debug("Init", "Starting Pixiecore goroutines")
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()
 	go func() { s.errs <- s.serveTFTP(tftp) }()
-	go func() { s.errs <- s.serveHTTP(http) }()
+	if statusHTTP != nil {
+		go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
+		go func() { s.errs <- serveHTTP(statusHTTP, s.serveUI) }()
+	} else if s.HTTPStatusPort == s.HTTPPort {
+		go func() { s.errs <- serveHTTP(http, s.serveHTTP, s.serveUI) }()
+	} else {
+		go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
+	}
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
@@ -232,6 +263,9 @@ func (s *Server) Serve() error {
 	tftp.Close()
 	pxe.Close()
 	http.Close()
+	if statusHTTP != nil {
+		statusHTTP.Close()
+	}
 	return err
 }
 

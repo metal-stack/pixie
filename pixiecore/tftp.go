@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net"
 	"strconv"
+	"strings"
 
 	"go.universe.tf/netboot/tftp"
 )
@@ -39,18 +40,44 @@ func (s *Server) serveTFTP(l net.PacketConn) error {
 	return nil
 }
 
+func extractInfo(path string) (net.HardwareAddr, int, error) {
+	pathElements := strings.Split(path, "/")
+	if len(pathElements) != 2 {
+		return nil, 0, errors.New("not found")
+	}
+
+	mac, err := net.ParseMAC(pathElements[0])
+	if err != nil {
+		return nil, 0, fmt.Errorf("invalid MAC address %q", pathElements[0])
+	}
+
+	i, err := strconv.Atoi(pathElements[1])
+	if err != nil {
+		return nil, 0, errors.New("not found")
+	}
+
+	return mac, i, nil
+}
+
 func (s *Server) logTFTPTransfer(clientAddr net.Addr, path string, err error) {
+	mac, _, err := extractInfo(path)
+	if err != nil {
+		// Unknown path, nothing to log.
+		return
+	}
+
 	if err != nil {
 		s.log("TFTP", "Send of %q to %s failed: %s", path, clientAddr, err)
 	} else {
 		s.log("TFTP", "Sent %q to %s", path, clientAddr)
+		s.machineEvent(mac, machineStateTFTP, "Sent iPXE to %s", clientAddr)
 	}
 }
 
 func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, int64, error) {
-	i, err := strconv.Atoi(path)
+	_, i, err := extractInfo(path)
 	if err != nil {
-		return nil, 0, errors.New("not found")
+		return nil, 0, fmt.Errorf("unknown path %q", path)
 	}
 
 	bs, ok := s.Ipxe[Firmware(i)]

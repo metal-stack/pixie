@@ -26,14 +26,21 @@ import (
 	"text/template"
 )
 
-func (s *Server) serveHTTP(l net.Listener) error {
-	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/_/ipxe", s.handleIpxe)
-	httpMux.HandleFunc("/_/file", s.handleFile)
-	if err := http.Serve(l, httpMux); err != nil {
+func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
+	mux := http.NewServeMux()
+	for _, h := range handlers {
+		h(mux)
+	}
+	if err := http.Serve(l, mux); err != nil {
 		return fmt.Errorf("HTTP server shut down: %s", err)
 	}
 	return nil
+}
+
+func (s *Server) serveHTTP(mux *http.ServeMux) {
+	mux.HandleFunc("/_/ipxe", s.handleIpxe)
+	mux.HandleFunc("/_/file", s.handleFile)
+	mux.HandleFunc("/_/booting", s.handleBooting)
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +96,7 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "you don't netboot", http.StatusNotFound)
 		return
 	}
-	script, err := ipxeScript(spec, r.Host)
+	script, err := ipxeScript(mach, spec, r.Host)
 	if err != nil {
 		s.log("HTTP", "Failed to assemble ipxe script for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get a boot script", http.StatusInternalServerError)
@@ -97,6 +104,7 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.log("HTTP", "Sending ipxe boot script to %s", r.RemoteAddr)
+	s.machineEvent(mac, machineStateIpxeScript, "Sent iPXE boot script")
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(script)
 }
@@ -125,20 +133,55 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.log("HTTP", "Sent file %q to %s", name, r.RemoteAddr)
+
+	mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
+	if err != nil {
+		s.log("HTTP", "File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
+		return
+	}
+	switch r.URL.Query().Get("type") {
+	case "kernel":
+		s.machineEvent(mac, machineStateKernel, "Sent kernel %q", name)
+	case "initrd":
+		s.machineEvent(mac, machineStateInitrd, "Sent initrd %q", name)
+	}
 }
 
-func ipxeScript(spec *Spec, serverHost string) ([]byte, error) {
+func (s *Server) handleBooting(w http.ResponseWriter, r *http.Request) {
+	// This handler always errors out.
+	http.Error(w, "", http.StatusInternalServerError)
+
+	macStr := r.URL.Query().Get("mac")
+	if macStr == "" {
+		s.debug("HTTP", "Bad request %q from %s, missing MAC address", r.URL, r.RemoteAddr)
+		return
+	}
+	mac, err := net.ParseMAC(macStr)
+	if err != nil {
+		s.debug("HTTP", "Bad request %q from %s, invalid MAC address %q (%s)", r.URL, r.RemoteAddr, macStr, err)
+		return
+	}
+	s.machineEvent(mac, machineStateBooted, "Booting into OS")
+}
+
+func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	if spec.Kernel == "" {
 		return nil, errors.New("spec is missing Kernel")
 	}
 
-	urlPrefix := fmt.Sprintf("http://%s/_/file?name=", serverHost)
+	urlTemplate := fmt.Sprintf("http://%s/_/file?name=%%s&type=%%s&mac=%%s", serverHost)
 	var b bytes.Buffer
 	b.WriteString("#!ipxe\n")
-	fmt.Fprintf(&b, "kernel --name kernel %s%s\n", urlPrefix, url.QueryEscape(string(spec.Kernel)))
+	u := fmt.Sprintf(urlTemplate, url.QueryEscape(string(spec.Kernel)), "kernel", url.QueryEscape(mach.MAC.String()))
+	fmt.Fprintf(&b, "kernel --name kernel %s\n", u)
 	for i, initrd := range spec.Initrd {
-		fmt.Fprintf(&b, "initrd --name initrd%d %s%s\n", i, urlPrefix, url.QueryEscape(string(initrd)))
+		u = fmt.Sprintf(urlTemplate, url.QueryEscape(string(initrd)), "initrd", url.QueryEscape(mach.MAC.String()))
+		fmt.Fprintf(&b, "initrd --name initrd%d %s\n", i, u)
 	}
+
+	fmt.Fprintf(&b, "imgfetch --name ready http://%s/_/booting?mac=%s ||\n", serverHost, url.QueryEscape(mach.MAC.String()))
+	b.WriteString("imgfree ready ||\n")
+
 	b.WriteString("boot kernel ")
 	for i := range spec.Initrd {
 		fmt.Fprintf(&b, "initrd=initrd%d ", i)
@@ -152,7 +195,7 @@ func ipxeScript(spec *Spec, serverHost string) ([]byte, error) {
 		return nil, fmt.Errorf("expanding cmdline %q: %s", spec.Cmdline, err)
 	}
 	b.WriteString(cmdline)
-
 	b.WriteByte('\n')
+
 	return b.Bytes(), nil
 }

@@ -53,6 +53,7 @@ func TestIpxe(t *testing.T) {
 		Booter: booterFunc(booter),
 		Log:    log,
 		Debug:  log,
+		events: make(map[string][]machineEvent),
 	}
 
 	// Successful boot
@@ -69,9 +70,11 @@ func TestIpxe(t *testing.T) {
 	}
 
 	expected := `#!ipxe
-kernel --name kernel http://localhost:1234/_/file?name=k-01%3A02%3A03%3A04%3A05%3A06-0
-initrd --name initrd0 http://localhost:1234/_/file?name=i1-01%3A02%3A03%3A04%3A05%3A06-0
-initrd --name initrd1 http://localhost:1234/_/file?name=i2-01%3A02%3A03%3A04%3A05%3A06-0
+kernel --name kernel http://localhost:1234/_/file?name=k-01%3A02%3A03%3A04%3A05%3A06-0&type=kernel&mac=01%3A02%3A03%3A04%3A05%3A06
+initrd --name initrd0 http://localhost:1234/_/file?name=i1-01%3A02%3A03%3A04%3A05%3A06-0&type=initrd&mac=01%3A02%3A03%3A04%3A05%3A06
+initrd --name initrd1 http://localhost:1234/_/file?name=i2-01%3A02%3A03%3A04%3A05%3A06-0&type=initrd&mac=01%3A02%3A03%3A04%3A05%3A06
+imgfetch --name ready http://localhost:1234/_/booting?mac=01%3A02%3A03%3A04%3A05%3A06 ||
+imgfree ready ||
 boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?name=f-01%3A02%3A03%3A04%3A05%3A06-0 foo=bar
 `
 	if rr.Body.String() != expected {
@@ -92,9 +95,11 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 	}
 
 	expected = `#!ipxe
-kernel --name kernel http://localhost:1234/_/file?name=k-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1
-initrd --name initrd0 http://localhost:1234/_/file?name=i1-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1
-initrd --name initrd1 http://localhost:1234/_/file?name=i2-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1
+kernel --name kernel http://localhost:1234/_/file?name=k-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=kernel&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
+initrd --name initrd0 http://localhost:1234/_/file?name=i1-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=initrd&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
+initrd --name initrd1 http://localhost:1234/_/file?name=i2-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=initrd&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
+imgfetch --name ready http://localhost:1234/_/booting?mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe ||
+imgfree ready ||
 boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?name=f-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1 foo=bar
 `
 	if rr.Body.String() != expected {

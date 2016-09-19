@@ -72,10 +72,15 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 	cmd.Flags().StringP("listen-addr", "l", "", "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
+	cmd.Flags().Int("status-port", 0, "HTTP port for status information (can be the same as --port)")
 	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
 	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
 	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
 	cmd.Flags().String("ipxe-efi64", "", "Path to an iPXE binary for 64-bit UEFI")
+
+	// Development flags, hidden from normal use.
+	cmd.Flags().String("ui-assets-dir", "", "UI assets directory (used for development)")
+	cmd.Flags().MarkHidden("ui-assets-dir")
 }
 
 func mustFile(path string) []byte {
@@ -104,6 +109,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	httpStatusPort, err := cmd.Flags().GetInt("status-port")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 	dhcpNoBind, err := cmd.Flags().GetBool("dhcp-no-bind")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
@@ -120,16 +129,22 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	uiAssetsDir, err := cmd.Flags().GetString("ui-assets-dir")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
 	}
 
 	ret := &pixiecore.Server{
-		Ipxe:       map[pixiecore.Firmware][]byte{},
-		Log:        logWithStdFmt,
-		HTTPPort:   httpPort,
-		DHCPNoBind: dhcpNoBind,
+		Ipxe:           map[pixiecore.Firmware][]byte{},
+		Log:            logWithStdFmt,
+		HTTPPort:       httpPort,
+		HTTPStatusPort: httpStatusPort,
+		DHCPNoBind:     dhcpNoBind,
+		UIAssetsDir:    uiAssetsDir,
 	}
 	for fwtype, bs := range Ipxe {
 		ret.Ipxe[fwtype] = bs

@@ -49,10 +49,16 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		}
 		if spec == nil {
 			s.debug("DHCP", "No boot spec for %s, ignoring boot request", pkt.HardwareAddr)
+			s.machineEvent(pkt.HardwareAddr, machineStateIgnored, "Machine should not netboot")
 			continue
 		}
 
 		s.log("DHCP", "Offering to boot %s", pkt.HardwareAddr)
+		if isIpxe {
+			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
+		} else {
+			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCP, "Offering to boot")
+		}
 
 		// Machine should be booted.
 		serverIP, err := interfaceIP(intf)
@@ -157,7 +163,7 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, isI
 		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
 	} else {
 		resp.BootServerName = serverIP.String()
-		resp.BootFilename = fmt.Sprintf("%d", fwtype)
+		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
 	}
 
 	if fwtype == FirmwareX86PC {
