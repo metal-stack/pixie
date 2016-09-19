@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/cockroach/ui"
+	"go.universe.tf/netboot/pixiecore/ui"
 )
 
 //go:generate go-bindata -o ui/autogen.go -ignore autogen.go -pkg ui -nometadata -nomemcopy -prefix ui/ ui/
