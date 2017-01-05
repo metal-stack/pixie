@@ -19,7 +19,3 @@ script:
   - go test $(glide novendor)
   - go vet $(glide novendor)
   - glide novendor | xargs -n1 golint
-after_success:
-  # Trigger a quay.io build iff the continuous build succeeds.
-  - 'curl -X POST -H "Content-Type: application/json" -d "{\"commit\": \"$TRAVIS_COMMIT\", \"ref\": \"refs/heads/master\", \"default_branch\":\"master\"}" $QUAY_TRIGGER_URL'
-secure: "l0YGRJgyl87F0jltWzLiwXSeGiuw+8A7QINeJjXrnWYFco1OtatlPFY94aJmDa4Vz4fyeSnxMbvrDRFbfCwaT3qKZ//h3Ky6UnZp6NvVxYnM/VJgJtfxq+745Z6VGpPk4EG2NVdEA8yui7W/Bdr9HhYJ2OEZp7BEKt5er7UtPFqdt5yS9Blew8BmmigprkcT04fCsjN7ThI5FdzEXYTmXxOyJOgenM0CEFw+d5/g/+uL8BlwNtEatR1OVOUIS+Ny3kStiht+y1Iump9TJbfZinenUGLMwqf+gSvWgCrsMRprx1m+eZcgqOyVgRb6QBXMt0XXmqQxdLGJ301JTWmTT3IBexjb49W46CezIccXlh0xpd0sEC2hulZ2nwTdJ9cKJKD/iLmCqXW+lDBYCKAczKUhl9OffqgpqVST/rn3sLZyCV7+PqJgG3qTCAuthYtr3/yhO9IVxu2lvxZynR9rrbyADeAQnEM4m1BX1z0uBSyyB5hZ5MXIoMEs0cR+gx3lB8WI+qIE2HEcnXdMg6LxObWQo6tr+A+T5G3mkuq/bppyU4/WH9iMxuG1KyZuZXI1kv4T94jRqAsjbcgkcFVzuEWtoZCqTKSe2JDVptG4/KohtJlEU+omfMPXCzyU3gDJpUl60PULgGqX0so3fkvOpKm3mxbfEAwEP3aKMRBFBZo="
