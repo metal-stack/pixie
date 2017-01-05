@@ -20,6 +20,7 @@ go get -v github.com/Masterminds/glide
 go get -v -d go.universe.tf/netboot/cmd/pixiecore
 cd /tmp/go/src/go.universe.tf/netboot
 /tmp/go/bin/glide install
+go test $(/tmp/go/bin/glide nv)
 cd cmd/pixiecore
 go build .
 cp ./pixiecore /pixiecore
