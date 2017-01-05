@@ -24,7 +24,7 @@ import (
 )
 
 func testConn(t *testing.T, impl conn, addr string) {
-	c := &Conn{impl}
+	c := &Conn{impl, 0}
 
 	s, err := net.Dial("udp4", addr)
 	if err != nil {
@@ -121,10 +121,11 @@ func TestPortableConn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	port := l.LocalAddr().(*net.UDPAddr).Port
 	addr := l.LocalAddr().String()
 	l.Close()
 
-	c, err := newPortableConn(addr)
+	c, err := newPortableConn(port)
 	if err != nil {
 		t.Fatalf("creating the conn: %s", err)
 	}
@@ -146,7 +147,7 @@ func TestLinuxConn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := newLinuxConn(l.LocalAddr().String())
+	c, err := newLinuxConn(l.LocalAddr().(*net.UDPAddr).Port)
 	if err != nil {
 		t.Fatalf("creating the linuxconn: %s", err)
 	}

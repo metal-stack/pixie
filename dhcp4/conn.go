@@ -16,6 +16,7 @@ package dhcp4
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"time"
@@ -62,16 +63,66 @@ type conn interface {
 //
 // Multiple goroutines may invoke methods on a Conn simultaneously.
 type Conn struct {
-	conn conn
+	conn    conn
+	ifIndex int
 }
 
 // NewConn creates a Conn bound to the given UDP ip:port.
 func NewConn(addr string) (*Conn, error) {
-	c, err := newPortableConn(addr)
+	return newConn(addr, newPortableConn)
+}
+
+func newConn(addr string, n func(int) (conn, error)) (*Conn, error) {
+	if addr == "" {
+		addr = "0.0.0.0:67"
+	}
+
+	ifIndex := 0
+	udpAddr, err := net.ResolveUDPAddr("udp4", addr)
 	if err != nil {
 		return nil, err
 	}
-	return &Conn{c}, nil
+	if !udpAddr.IP.To4().Equal(net.IPv4zero) {
+		// Caller wants to listen only on one address. However, DHCP
+		// packets are frequently broadcast, so we can't just listen
+		// on the given address. Instead, we need to translate it to
+		// an interface, and then filter incoming packets based on
+		// their received interface.
+		ifIndex, err = ipToIfindex(udpAddr.IP)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	c, err := n(udpAddr.Port)
+	if err != nil {
+		return nil, err
+	}
+	return &Conn{
+		conn:    c,
+		ifIndex: ifIndex,
+	}, nil
+}
+
+func ipToIfindex(ip net.IP) (int, error) {
+	intfs, err := net.Interfaces()
+	if err != nil {
+		return 0, err
+	}
+	for _, intf := range intfs {
+		addrs, err := intf.Addrs()
+		if err != nil {
+			return 0, err
+		}
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok {
+				if ipnet.IP.Equal(ip) {
+					return intf.Index, nil
+				}
+			}
+		}
+	}
+	return 0, fmt.Errorf("IP %s not found on any local interface", ip)
 }
 
 // Close closes the DHCP socket.
@@ -89,6 +140,9 @@ func (c *Conn) RecvDHCP() (*Packet, *net.Interface, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+		if c.ifIndex != 0 && ifidx != c.ifIndex {
+			continue
+		}
 		pkt, err := Unmarshal(b)
 		if err != nil {
 			continue
@@ -97,6 +151,7 @@ func (c *Conn) RecvDHCP() (*Packet, *net.Interface, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+
 		// TODO: possibly more validation that the source lines up
 		// with what the packet says.
 		return pkt, intf, nil
@@ -157,11 +212,8 @@ type portableConn struct {
 	conn *ipv4.PacketConn
 }
 
-func newPortableConn(addr string) (conn, error) {
-	if addr == "" {
-		addr = ":67"
-	}
-	c, err := net.ListenPacket("udp4", addr)
+func newPortableConn(port int) (conn, error) {
+	c, err := net.ListenPacket("udp4", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
