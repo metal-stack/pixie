@@ -31,6 +31,10 @@ Install Pixiecore via `go get`:
 go get go.universe.tf/netboot/cmd/pixiecore
 ```
 
+Pixiecore is also available in other formats:
+ - Docker image on Docker Hub: [danderson/pixiecore](https://hub.docker.com/r/danderson/pixiecore/)
+ - Rkt ACI image on Quay.io: [quay.io/pixiecore/pixiecore](https://quay.io/repository/pixiecore/pixiecore)
+
 ## Using Pixiecore in static mode ("I just want to boot a machine")
 
 Run the pixiecore binary, passing it a kernel and initrd, and
@@ -110,15 +114,26 @@ subdirectory. The code is not production-grade, but gives a short
 illustration of how the protocol works by reimplementing a subset of
 Pixiecore's static mode as an API server.
 
-## Running in Docker
+## Running in containers
 
-Pixiecore is available as a Docker image called
-`danderson/pixiecore`. It's an automatic Docker Hub build that tracks
-the repository.
+Pixiecore is available both as an ACI image for `rkt`, and as a Docker
+image for Docker Engine. Both images are automatically built whenever
+the github repository changes.
 
 Because Pixiecore needs to listen for DHCP traffic, it has to run with
-the host network stack.
+access to the host's networking stack. Both Rkt and Docker do this
+with the `--net=host` commandline flag.
 
 ```shell
-sudo docker run -v .:/image --net=host danderson/pixiecore boot /image/coreos_production_pxe.vmlinuz /image/coreos_production_pxe_image.cpio.gz
+sudo rkt run --net=host \
+  --volume images,kind=host,source=/var/images \
+  --mount volume=images,target=/image \
+  quay.io/pixiecore/pixiecore -- \
+    boot /image/coreos_production_pxe.vmlinuz /image/coreos_production_pxe_image.cpio.gz
+
+sudo docker run \
+  --net=host \
+  -v .:/image \
+  danderson/pixiecore \
+    boot /image/coreos_production_pxe.vmlinuz /image/coreos_production_pxe_image.cpio.gz
 ```
