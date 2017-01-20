@@ -94,6 +94,12 @@ let administrators tell Pixiecore what IP range to manage, but that's
 a slippery slope that leads to building a fully featured DHCPv6
 server. Ick.
 
+Hrm. A complication is that we'd need to set a ULA within the right
+prefix on the right interface for Pixiecore to have
+connectivity. That's annoying. Maybe we can use link-local addresses
+in the boot URL instead? But that has a good chance of not
+working... We'll have to test.
+
 ## What happens after DHCPv6?
 
 The Boot File URL provided by the DHCPv6 server tells the client where
