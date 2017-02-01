@@ -17,10 +17,12 @@ script:
 - go test $(glide novendor)
 - go vet $(glide novendor)
 - glide novendor | xargs -n1 golint
+
+- go build -o pixiecore.amd64 ./cmd/pixiecore
 - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S') --license Apache2 --vendor
   "David Anderson <dave@natulte.net>" --maintainer "David Anderson <dave@natulte.net>"
   --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
-  ./pixiecore=/usr/bin/pixiecore
+  ./pixiecore.amd64=/usr/bin/pixiecore
 env:
   global:
     # Packagecloud API token
