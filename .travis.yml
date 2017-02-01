@@ -40,12 +40,12 @@ deploy:
     branch: master
     go: '1.7'
 - provider: script
-  script: go run scripts/prune_old_versions.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=amd64 -limit=2
+  script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=amd64 -limit=2
   on:
     branch: master
     go: '1.7'
 - provider: script
-  script: go run scripts/trigger_quay_build.go
+  script: go run scripts/trigger_quay_build/main.go
   on:
     branch: master
     go: '1.7'
