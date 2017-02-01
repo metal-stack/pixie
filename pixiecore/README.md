@@ -25,13 +25,43 @@ can read the details in [README.booting](README.booting.md).
 
 ## Installation
 
-Install Pixiecore via `go get`:
+Pixiecore is available in a variety of forms. All of them
+automatically track this repository, so you always get the latest
+build.
+
+### Go get
+
+Build the latest Pixiecore via `go get`:
 
 ```shell
 go get go.universe.tf/netboot/cmd/pixiecore
 ```
 
-Pixiecore is also available in other formats:
+### Debian/Ubuntu
+
+A Debian/Ubuntu package is available from
+[packagecloud.io](https://packagecloud.io/danderson/pixiecore/install). They
+have extensive configuration instructions for a variety of mechanisms,
+but the quick version is:
+
+```shell
+sudo apt-get install -y apt-transport-https
+curl -L https://packagecloud.io/danderson/pixiecore/gpgkey | sudo apt-key add -
+echo "deb https://packagecloud.io/danderson/pixiecore/debian stretch main" >/etc/apt/sources.list.d/pixiecore.list
+sudo apt-get update
+sudo apt-get install pixiecore
+```
+
+Note that you should reference debian/stretch regardless of your
+actual distro. The pixiecore binary is built statically and should
+work fine on all distros, so we only build one variant of the
+package. Please file a bug if you hit problems with this setup.
+
+### Container images
+
+Docker and ACI autobuilds are available. They track the latest code
+from this repository.
+
  - Docker image on Docker Hub: [danderson/pixiecore](https://hub.docker.com/r/danderson/pixiecore/)
  - Rkt ACI image on Quay.io: [quay.io/pixiecore/pixiecore](https://quay.io/repository/pixiecore/pixiecore)
 
