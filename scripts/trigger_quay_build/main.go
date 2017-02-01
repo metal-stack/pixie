@@ -29,7 +29,7 @@ type commitInfo struct {
 	Branch string `json:"default_branch"`
 }
 
-func fatal(msg string, args ...interface{}) {
+func fatalf(msg string, args ...interface{}) {
 	fmt.Printf(msg+"\n", args...)
 	os.Exit(1)
 }
@@ -42,29 +42,29 @@ func main() {
 	}
 
 	if info.Commit == "" {
-		fatal("no TRAVIS_COMMIT found in environment")
+		fatalf("no TRAVIS_COMMIT found in environment")
 	}
 
 	bs, err := json.Marshal(info)
 	if err != nil {
-		fatal("marshal commitInfo: %s", err)
+		fatalf("marshal commitInfo: %s", err)
 	}
 
 	url := os.Getenv("QUAY_TRIGGER_URL")
 	if url == "" {
-		fatal("no QUAY_TRIGGER_URL found in environment")
+		fatalf("no QUAY_TRIGGER_URL found in environment")
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(bs))
 	if err != nil {
-		fatal("post to quay trigger: %s", err)
+		fatalf("post to quay trigger: %s", err)
 	}
 	if resp.StatusCode != 200 {
 		msg, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			fatal("reading error message from quay trigger response: %s", err)
+			fatalf("reading error message from quay trigger response: %s", err)
 		}
-		fatal("non-200 status from quay trigger: %s (%q)", resp.Status, string(msg))
+		fatalf("non-200 status from quay trigger: %s (%q)", resp.Status, string(msg))
 	}
 
 	fmt.Printf("Triggered Quay build on commit %s\n", info.Commit)
