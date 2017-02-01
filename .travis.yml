@@ -23,8 +23,12 @@ script:
   ./pixiecore=/usr/bin/pixiecore
 env:
   global:
+    # Packagecloud API token
     - secure: "S8R+j1uSi0+gZHcEI7lZGkECWXTv50d/g23kKaIH7HHgQO2ljplSE0egkWRr5s0yQnDuBRAw0bLfN9EI2IYo/iTEuBuACoO0fg/FnyJnrlNcugUeejMdbXbAgrI6phTqqr+LGmSAv8sNbSKDppJ8nkfCU0P6GXOyh63JjrnT8J7yeP3evs//Qe/WtMGBsh2o+9FlHldy+E7Vb8HePIwJ+KoOvFByoug3GtZ0yHr26XX0rwmXANo4QrA8TNuk9rGyu/teNrG0IOmAgnb6V3fNjjVJ15EwCM9c9YXtbo1Dz5r2fl8etmkSC0EvKAuTOfoyxEs2UjObu2gxy/Ow6oYvCUtEfBqoWAwlEpcuKjX7S92iNtlzNNcp1jILYAjcbcqwY18kOXfzXWtnSeSdf1DNruvljQuG55Hk7HuXQ+ljjvY4s9jHXN+w6b3IP6nvNhhXL+a3iKJVOzC2PjrXte3PTYiCsEPISAA1NQUNQly6QCUf3Feo0NMRnnh0W5/nZg0qW24rBOp0Y4fM6mh8d8TtpTEfpXacqJFy2q+8ypAR981kRvq81F2aEpFr+7+dHoUom/2k0xotp9VJ9x2b7HQBJGS2AmmT3bFk6ZNh4fLIjsBWy2fqwnq/vFqsJCErkX7q38XVJxbaZGZQ9e3NVGwwne5E/i4u39zOGHVB8XpQgKc="
+    # Quay trigger URL
     - secure: "XDV3Wf57zoCQx8BMUxdkYFuioEwJo/WQHO4rA9tbMLgOeDdHiS2gTPnF7OdxXwYuT1jEkBODUBql/U2Xku0b5fhJQV30oUdsL5R8wXR59xSYYUFOF5yg6MfhEdkh8VgcMNQcRGrkdTSHyOZ1ITEqqMAA6w/tg3sD4zLaUx5Ad4TlaHr3xB/1DJdgRbYJp2UMPzbLrmsTC/S/bJ4lEkJiFkUAdWejWKc3ji4ReGoHiYriwtDVvSPZLNucT76c1058KC/KA6r/Mf4Gr6Dn6ixQDa5T+7GWOf8+V/5qvYogURdxcc1faFOJNDnnJp7pe0NYnZHjl0onYN9dTul1gQoyPrq1MvXBvoINXtXWE9y54OWjtybiIasZ4IYpbW9VXylWEoFd+qpweFSAKTdYPXONzNgER3v33+HoRLjYRMrVUd4xgyxGRhwZqj3ankOwana3UhhSd+9SImR7tGUzh2V+NoMZWG3wk+GAP+2ak8SInbjHIHm3ZZ4/TpAtmK/W4yGww0BqQSvxkinS1zUxGCk1ZO33ZAHmutc+hSMr/DmGHKSbQ23lJpALVp/S2r0WgQOkcEnmau1okHupuFnBkLBQqc3dk4auCOWBmu5r24Ea+q0bG/ZPGkKqU9FPlsCQCJ84sn5o8HQ31bFGSRjZUwAazk8notbt7LY1HKfBReqyRMA="
+    # Docker Hub trigger URL
+    - secure: "O0Yq00UdN5PRTQOKZL87MGtceXN+7ag2srsH/TFA6DuY1jPUV5LxkqCQVysFvoyYzroBjk91K12Aw8tTzgB6s5Ehz9c1G/lMOgQwF0QUZ4ufnOJQU7evZaLdaPtNL79QfFxtNzgF5j9wX4PYJLiduMYOKCKM63GJsEXEGevdSXsmSwayA9L6GIq8gRhX5nXx34mQDDTLDsOQAqCM1atpe80yA0a++xuLULc6IeyPOYw939CzNBFMqVPpyf27+It/UO2Ul9Dl9FrvDGpeaSGY8j0kY2P1cSawZcGUgPKZUm70fvCiYDXY+PYyiFFPt51CeADCC+ezP47T/W/Hq1EfPeC/qhQRa2NVjACZVhYV6fwlhQIb9QUKAqIYrbqw5Yb+sBDd9xMwvzVy3vStQ3fMkQvJZLfYFAB5/UStyO22gPw830ILq2kWF7h4DP304kzmDR39+foBysXbdcmNqW4KrQxDswmSUy6Dam7dFhJu208KNiiB3Pz3RJL3O0qmuYXkEj3hJ+VxpWj10SPGpK/HBwFIMo2B06cIPmTtBRTpXXKNvHcaL21NqpZtf0umyRYmp8ifkHtElHUeqELoWA7aNiNGL9v3bBhrs7unjMPxXkE1G1wCIMOGEvzbWNmVR1rmduquTCVXGGrodYlIHRvsA4ZUBcv2O0vl6+UMZEuGnNI="
 
 deploy:
 - provider: packagecloud
@@ -45,6 +49,11 @@ deploy:
     go: '1.7'
 - provider: script
   script: go run scripts/trigger_quay_build/main.go
+  on:
+    branch: master
+    go: '1.7'
+- provider: script
+  script: go run scripts/trigger_docker_build/main.go
   on:
     branch: master
     go: '1.7'
