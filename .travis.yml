@@ -3,7 +3,8 @@ go_import_path: go.universe.tf/netboot
 go:
 - 1.7
 - 1.8
-- tip
+# x/net is currently broken in tip, because of a refactoring of the net package.
+#- tip
 os:
 - linux
 install:
