@@ -134,15 +134,20 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	}
 	s.log("HTTP", "Sent file %q to %s", name, r.RemoteAddr)
 
-	mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
-	if err != nil {
-		s.log("HTTP", "File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
-		return
-	}
 	switch r.URL.Query().Get("type") {
 	case "kernel":
+		mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
+		if err != nil {
+			s.log("HTTP", "File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
+			return
+		}
 		s.machineEvent(mac, machineStateKernel, "Sent kernel %q", name)
 	case "initrd":
+		mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
+		if err != nil {
+			s.log("HTTP", "File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
+			return
+		}
 		s.machineEvent(mac, machineStateInitrd, "Sent initrd %q", name)
 	}
 }
