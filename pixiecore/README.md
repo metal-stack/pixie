@@ -167,3 +167,18 @@ sudo docker run \
   danderson/pixiecore \
     boot /image/coreos_production_pxe.vmlinuz /image/coreos_production_pxe_image.cpio.gz
 ```
+
+## Demos and users
+
+Pixiecore was used alongside
+[waitron](https://github.com/jhaals/waitron) in a
+[https://youtu.be/QyGHZ2HCwqY?t=440](presentation at the OpenStack
+summit in 2016).
+
+If you use Pixiecore, we'd love to hear about it, and know more about
+how you're using it. You can open a pull request to be added to this
+list, file an issue for me to add you, or just email me at
+dave(at)natulte.net if you'd like to give feedback privately.
+
+- [waitron](https://github.com/jhaals/waitron) uses Pixiecore to
+  manage automated server installation based on machine templates.
