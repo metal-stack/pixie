@@ -30,15 +30,10 @@ following specification, with **_italicized_** entries being optional:
 - **kernel** (string): the URL of the kernel to boot.
 - **_initrd_** (list of strings): URLs of initrds to load. The kernel
   will flatten all the initrds into a single filesystem.
-- **_cmdline_** (object): commandline parameters for the kernel. Each
-  key/value pair maps to key=value, where value can be:
-  - **string**: the value is passed verbatim to the kernel
-  - **true**: the value is omitted, only the key is passed to the
-    kernel.
-  - **object**: the value is a URL that Pixiecore will rewrite such
-    that it proxies the request (see below for why you'd want that).
-    - **url** (string): any URL. Pixiecore will rewrite the URL such
-      that it proxies the request.
+- **_cmdline_** (string): commandline parameters for the kernel. The
+  commandline is processed by Go's text/template library. Within the
+  template, a `URL` function is available that takes a URL and
+  rewrites it such that Pixiecore proxies the request.
 - **_message_** (string): A message to display before booting the
   provided configuration. Note that displaying this message is on
   a _best-effort basis only_, as particular implementations of the
@@ -95,7 +90,7 @@ detail of Pixiecore and are subject to breaking change at any
 time.
 
 For the curious, the current implementation translates API server
-provided URLs into `<pixiecore HTTP endpoint>/f/<signed URL
+provided URLs into `<pixiecore HTTP endpoint>/_/file?name=<signed URL
 blob>`. The signed URL blob is a base64-encoding of running NaCL's
 secretbox authenticated encryption function over the server-provided
 URL, using an ephemeral key generated when Pixiecore starts. This
@@ -145,10 +140,7 @@ Boot from HTTPS, with extra commandline flags.
 {
   "kernel": "https://files.local/kernel",
   "initrd": ["https://files.local/initrd"],
-  "cmdline": {
-    "selinux": "1",
-    "coreos.autologin": true
-  }
+  "cmdline": "selinux=1 coreos.autologin"
 }
 ```
 
@@ -167,12 +159,7 @@ Provide a proxied cloud-config and an unproxied other URL.
 {
   "kernel": "https://files.local/kernel",
   "initrd": ["https://files.local/initrd"],
-  "cmdline": {
-    "cloud-config-url": {
-      "url": "https://files.local/cloud-config"
-    },
-    "non-proxied-url": "https://files.local/something-else"
-  }
+  "cmdline": "cloud-config-url={{ URL \"https://files.local/cloud-config\" }} non-proxied-url=https://files.local/something-else"
 }
 ```
 
@@ -187,13 +174,26 @@ directly from upstream servers.
 
 ## Deprecated features
 
-### Kernel commandline as a string
+### Kernel commandline as an object
 
-The `cmdline` parameter returned by the API server can also be a plain
-string instead of an object. That string is the full verbatim
-commandline to be passed to the booting kernel.
+The `cmdline` parameter returned by the API server can also be a JSON
+object, where each key/value pair is one commandline parameter. The
+format is:
 
-This form was replaced by the object form to allow Pixiecore to do
-additional processing of the commandline before passing it to the
-booting kernel - specifically to allow for URL translation and
-proxying.
+- **_cmdline_** (object): commandline parameters for the kernel. Each
+  key/value pair maps to key=value, where value can be:
+  - **string**: the value is passed verbatim to the kernel
+  - **true**: the value is omitted, only the key is passed to the
+    kernel.
+  - **object**: the value is a URL that Pixiecore will rewrite such
+    that it proxies the request (see below for why you'd want that).
+    - **url** (string): any URL. Pixiecore will rewrite the URL such
+      that it proxies the request.
+
+This form was replaced by the use of Go's text/template to allow for
+inline URL substitution, without having to construct a cumbersome JSON
+object, and to resolve issues with non-deterministic commandline
+parameter ordering.
+
+There are currently no plans to remove this form of the `cmdline`
+value, though its use is discouraged.
