@@ -71,6 +71,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define ERRFILE_fault		       ( ERRFILE_CORE | 0x001f0000 )
 #define ERRFILE_blocktrans	       ( ERRFILE_CORE | 0x00200000 )
 #define ERRFILE_pixbuf		       ( ERRFILE_CORE | 0x00210000 )
+#define ERRFILE_efi_block	       ( ERRFILE_CORE | 0x00220000 )
 
 #define ERRFILE_eisa		     ( ERRFILE_DRIVER | 0x00000000 )
 #define ERRFILE_isa		     ( ERRFILE_DRIVER | 0x00010000 )
@@ -193,6 +194,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define ERRFILE_pciea		     ( ERRFILE_DRIVER | 0x00c00000 )
 #define ERRFILE_axge		     ( ERRFILE_DRIVER | 0x00c10000 )
 #define ERRFILE_thunderx	     ( ERRFILE_DRIVER | 0x00c20000 )
+#define ERRFILE_af_packet	     ( ERRFILE_DRIVER | 0x00c30000 )
 
 #define ERRFILE_aoe			( ERRFILE_NET | 0x00000000 )
 #define ERRFILE_arp			( ERRFILE_NET | 0x00010000 )
@@ -359,6 +361,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define ERRFILE_efi_fbcon	      ( ERRFILE_OTHER | 0x004c0000 )
 #define ERRFILE_efi_local	      ( ERRFILE_OTHER | 0x004d0000 )
 #define ERRFILE_efi_entropy	      ( ERRFILE_OTHER | 0x004e0000 )
+#define ERRFILE_cert_cmd	      ( ERRFILE_OTHER | 0x004f0000 )
 
 /** @} */
 

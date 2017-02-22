@@ -78,6 +78,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define HTTP_AUTH_BASIC		/* Basic authentication */
 #define HTTP_AUTH_DIGEST	/* Digest authentication */
 //#define HTTP_ENC_PEERDIST	/* PeerDist content encoding */
+//#define HTTP_HACK_GCE		/* Google Compute Engine hacks */
 
 /*
  * 802.11 cryptosystems and handshaking protocols
@@ -150,6 +151,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 //#define IPSTAT_CMD		/* IP statistics commands */
 //#define PROFSTAT_CMD		/* Profiling commands */
 //#define NTP_CMD		/* NTP commands */
+//#define CERT_CMD		/* Certificate management commands */
 
 /*
  * ROM-specific options
@@ -189,6 +191,9 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #undef	GDBUDP			/* Remote GDB debugging over UDP
 				 * (both may be set) */
 //#define EFI_DOWNGRADE_UX	/* Downgrade UEFI user experience */
+#define	TIVOLI_VMM_WORKAROUND	/* Work around the Tivoli VMM's garbling of SSE
+				 * registers when iPXE traps to it due to
+				 * privileged instructions */
 
 #include <config/named.h>
 #include NAMED_CONFIG(general.h)

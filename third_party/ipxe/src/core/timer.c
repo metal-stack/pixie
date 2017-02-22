@@ -23,11 +23,52 @@
 
 FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 
-#include <unistd.h>
+#include <string.h>
 #include <ipxe/process.h>
 #include <ipxe/console.h>
 #include <ipxe/keys.h>
 #include <ipxe/nap.h>
+#include <ipxe/init.h>
+#include <ipxe/timer.h>
+
+/** Current timer */
+static struct timer *timer;
+
+/**
+ * Get current system time in ticks
+ *
+ * @ret ticks		Current time, in ticks
+ */
+unsigned long currticks ( void ) {
+
+	/* Guard against use during early initialisation */
+	if ( ! timer ) {
+		DBGC ( &timer, "TIMER currticks() called before initialisation "
+		       "from %p\n", __builtin_return_address ( 0 ) );
+		return 0;
+	}
+
+	/* Use selected timer */
+	return timer->currticks();
+}
+
+/**
+ * Delay for a fixed number of microseconds
+ *
+ * @v usecs		Number of microseconds for which to delay
+ */
+void udelay ( unsigned long usecs ) {
+
+	/* Guard against use during early initialisation */
+	if ( ! timer ) {
+		DBGC ( &timer, "TIMER udelay() called before initialisation "
+		       "from %p\n", __builtin_return_address ( 0 ) );
+		return;
+	}
+
+	/* Use selected timer */
+	timer->udelay ( usecs );
+}
 
 /**
  * Delay for a fixed number of milliseconds
@@ -35,6 +76,15 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
  * @v msecs		Number of milliseconds for which to delay
  */
 void mdelay ( unsigned long msecs ) {
+
+	/* Guard against use during early initialisation */
+	if ( ! timer ) {
+		DBGC ( &timer, "TIMER mdelay() called before initialisation "
+		       "from %p\n", __builtin_return_address ( 0 ) );
+		return;
+	}
+
+	/* Delay for specified number of milliseconds */
 	while ( msecs-- )
 		udelay ( 1000 );
 }
@@ -61,3 +111,35 @@ unsigned int sleep ( unsigned int secs ) {
 
 	return 0;
 }
+
+/**
+ * Find a working timer
+ *
+ */
+static void timer_probe ( void ) {
+	int rc;
+
+	/* Use first working timer */
+	for_each_table_entry ( timer, TIMERS ) {
+		if ( ( timer->probe == NULL ) ||
+		     ( ( rc = timer->probe() ) == 0 ) ) {
+			DBGC ( &timer, "TIMER using %s\n", timer->name );
+			return;
+		}
+		DBGC ( &timer, "TIMER could not initialise %s: %s\n",
+		       timer->name, strerror ( rc ) );
+	}
+
+	/* This is a fatal error */
+	DBGC ( &timer, "TIMER found no working timers!\n" );
+	while ( 1 ) {}
+}
+
+/** Timer initialisation function */
+struct init_fn timer_init_fn __init_fn ( INIT_EARLY ) = {
+	.initialise = timer_probe,
+};
+
+/* Drag in timer configuration */
+REQUIRING_SYMBOL ( timer_init_fn );
+REQUIRE_OBJECT ( config_timer );

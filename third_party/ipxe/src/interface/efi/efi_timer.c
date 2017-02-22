@@ -36,6 +36,13 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
  *
  */
 
+/**
+ * Number of jiffies per second
+ *
+ * This is a policy decision.
+ */
+#define EFI_JIFFIES_PER_SEC 32
+
 /** Current tick count */
 static unsigned long efi_jiffies;
 
@@ -70,7 +77,32 @@ static void efi_udelay ( unsigned long usecs ) {
  */
 static unsigned long efi_currticks ( void ) {
 
-	return efi_jiffies;
+	/* EFI provides no clean way for device drivers to shut down
+	 * in preparation for handover to a booted operating system.
+	 * The platform firmware simply doesn't bother to call the
+	 * drivers' Stop() methods.  Instead, drivers must register an
+	 * EVT_SIGNAL_EXIT_BOOT_SERVICES event to be signalled when
+	 * ExitBootServices() is called, and clean up without any
+	 * reference to the EFI driver model.
+	 *
+	 * Unfortunately, all timers silently stop working when
+	 * ExitBootServices() is called.  Even more unfortunately, and
+	 * for no discernible reason, this happens before any
+	 * EVT_SIGNAL_EXIT_BOOT_SERVICES events are signalled.  The
+	 * net effect of this entertaining design choice is that any
+	 * timeout loops on the shutdown path (e.g. for gracefully
+	 * closing outstanding TCP connections) may wait indefinitely.
+	 *
+	 * There is no way to report failure from currticks(), since
+	 * the API lazily assumes that the host system continues to
+	 * travel through time in the usual direction.  Work around
+	 * EFI's violation of this assumption by falling back to a
+	 * simple free-running monotonic counter.
+	 */
+	if ( efi_shutdown_in_progress )
+		efi_jiffies++;
+
+	return ( efi_jiffies * ( TICKS_PER_SEC / EFI_JIFFIES_PER_SEC ) );
 }
 
 /**
@@ -108,7 +140,7 @@ static void efi_tick_startup ( void ) {
 
 	/* Start timer tick */
 	if ( ( efirc = bs->SetTimer ( efi_tick_event, TimerPeriodic,
-				      ( 10000000 / EFI_TICKS_PER_SEC ) ) ) !=0){
+				      ( 10000000 / EFI_JIFFIES_PER_SEC ) ))!=0){
 		rc = -EEFI ( efirc );
 		DBGC ( colour, "EFI could not start timer tick: %s\n",
 		       strerror ( rc ) );
@@ -116,7 +148,7 @@ static void efi_tick_startup ( void ) {
 		return;
 	}
 	DBGC ( colour, "EFI timer started at %d ticks per second\n",
-	       EFI_TICKS_PER_SEC );
+	       EFI_JIFFIES_PER_SEC );
 }
 
 /**
@@ -155,6 +187,9 @@ struct startup_fn efi_tick_startup_fn __startup_fn ( STARTUP_EARLY ) = {
 	.shutdown = efi_tick_shutdown,
 };
 
-PROVIDE_TIMER ( efi, udelay, efi_udelay );
-PROVIDE_TIMER ( efi, currticks, efi_currticks );
-PROVIDE_TIMER_INLINE ( efi, ticks_per_sec );
+/** EFI timer */
+struct timer efi_timer __timer ( TIMER_NORMAL ) = {
+	.name = "efi",
+	.currticks = efi_currticks,
+	.udelay = efi_udelay,
+};
