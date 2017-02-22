@@ -14,7 +14,12 @@
 
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/spf13/cobra"
+)
 
 var quickCmd = &cobra.Command{
 	Use:   "quick recipe [settings...]",
@@ -24,17 +29,254 @@ you having to find the kernels and ramdisks for popular OSes.
 
 TODO: better help here
 `,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			fatalf("you must specify at least a recipe")
-		}
-		recipe := args[0]
-		todo("run in quick mode with recipe=%s", recipe)
-	},
+}
+
+func debianRecipe(parent *cobra.Command) {
+	versions := []string{
+		"oldstable",
+		"stable",
+		"testing",
+		"unstable",
+
+		"wheezy",
+		"jessie",
+		"stretch",
+		"sid",
+	}
+
+	debCmd := &cobra.Command{
+		Use:   "debian version",
+		Short: "Boot a Debian installer",
+		Long:  fmt.Sprintf("Boot a Debian installer for the given version (one of %s)", strings.Join(versions, ",")),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fatalf("you must specify a Debian version")
+			}
+			var version string
+			for _, v := range versions {
+				if args[0] == v {
+					version = v
+					break
+				}
+			}
+			if version == "" {
+				fatalf("Unknown Debian version %q", version)
+			}
+
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("%s/dists/%s/main/installer-%s/current/images/netboot/debian-installer/%s/linux", mirror, version, arch, arch)
+			initrd := fmt.Sprintf("%s/dists/%s/main/installer-%s/current/images/netboot/debian-installer/%s/initrd.gz", mirror, version, arch, arch)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, "").Serve())
+		},
+	}
+
+	debCmd.Flags().String("arch", "amd64", "CPU architecture of the Debian installer files")
+	debCmd.Flags().String("mirror", "https://mirrors.kernel.org/debian", "Root of the debian mirror to use")
+	serverConfigFlags(debCmd)
+	staticConfigFlags(debCmd)
+	parent.AddCommand(debCmd)
+}
+
+func ubuntuRecipe(parent *cobra.Command) {
+	versions := []string{
+		"precise",
+		"trusty",
+		"vivid",
+		"wily",
+		"xenial",
+		"yakkety",
+		"zesty",
+	}
+
+	ubuntuCmd := &cobra.Command{
+		Use:   "ubuntu version",
+		Short: "Boot an Ubuntu installer",
+		Long:  fmt.Sprintf("Boot an Ubuntu installer for the given version (one of %s)", strings.Join(versions, ",")),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fatalf("you must specify an Ubuntu version")
+			}
+			var version string
+			for _, v := range versions {
+				if args[0] == v {
+					version = v
+					break
+				}
+			}
+			if version == "" {
+				fatalf("Unknown Ubuntu version %q", version)
+			}
+
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("%s/dists/%s/main/installer-%s/current/images/netboot/ubuntu-installer/%s/linux", mirror, version, arch, arch)
+			initrd := fmt.Sprintf("%s/dists/%s/main/installer-%s/current/images/netboot/ubuntu-installer/%s/initrd.gz", mirror, version, arch, arch)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, "").Serve())
+		},
+	}
+
+	ubuntuCmd.Flags().String("arch", "amd64", "CPU architecture of the Ubuntu installer files")
+	ubuntuCmd.Flags().String("mirror", "https://mirrors.kernel.org/ubuntu", "Root of the ubuntu mirror to use")
+	serverConfigFlags(ubuntuCmd)
+	staticConfigFlags(ubuntuCmd)
+	parent.AddCommand(ubuntuCmd)
+}
+
+func fedoraRecipe(parent *cobra.Command) {
+	versions := []string{
+		"22",
+		"23",
+		"24",
+		"25",
+	}
+
+	fedoraCmd := &cobra.Command{
+		Use:   "fedora version",
+		Short: "Boot a Fedora installer",
+		Long:  fmt.Sprintf(`Boot a Fedora installer for the given version (one of %s)`, strings.Join(versions, ",")),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fatalf("you must specify a Fedora version")
+			}
+			var version string
+			for _, v := range versions {
+				if args[0] == v {
+					version = v
+					break
+				}
+			}
+			if version == "" {
+				fatalf("Unknown Fedora version %q", version)
+			}
+
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("%s/releases/%s/Server/%s/os/images/pxeboot/vmlinuz", mirror, version, arch)
+			initrd := fmt.Sprintf("%s/releases/%s/Server/%s/os/images/pxeboot/initrd.img", mirror, version, arch)
+			stage2 := fmt.Sprintf("inst.stage2=%s/releases/%s/Server/%s/os/", mirror, version, arch)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, stage2).Serve())
+		},
+	}
+
+	fedoraCmd.Flags().String("arch", "x86_64", "CPU architecture of the Fedora installer files")
+	// TODO: workstation/server variant
+	fedoraCmd.Flags().String("mirror", "https://mirrors.kernel.org/fedora", "Root of the fedora mirror to use")
+	serverConfigFlags(fedoraCmd)
+	staticConfigFlags(fedoraCmd)
+	parent.AddCommand(fedoraCmd)
+}
+
+func centosRecipe(parent *cobra.Command) {
+	versions := []string{
+		"5",
+		"6",
+		"7",
+	}
+
+	centosCmd := &cobra.Command{
+		Use:   "centos version",
+		Short: "Boot a Centos installer",
+		Long:  fmt.Sprintf(`Boot a Centos installer for the given version (one of %s)`, strings.Join(versions, ",")),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fatalf("you must specify a Centos version")
+			}
+			var version string
+			for _, v := range versions {
+				if args[0] == v {
+					version = v
+					break
+				}
+			}
+			if version == "" {
+				fatalf("Unknown Centos version %q", version)
+			}
+
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("%s/%s/os/%s/images/pxeboot/vmlinuz", mirror, version, arch)
+			initrd := fmt.Sprintf("%s/%s/os/%s/images/pxeboot/initrd.img", mirror, version, arch)
+			stage2 := fmt.Sprintf("inst.stage2=%s/%s/os/%s/", mirror, version, arch)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, stage2).Serve())
+		},
+	}
+
+	centosCmd.Flags().String("arch", "x86_64", "CPU architecture of the Centos installer files")
+	centosCmd.Flags().String("mirror", "https://mirrors.kernel.org/centos", "Root of the centos mirror to use")
+	serverConfigFlags(centosCmd)
+	staticConfigFlags(centosCmd)
+	parent.AddCommand(centosCmd)
+}
+
+func archRecipe(parent *cobra.Command) {
+	archCmd := &cobra.Command{
+		Use:   "arch",
+		Short: "Boot an Arch Linux installer",
+		Run: func(cmd *cobra.Command, args []string) {
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("%s/iso/latest/arch/boot/%s/vmlinuz", mirror, arch)
+			initrd := fmt.Sprintf("%s/iso/latest/arch/boot/%s/archiso.img", mirror, arch)
+			stage2 := fmt.Sprintf("archisobasedir=arch archiso_http_srv=%s/iso/latest/", mirror)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, stage2).Serve())
+		},
+	}
+
+	archCmd.Flags().String("arch", "x86_64", "CPU architecture of the Debian installer files")
+	archCmd.Flags().String("mirror", "https://mirrors.kernel.org/archlinux", "Root of the debian mirror to use")
+	serverConfigFlags(archCmd)
+	staticConfigFlags(archCmd)
+	parent.AddCommand(archCmd)
 }
 
 func init() {
-	//rootCmd.AddCommand(quickCmd)
+	rootCmd.AddCommand(quickCmd)
+	debianRecipe(quickCmd)
+	ubuntuRecipe(quickCmd)
+	fedoraRecipe(quickCmd)
+	centosRecipe(quickCmd)
+	//archRecipe(quickCmd)
 
 	// TODO: some kind of caching support where quick OSes get
 	// downloaded locally, so you don't have to fetch from a remote

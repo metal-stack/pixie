@@ -63,6 +63,5 @@ var bootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(bootCmd)
 	serverConfigFlags(bootCmd)
-	bootCmd.Flags().String("cmdline", "", "Kernel commandline arguments")
-	bootCmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
+	staticConfigFlags(bootCmd)
 }

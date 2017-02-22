@@ -67,6 +67,11 @@ func todo(msg string, args ...interface{}) {
 	fatalf("TODO: "+msg, args...)
 }
 
+func staticConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().String("cmdline", "", "Kernel commandline arguments")
+	cmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
+}
+
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
@@ -90,6 +95,40 @@ func mustFile(path string) []byte {
 	}
 
 	return bs
+}
+
+func staticFromFlags(cmd *cobra.Command, kernel string, initrds []string, extraCmdline string) *pixiecore.Server {
+	cmdline, err := cmd.Flags().GetString("cmdline")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	bootmsg, err := cmd.Flags().GetString("bootmsg")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+
+	if extraCmdline != "" {
+		cmdline = fmt.Sprintf("%s %s", extraCmdline, cmdline)
+	}
+
+	spec := &pixiecore.Spec{
+		Kernel:  pixiecore.ID(kernel),
+		Cmdline: cmdline,
+		Message: bootmsg,
+	}
+	for _, initrd := range initrds {
+		spec.Initrd = append(spec.Initrd, pixiecore.ID(initrd))
+	}
+
+	booter, err := pixiecore.StaticBooter(spec)
+	if err != nil {
+		fatalf("Couldn't make static booter: %s", err)
+	}
+
+	s := serverFromFlags(cmd)
+	s.Booter = booter
+
+	return s
 }
 
 func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
