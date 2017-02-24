@@ -153,10 +153,9 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleBooting(w http.ResponseWriter, r *http.Request) {
-	// This should not always errors out.
-	// if we send http.StatusInternalServerError iPXE will get a image not found error
-	// http.Error(w, "", http.StatusInternalServerError)
-	// return a empty commented script
+	// Return a no-op boot script, to satisfy iPXE. It won't get used,
+	// the boot script deletes this image immediately after
+	// downloading.
 	fmt.Fprintf(w, "# Booting")
 
 	macStr := r.URL.Query().Get("mac")
