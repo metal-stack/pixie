@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"strconv"
 	"text/template"
+	"time"
 )
 
 func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
@@ -44,6 +45,7 @@ func (s *Server) serveHTTP(mux *http.ServeMux) {
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
+	overallStart := time.Now()
 	macStr := r.URL.Query().Get("mac")
 	if macStr == "" {
 		s.debug("HTTP", "Bad request %q from %s, missing MAC address", r.URL, r.RemoteAddr)
@@ -83,7 +85,9 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		MAC:  mac,
 		Arch: arch,
 	}
+	start := time.Now()
 	spec, err := s.Booter.BootSpec(mach)
+	s.debug("HTTP", "Get bootspec for %s took %s", mac, time.Since(start))
 	if err != nil {
 		s.log("HTTP", "Couldn't get a bootspec for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
@@ -96,7 +100,9 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "you don't netboot", http.StatusNotFound)
 		return
 	}
+	start = time.Now()
 	script, err := ipxeScript(mach, spec, r.Host)
+	s.debug("HTTP", "Construct ipxe script for %s took %s", mac, time.Since(start))
 	if err != nil {
 		s.log("HTTP", "Failed to assemble ipxe script for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
 		http.Error(w, "couldn't get a boot script", http.StatusInternalServerError)
@@ -104,9 +110,12 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.log("HTTP", "Sending ipxe boot script to %s", r.RemoteAddr)
+	start = time.Now()
 	s.machineEvent(mac, machineStateIpxeScript, "Sent iPXE boot script")
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write(script)
+	s.debug("HTTP", "Writing ipxe script to %s took %s", mac, time.Since(start))
+	s.debug("HTTP", "handleIpxe for %s took %s", mac, time.Since(overallStart))
 }
 
 func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
