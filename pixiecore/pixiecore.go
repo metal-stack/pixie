@@ -53,6 +53,17 @@ const (
 	ArchX64
 )
 
+func (a Architecture) String() string {
+	switch a {
+	case ArchIA32:
+		return "IA32"
+	case ArchX64:
+		return "X64"
+	default:
+		return "Unknown architecture"
+	}
+}
+
 // A Machine describes a machine that is attempting to boot.
 type Machine struct {
 	MAC  net.HardwareAddr

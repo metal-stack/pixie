@@ -42,6 +42,8 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			continue
 		}
 
+		s.debug("DHCP", "Got valid request to boot %s (%s)", mach.MAC, mach.Arch)
+
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {
 			s.log("DHCP", "Couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
