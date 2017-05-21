@@ -72,15 +72,22 @@ jobs:
           script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=armhf -limit=2
           on:
             branch: master
+    - stage: deploy
+      go: 1.8
+      script: true
+      deploy:
         - provider: script
           script: go run scripts/trigger_quay_build/main.go
           on:
             branch: master
+    - stage: deploy
+      go: 1.8
+      script: true
+      deploy:
         - provider: script
           script: go run scripts/trigger_docker_build/main.go
           on:
             branch: master
-
 
 env:
   matrix:
