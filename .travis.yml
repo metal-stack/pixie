@@ -30,6 +30,8 @@ jobs:
   include:
     - stage: deploy
       go: 1.8
+      env:
+        - NAME=debian_packages
       install:
       - go get github.com/Masterminds/glide
       - gem install fpm
@@ -75,7 +77,7 @@ jobs:
     - stage: deploy
       go: 1.8
       env:
-        - TEST=foo
+        - NAME=quay_io
       script: true
       deploy:
         - provider: script
@@ -84,6 +86,8 @@ jobs:
             branch: master
     - stage: deploy
       go: 1.8
+      env:
+        - NAME=docker_hub
       script: true
       deploy:
         - provider: script
