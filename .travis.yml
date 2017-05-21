@@ -13,6 +13,8 @@ install:
 
 script:
 - env
+- export GOARCH=$MY_GOARCH
+- env
 - glide install
 - go test $(glide novendor)
 - go vet $(glide novendor)
