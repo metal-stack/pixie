@@ -1,14 +1,15 @@
 language: go
 go_import_path: go.universe.tf/netboot
 
+os:
+- linux
 go:
 - 1.7
 - 1.8
 
 jobs:
   include:
-    - stage: test
-      install:
+    - install:
         - go get github.com/Masterminds/glide
         - go get github.com/golang/lint/golint
       script:
