@@ -1,24 +1,43 @@
 language: go
 go_import_path: go.universe.tf/netboot
-go:
-- 1.7
-- 1.8
-# x/net is deliberately broken at tip, pending a lot of netpoller surgery for 1.9.
-#- tip
-os:
-- linux
 
-install:
-- go get github.com/Masterminds/glide
-- go get github.com/golang/lint/golint
-- gem install fpm
+jobs:
+  include:
+    - stage: test
+      install:
+        - go get github.com/Masterminds/glide
+        - go get github.com/golang/lint/golint
+      script:
+        - glide install
+        - go test $(glide novendor)
+        - go vet $(glide novendor)
+        - glide novendor | xargs -n1 golint
+      go:
+        - 1.7
+        - 1.8
+      env:
+        - GOARCH=amd64
+        - GOARCH=386
 
-script:
-- glide install
-- go build $(glide novendor)
-- "[ \"$GOARCH\" = \"amd64\" ] && go test $(glide novendor) || echo \"skipping tests on $GOARCH\""
-- go vet $(glide novendor)
-- glide novendor | xargs -n1 golint
+# go:
+# - 1.7
+# - 1.8
+# # x/net is deliberately broken at tip, pending a lot of netpoller surgery for 1.9.
+# #- tip
+# os:
+# - linux
+
+# install:
+# - go get github.com/Masterminds/glide
+# - go get github.com/golang/lint/golint
+# - gem install fpm
+
+# script:
+# - glide install
+# - go build $(glide novendor)
+# - "[ \"$GOARCH\" = \"amd64\" ] && go test $(glide novendor) || echo \"skipping tests on $GOARCH\""
+# - go vet $(glide novendor)
+# - glide novendor | xargs -n1 golint
 
 
 # jobs:
