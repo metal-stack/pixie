@@ -16,7 +16,7 @@ install:
 script:
 - glide install
 - go build $(glide novendor)
-- "[ \"$GOARCH\" -eq \"amd64\" ] && go test $(glide novendor) || true"
+- "[ \"$GOARCH\" = \"amd64\" ] && go test $(glide novendor) || true"
 - go vet $(glide novendor)
 - glide novendor | xargs -n1 golint
 
