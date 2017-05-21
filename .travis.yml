@@ -16,8 +16,9 @@ jobs:
         - 1.7
         - 1.8
       env:
-        - GOARCH=amd64
-        - GOARCH=386
+        matrix:
+          - GOARCH=amd64
+          - GOARCH=386
 
 # go:
 # - 1.7
