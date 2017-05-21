@@ -7,26 +7,53 @@ go:
 #- tip
 os:
 - linux
-install:
-- go get github.com/Masterminds/glide
-- go get github.com/golang/lint/golint
-- gem install fpm
-before_script: 
-script:
-- glide install
-- go build $(glide novendor)
-- go test $(glide novendor)
-- go vet $(glide novendor)
-- glide novendor | xargs -n1 golint
 
-- go build -o pixiecore.amd64 ./cmd/pixiecore
-- fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S') --license Apache2 --vendor
-  "David Anderson <dave@natulte.net>" --maintainer "David Anderson <dave@natulte.net>"
-  --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
-  --directories /usr/share/doc/pixiecore
-  ./pixiecore.amd64=/usr/bin/pixiecore
-  ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
+jobs:
+  include:
+    - stage: build
+      install:
+      - go get github.com/Masterminds/glide
+      - go get github.com/golang/lint/golint
+      script:
+      - glide install
+      - go build $(glide novendor)
+    - stage: test (amd64 only)
+      install:
+      - go get github.com/Masterminds/glide
+      - go get github.com/golang/lint/golint
+      script:
+      - glide install
+      - go test $(glide novendor)
+      - go vet $(glide novendor)
+      - glide novendor | xargs -n1 golint
+      go: 1.8
+      env:
+        - GOARCH=amd64
+
+# install:
+# - go get github.com/Masterminds/glide
+# - go get github.com/golang/lint/golint
+# - gem install fpm
+# before_script: 
+# script:
+# - glide install
+# - go build $(glide novendor)
+# - go test $(glide novendor)
+# - go vet $(glide novendor)
+# - glide novendor | xargs -n1 golint
+
+# - go build -o pixiecore.amd64 ./cmd/pixiecore
+# - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S') --license Apache2 --vendor
+#   "David Anderson <dave@natulte.net>" --maintainer "David Anderson <dave@natulte.net>"
+#   --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
+#   --directories /usr/share/doc/pixiecore
+#   ./pixiecore.amd64=/usr/bin/pixiecore
+#   ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
 env:
+  matrix:
+    - GOARCH=amd64
+    - GOARCH=386
+    - GOARCH=arm GOARM=6
   global:
     # Packagecloud API token
     - secure: "S8R+j1uSi0+gZHcEI7lZGkECWXTv50d/g23kKaIH7HHgQO2ljplSE0egkWRr5s0yQnDuBRAw0bLfN9EI2IYo/iTEuBuACoO0fg/FnyJnrlNcugUeejMdbXbAgrI6phTqqr+LGmSAv8sNbSKDppJ8nkfCU0P6GXOyh63JjrnT8J7yeP3evs//Qe/WtMGBsh2o+9FlHldy+E7Vb8HePIwJ+KoOvFByoug3GtZ0yHr26XX0rwmXANo4QrA8TNuk9rGyu/teNrG0IOmAgnb6V3fNjjVJ15EwCM9c9YXtbo1Dz5r2fl8etmkSC0EvKAuTOfoyxEs2UjObu2gxy/Ow6oYvCUtEfBqoWAwlEpcuKjX7S92iNtlzNNcp1jILYAjcbcqwY18kOXfzXWtnSeSdf1DNruvljQuG55Hk7HuXQ+ljjvY4s9jHXN+w6b3IP6nvNhhXL+a3iKJVOzC2PjrXte3PTYiCsEPISAA1NQUNQly6QCUf3Feo0NMRnnh0W5/nZg0qW24rBOp0Y4fM6mh8d8TtpTEfpXacqJFy2q+8ypAR981kRvq81F2aEpFr+7+dHoUom/2k0xotp9VJ9x2b7HQBJGS2AmmT3bFk6ZNh4fLIjsBWy2fqwnq/vFqsJCErkX7q38XVJxbaZGZQ9e3NVGwwne5E/i4u39zOGHVB8XpQgKc="
@@ -35,30 +62,30 @@ env:
     # Docker Hub trigger URL
     - secure: "O0Yq00UdN5PRTQOKZL87MGtceXN+7ag2srsH/TFA6DuY1jPUV5LxkqCQVysFvoyYzroBjk91K12Aw8tTzgB6s5Ehz9c1G/lMOgQwF0QUZ4ufnOJQU7evZaLdaPtNL79QfFxtNzgF5j9wX4PYJLiduMYOKCKM63GJsEXEGevdSXsmSwayA9L6GIq8gRhX5nXx34mQDDTLDsOQAqCM1atpe80yA0a++xuLULc6IeyPOYw939CzNBFMqVPpyf27+It/UO2Ul9Dl9FrvDGpeaSGY8j0kY2P1cSawZcGUgPKZUm70fvCiYDXY+PYyiFFPt51CeADCC+ezP47T/W/Hq1EfPeC/qhQRa2NVjACZVhYV6fwlhQIb9QUKAqIYrbqw5Yb+sBDd9xMwvzVy3vStQ3fMkQvJZLfYFAB5/UStyO22gPw830ILq2kWF7h4DP304kzmDR39+foBysXbdcmNqW4KrQxDswmSUy6Dam7dFhJu208KNiiB3Pz3RJL3O0qmuYXkEj3hJ+VxpWj10SPGpK/HBwFIMo2B06cIPmTtBRTpXXKNvHcaL21NqpZtf0umyRYmp8ifkHtElHUeqELoWA7aNiNGL9v3bBhrs7unjMPxXkE1G1wCIMOGEvzbWNmVR1rmduquTCVXGGrodYlIHRvsA4ZUBcv2O0vl6+UMZEuGnNI="
 
-deploy:
-- provider: packagecloud
-  repository: pixiecore
-  username: danderson
-  dist: debian/stretch
-  skip_cleanup: true
-  package_glob: "*"
-  token:
-    secure: bKYiaKJgHWEubQOv3Z+xb0CVrxNnIWhf11IsDVPYmypTjqZ1RzqkyPo3VVksRi4IC+fndywXjImT0uYDlwLR26zatIGbSxrNPaawKZYmTR/Xm6/gF5AJlteLWUVZAD5O/Nq5rPxQUy5GGxYiDCmG2EB4Y4EYkjxLTwUyC2pqMKhX6vcR+b967cBrffm+AVz0nOEA684jhDq2+igVo4oG7F7U0745YRbhNZHJhftFmxMT7hvMhi/J7ogq2krPyItIrmnkfW/tlV4PJhiIk1p0VDIXLAGQ98VlG0HjUPdIsMla0d+JkswoGG9JPipb91j5i9XSvKhgHry/xaC1NnyraoHbzmrV7MamwDtK8Y3Rghomu+s3bknYz5B0Ft5ifWz6nTUqs7T/AHlnpK3y/zrK9YuQoZ5zQvMnx4xt97AK/2Au87dCP5ProxKIMiPyrc4rNSPzRe0wJu9opizV0EKS34hTOXsw40/bSuqBtBAenBz2qesWay4IT2gQ8BvhkclHnCEczh/+N/8cEAhXKiptRMm0MkbNVvBvLZOQS+S0npXLq1aTb2ROZ3LA9yEsB5LWUV5lLDoPDmFjGHZ6dHjg7l/ZDc5N0LYAiLv6imaScl5e1np85RStji1M5d4Enx7LD3cqXU5WtGHrz/RoH30in10N9g9dpzf7Glqt6hyeSG4=
-  on:
-    branch: master
-    go: '1.8'
-- provider: script
-  script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=amd64 -limit=2
-  on:
-    branch: master
-    go: '1.8'
-- provider: script
-  script: go run scripts/trigger_quay_build/main.go
-  on:
-    branch: master
-    go: '1.8'
-- provider: script
-  script: go run scripts/trigger_docker_build/main.go
-  on:
-    branch: master
-    go: '1.8'
+# deploy:
+# - provider: packagecloud
+#   repository: pixiecore
+#   username: danderson
+#   dist: debian/stretch
+#   skip_cleanup: true
+#   package_glob: "*"
+#   token:
+#     secure: bKYiaKJgHWEubQOv3Z+xb0CVrxNnIWhf11IsDVPYmypTjqZ1RzqkyPo3VVksRi4IC+fndywXjImT0uYDlwLR26zatIGbSxrNPaawKZYmTR/Xm6/gF5AJlteLWUVZAD5O/Nq5rPxQUy5GGxYiDCmG2EB4Y4EYkjxLTwUyC2pqMKhX6vcR+b967cBrffm+AVz0nOEA684jhDq2+igVo4oG7F7U0745YRbhNZHJhftFmxMT7hvMhi/J7ogq2krPyItIrmnkfW/tlV4PJhiIk1p0VDIXLAGQ98VlG0HjUPdIsMla0d+JkswoGG9JPipb91j5i9XSvKhgHry/xaC1NnyraoHbzmrV7MamwDtK8Y3Rghomu+s3bknYz5B0Ft5ifWz6nTUqs7T/AHlnpK3y/zrK9YuQoZ5zQvMnx4xt97AK/2Au87dCP5ProxKIMiPyrc4rNSPzRe0wJu9opizV0EKS34hTOXsw40/bSuqBtBAenBz2qesWay4IT2gQ8BvhkclHnCEczh/+N/8cEAhXKiptRMm0MkbNVvBvLZOQS+S0npXLq1aTb2ROZ3LA9yEsB5LWUV5lLDoPDmFjGHZ6dHjg7l/ZDc5N0LYAiLv6imaScl5e1np85RStji1M5d4Enx7LD3cqXU5WtGHrz/RoH30in10N9g9dpzf7Glqt6hyeSG4=
+#   on:
+#     branch: master
+#     go: '1.8'
+# - provider: script
+#   script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=amd64 -limit=2
+#   on:
+#     branch: master
+#     go: '1.8'
+# - provider: script
+#   script: go run scripts/trigger_quay_build/main.go
+#   on:
+#     branch: master
+#     go: '1.8'
+# - provider: script
+#   script: go run scripts/trigger_docker_build/main.go
+#   on:
+#     branch: master
+#     go: '1.8'
