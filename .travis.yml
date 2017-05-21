@@ -8,34 +8,43 @@ go:
 os:
 - linux
 
-jobs:
-  include:
-    - stage: test
-      install:
-      - go get github.com/Masterminds/glide
-      - go get github.com/golang/lint/golint
-      script:
-      - glide install
-      - go test $(glide novendor)
-      - go vet $(glide novendor)
-      - glide novendor | xargs -n1 golint
-      go:
-        - 1.7
-        - 1.8
-      env:
-        - GOARCH=amd64
-    - stage: build
-      install:
-      - go get github.com/Masterminds/glide
-      - go get github.com/golang/lint/golint
-      script:
-      - glide install
-      - go build $(glide novendor)
+install:
+- go get github.com/Masterminds/glide
+- go get github.com/golang/lint/golint
+- gem install fpm
 
-# install:
-# - go get github.com/Masterminds/glide
-# - go get github.com/golang/lint/golint
-# - gem install fpm
+script:
+- glide install
+- go build $(glide novendor)
+- "[ \"$GOARCH\" -eq \"amd64\" ] && go test $(glide novendor) || true"
+- go vet $(glide novendor)
+- glide novendor | xargs -n1 golint
+
+
+# jobs:
+#   include:
+#     - stage: test
+#       install:
+#       - go get github.com/Masterminds/glide
+#       - go get github.com/golang/lint/golint
+#       script:
+#       - glide install
+#       - go test $(glide novendor)
+#       - go vet $(glide novendor)
+#       - glide novendor | xargs -n1 golint
+#       go:
+#         - 1.7
+#         - 1.8
+#       env:
+#         - GOARCH=amd64
+#     - stage: build
+#       install:
+#       - go get github.com/Masterminds/glide
+#       - go get github.com/golang/lint/golint
+#       script:
+#       - glide install
+#       - go build $(glide novendor)
+
 # before_script: 
 # script:
 # - glide install
