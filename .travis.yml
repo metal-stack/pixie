@@ -36,7 +36,6 @@ jobs:
       script:
       - glide install
       - GOARCH=amd64 go build -o pixiecore.amd64 ./cmd/pixiecore
-      - GOARCH=386 go build -o pixiecore.386 ./cmd/pixiecore
       - GOARCH=arm go build -o pixiecore.arm ./cmd/pixiecore
       - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
         --architecture amd64
@@ -45,14 +44,6 @@ jobs:
         --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
         --directories /usr/share/doc/pixiecore
         ./pixiecore.amd64=/usr/bin/pixiecore
-        ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
-      - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
-        --architecture i386
-        --license Apache2 --vendor "David Anderson <dave@natulte.net>"
-        --maintainer "David Anderson <dave@natulte.net>"
-        --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
-        --directories /usr/share/doc/pixiecore
-        ./pixiecore.386=/usr/bin/pixiecore
         ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
       - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
         --architecture armhf
@@ -78,6 +69,10 @@ jobs:
           on:
             branch: master
         - provider: script
+          script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=armhf -limit=2
+          on:
+            branch: master
+        - provider: script
           script: go run scripts/trigger_quay_build/main.go
           on:
             branch: master
@@ -90,7 +85,6 @@ jobs:
 env:
   matrix:
     - MY_GOARCH=amd64
-    - MY_GOARCH=386
     - MY_GOARCH=arm
   global:
     - GOARM=6
