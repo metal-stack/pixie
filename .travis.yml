@@ -10,14 +10,7 @@ os:
 
 jobs:
   include:
-    - stage: build
-      install:
-      - go get github.com/Masterminds/glide
-      - go get github.com/golang/lint/golint
-      script:
-      - glide install
-      - go build $(glide novendor)
-    - stage: test (amd64 only)
+    - stage: test
       install:
       - go get github.com/Masterminds/glide
       - go get github.com/golang/lint/golint
@@ -26,9 +19,18 @@ jobs:
       - go test $(glide novendor)
       - go vet $(glide novendor)
       - glide novendor | xargs -n1 golint
-      go: 1.8
+      go:
+        - 1.7
+        - 1.8
       env:
         - GOARCH=amd64
+    - stage: build
+      install:
+      - go get github.com/Masterminds/glide
+      - go get github.com/golang/lint/golint
+      script:
+      - glide install
+      - go build $(glide novendor)
 
 # install:
 # - go get github.com/Masterminds/glide
