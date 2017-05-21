@@ -12,7 +12,6 @@ install:
 - go get github.com/golang/lint/golint
 
 script:
-
 # It seems Travis, in an attempt to be helpful, nukes GOARCH=x if we
 # pass it as such in the build matrix. So, because we really actually
 # want the arch to change, we have to do this layer of
@@ -25,6 +24,44 @@ script:
 - "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(glide novendor); fi"
 - "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(glide novendor); fi"
 - "if [ \"$GOARCH\" = \"amd64\" ]; then glide novendor | xargs -n1 golint; fi"
+
+
+jobs:
+  include:
+    - stage: deploy
+      go: 1.8
+      install:
+      - go get github.com/Masterminds/glide
+      - gem install fpm
+      script:
+      - glide install
+      - GOARCH=amd64 go build -o pixiecore.amd64 ./cmd/pixiecore
+      - GOARCH=386 go build -o pixiecore.386 ./cmd/pixiecore
+      - GOARCH=arm go build -o pixiecore.arm ./cmd/pixiecore
+      - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
+        --architecture amd64
+        --license Apache2 --vendor "David Anderson <dave@natulte.net>"
+        --maintainer "David Anderson <dave@natulte.net>"
+        --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
+        --directories /usr/share/doc/pixiecore
+        ./pixiecore.amd64=/usr/bin/pixiecore
+        ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
+      - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
+        --architecture i386
+        --license Apache2 --vendor "David Anderson <dave@natulte.net>"
+        --maintainer "David Anderson <dave@natulte.net>"
+        --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
+        --directories /usr/share/doc/pixiecore
+        ./pixiecore.386=/usr/bin/pixiecore
+        ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
+      - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
+        --architecture armhf
+        --license Apache2 --vendor "David Anderson <dave@natulte.net>"
+        --maintainer "David Anderson <dave@natulte.net>"
+        --description "All-in-one PXE booting" --url "https://github.com/google/netboot"
+        --directories /usr/share/doc/pixiecore
+        ./pixiecore.arm=/usr/bin/pixiecore
+        ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
 
 env:
   matrix:
