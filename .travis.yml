@@ -62,6 +62,30 @@ jobs:
         --directories /usr/share/doc/pixiecore
         ./pixiecore.arm=/usr/bin/pixiecore
         ./pixiecore/pixiecore.service=/usr/share/doc/pixiecore/pixiecore.service.example
+      deploy:
+        - provider: packagecloud
+          repository: pixiecore
+          username: danderson
+          dist: debian/stretch
+          skip_cleanup: true
+          package_glob: "*"
+          token:
+            secure: bKYiaKJgHWEubQOv3Z+xb0CVrxNnIWhf11IsDVPYmypTjqZ1RzqkyPo3VVksRi4IC+fndywXjImT0uYDlwLR26zatIGbSxrNPaawKZYmTR/Xm6/gF5AJlteLWUVZAD5O/Nq5rPxQUy5GGxYiDCmG2EB4Y4EYkjxLTwUyC2pqMKhX6vcR+b967cBrffm+AVz0nOEA684jhDq2+igVo4oG7F7U0745YRbhNZHJhftFmxMT7hvMhi/J7ogq2krPyItIrmnkfW/tlV4PJhiIk1p0VDIXLAGQ98VlG0HjUPdIsMla0d+JkswoGG9JPipb91j5i9XSvKhgHry/xaC1NnyraoHbzmrV7MamwDtK8Y3Rghomu+s3bknYz5B0Ft5ifWz6nTUqs7T/AHlnpK3y/zrK9YuQoZ5zQvMnx4xt97AK/2Au87dCP5ProxKIMiPyrc4rNSPzRe0wJu9opizV0EKS34hTOXsw40/bSuqBtBAenBz2qesWay4IT2gQ8BvhkclHnCEczh/+N/8cEAhXKiptRMm0MkbNVvBvLZOQS+S0npXLq1aTb2ROZ3LA9yEsB5LWUV5lLDoPDmFjGHZ6dHjg7l/ZDc5N0LYAiLv6imaScl5e1np85RStji1M5d4Enx7LD3cqXU5WtGHrz/RoH30in10N9g9dpzf7Glqt6hyeSG4=
+          on:
+            branch: master
+        - provider: script
+          script: go run scripts/prune_old_versions/main.go -user=danderson -repo=pixiecore -distro=debian -version=stretch -package=pixiecore -arch=amd64 -limit=2
+          on:
+            branch: master
+        - provider: script
+          script: go run scripts/trigger_quay_build/main.go
+          on:
+            branch: master
+        - provider: script
+          script: go run scripts/trigger_docker_build/main.go
+          on:
+            branch: master
+
 
 env:
   matrix:
