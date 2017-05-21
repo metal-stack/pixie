@@ -7,16 +7,15 @@ go:
 - 1.7
 - 1.8
 
-jobs:
-  include:
-    - install:
-        - go get github.com/Masterminds/glide
-        - go get github.com/golang/lint/golint
-      script:
-        - glide install
-        - go test $(glide novendor)
-        - go vet $(glide novendor)
-        - glide novendor | xargs -n1 golint
+install:
+- go get github.com/Masterminds/glide
+- go get github.com/golang/lint/golint
+
+script:
+- glide install
+- go test $(glide novendor)
+- go vet $(glide novendor)
+- glide novendor | xargs -n1 golint
 
 env:
   matrix:
