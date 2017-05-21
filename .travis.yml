@@ -22,9 +22,9 @@ script:
 # Try to build on all architectures.
 - go install ./cmd/pixiecore
 # Only do testing and things that requires stuff to be executable on amd64.
-- "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(glide novendor); end"
-- "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(glide novendor); end"
-- "if [ \"$GOARCH\" = \"amd64\" ]; then glide novendor | xargs -n1 golint; end"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(glide novendor); fi"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(glide novendor); fi"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then glide novendor | xargs -n1 golint; fi"
 
 env:
   matrix:
