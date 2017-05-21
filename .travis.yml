@@ -74,6 +74,8 @@ jobs:
             branch: master
     - stage: deploy
       go: 1.8
+      env:
+        - TEST=foo
       script: true
       deploy:
         - provider: script
