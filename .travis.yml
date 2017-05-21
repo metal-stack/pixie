@@ -12,13 +12,19 @@ install:
 - go get github.com/golang/lint/golint
 
 script:
-- env
+
+# It seems Travis, in an attempt to be helpful, nukes GOARCH=x if we
+# pass it as such in the build matrix. So, because we really actually
+# want the arch to change, we have to do this layer of
+# indirection. Blargh.
 - export GOARCH=$MY_GOARCH
-- env
 - glide install
-- go test $(glide novendor)
-- go vet $(glide novendor)
-- glide novendor | xargs -n1 golint
+# Try to build on all architectures.
+- go install ./cmd/pixiecore
+# Only do testing and things that requires stuff to be executable on amd64.
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(glide novendor); end"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(glide novendor); end"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then glide novendor | xargs -n1 golint; end"
 
 env:
   matrix:
