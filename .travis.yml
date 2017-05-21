@@ -12,6 +12,7 @@ install:
 - go get github.com/golang/lint/golint
 
 script:
+- env
 - glide install
 - go test $(glide novendor)
 - go vet $(glide novendor)
