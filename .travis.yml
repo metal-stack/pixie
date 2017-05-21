@@ -1,6 +1,10 @@
 language: go
 go_import_path: go.universe.tf/netboot
 
+go:
+  - 1.7
+  - 1.8
+
 jobs:
   include:
     - stage: test
@@ -12,13 +16,6 @@ jobs:
         - go test $(glide novendor)
         - go vet $(glide novendor)
         - glide novendor | xargs -n1 golint
-      go:
-        - 1.7
-        - 1.8
-      env:
-        matrix:
-          - GOARCH=amd64
-          - GOARCH=386
 
 # go:
 # - 1.7
