@@ -16,9 +16,7 @@ package dhcp4
 
 import (
 	"net"
-	"os"
 	"reflect"
-	"runtime"
 	"testing"
 	"time"
 )
@@ -131,26 +129,4 @@ func TestPortableConn(t *testing.T) {
 	}
 
 	testConn(t, c, addr)
-}
-
-func TestLinuxConn(t *testing.T) {
-	if runtime.GOOS != "linux" {
-		t.Skipf("not supported on %s", runtime.GOOS)
-	}
-	if os.Getuid() != 0 {
-		t.Skipf("must be root on %s", runtime.GOOS)
-	}
-
-	// Use a listener to grab a free port, but we don't use it beyond
-	// that.
-	l, err := net.ListenPacket("udp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	c, err := newLinuxConn(l.LocalAddr().(*net.UDPAddr).Port)
-	if err != nil {
-		t.Fatalf("creating the linuxconn: %s", err)
-	}
-
-	testConn(t, c, l.LocalAddr().String())
 }
