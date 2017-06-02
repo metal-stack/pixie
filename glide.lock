@@ -1,5 +1,5 @@
 hash: 03601eebacfd9fcac492ebdfbc1b8ecbe7acc5142ab6f1b0f248c9720f166702
-updated: 2017-05-20T18:43:35.331322818-07:00
+updated: 2017-06-01T20:04:18.714898525-07:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
@@ -19,11 +19,11 @@ imports:
 - name: github.com/magiconair/properties
   version: 51463bfca2576e06c62a8504b5c0f06d61312647
 - name: github.com/mitchellh/mapstructure
-  version: cc8532a8e9a55ea36402aa21efdf403a60d34096
+  version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/pelletier/go-buffruneio
   version: c37440a7cf42ac63b919c752ca73a85067e05992
 - name: github.com/pelletier/go-toml
-  version: 5c26a6ff6fd178719e15decac1c8196da0d7d6d1
+  version: 5ccdfb18c776b740aecaf085c4d9a2779199c279
 - name: github.com/spf13/afero
   version: 9be650865eab0c12963d8753212f4f9c66cdcf12
   subpackages:
@@ -31,34 +31,34 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
-  version: ca57f0f5dba473a8a58765d16d7e811fb8027add
+  version: 8d4ce3549a0bf0e3569df3aae7423b7743cd05a9
 - name: github.com/spf13/jwalterweatherman
-  version: 8f07c835e5cc1450c082fe3a439cf87b0cbb2d99
+  version: 0efa5202c04663c757d84f90f5219c1250baf94f
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/spf13/viper
   version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
 - name: golang.org/x/crypto
-  version: 0fe963104e9d1877082f8fb38f816fcd97eb1d10
+  version: e1a4589e7d3ea14a3352255d04b6f1a418845e5e
   subpackages:
   - nacl/secretbox
   - poly1305
   - salsa20/salsa
 - name: golang.org/x/net
-  version: 513929065c19401a1c7b76ecd942f9f86a0c061b
+  version: 3da985ce5951d99de868be4385f21ea6c2b22f24
   subpackages:
   - bpf
   - ipv4
   - icmp
   - internal/iana
-  - internal/netreflect
+  - internal/socket
   - ipv6
 - name: golang.org/x/sys
-  version: a2e06a18b0d52d8cb2010e04b372a1965d8e3439
+  version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 19e51611da83d6be54ddafce4a4af510cb3e9ea4
+  version: 4ee4af566555f5fbe026368b75596286a312663a
   subpackages:
   - transform
   - unicode/norm
