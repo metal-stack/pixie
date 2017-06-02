@@ -70,13 +70,13 @@ func testConn(t *testing.T, impl conn, addr string) {
 	// Test writing
 	p.ClientAddr = net.IPv4(127, 0, 0, 1)
 	dhcpClientPort = s.LocalAddr().(*net.UDPAddr).Port
-	bs, err = p.Marshal()
+	bs2, err := p.Marshal()
 	if err != nil {
 		t.Fatalf("marshaling packet: %s", err)
 	}
 	// Unmarshal the packet again, to smooth out representation
 	// differences (e.g. nil IP vs. IP set to 0.0.0.0).
-	p, err = Unmarshal(bs)
+	p, err = Unmarshal(bs2)
 	if err != nil {
 		t.Fatal(err)
 	}
