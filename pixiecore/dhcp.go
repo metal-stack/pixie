@@ -121,6 +121,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwt
 	}
 
 	// iPXE options
+	supportsHTTP, supportsBzImage := false, false
 	if len(pkt.Options[175]) > 0 {
 		bs := pkt.Options[175]
 		for len(bs) > 0 {
@@ -129,14 +130,18 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwt
 			}
 			switch bs[0] {
 			case 19:
-				// This iPXE build supports HTTP, so is appropriate
-				// for going straight into the OS kernel, no need to
-				// chainload our own.
-				isIpxe = true
+				// This iPXE build supports HTTP.
+				supportsHTTP = true
+			case 24:
+				// This iPXE build supports bzImage.
+				supportsBzImage = true
 			}
 			bs = bs[2+int(bs[1]):]
 		}
 	}
+	// This firmware is an appropriate iPXE if it can speak HTTP and
+	// bzImage. If not, we'll chainload our own internal iPXE.
+	isIpxe = supportsHTTP && supportsBzImage
 
 	mach.MAC = pkt.HardwareAddr
 	mach.Arch = fwToArch[fwtype]
