@@ -236,17 +236,6 @@ func (s *Server) Serve() error {
 		pxe.Close()
 		return err
 	}
-	var statusHTTP net.Listener
-	if s.HTTPStatusPort != 0 && s.HTTPStatusPort != s.HTTPPort {
-		statusHTTP, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPStatusPort))
-		if err != nil {
-			dhcp.Close()
-			tftp.Close()
-			pxe.Close()
-			http.Close()
-			return err
-		}
-	}
 
 	s.events = make(map[string][]machineEvent)
 	// 5 buffer slots, one for each goroutine, plus one for
@@ -261,14 +250,7 @@ func (s *Server) Serve() error {
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()
 	go func() { s.errs <- s.serveTFTP(tftp) }()
-	if statusHTTP != nil {
-		go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
-		go func() { s.errs <- serveHTTP(statusHTTP, s.serveUI) }()
-	} else if s.HTTPStatusPort == s.HTTPPort {
-		go func() { s.errs <- serveHTTP(http, s.serveHTTP, s.serveUI) }()
-	} else {
-		go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
-	}
+	go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
@@ -276,9 +258,6 @@ func (s *Server) Serve() error {
 	tftp.Close()
 	pxe.Close()
 	http.Close()
-	if statusHTTP != nil {
-		statusHTTP.Close()
-	}
 	return err
 }
 

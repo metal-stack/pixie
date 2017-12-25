@@ -1,5 +1,5 @@
-hash: 185ae8303fbad004e25832461d1ee4270898513176604c78b50c742c511ec5a6
-updated: 2017-12-24T17:18:37.187557876-08:00
+hash: 793ba6396344241f612f1b186abc43fce3b4f6f4efd5f941ba708e038602865a
+updated: 2017-12-24T17:29:58.7960062-08:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
@@ -63,4 +63,11 @@ imports:
   - unicode/norm
 - name: gopkg.in/yaml.v2
   version: 287cf08546ab5e7e37d55a84f7ed3fd1db036de5
-testImports: []
+testImports:
+- name: github.com/google/go-cmp
+  version: 8099a9787ce5dc5984ed879a3bda47dc730a8e97
+  subpackages:
+  - cmp
+  - cmp/internal/diff
+  - cmp/internal/function
+  - cmp/internal/value
