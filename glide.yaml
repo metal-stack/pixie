@@ -2,7 +2,11 @@ package: go.universe.tf/netboot
 import:
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
+- package: golang.org/x/crypto
+  subpackages:
+  - nacl/secretbox
 - package: golang.org/x/net
   subpackages:
   - bpf
+  - icmp
   - ipv4
