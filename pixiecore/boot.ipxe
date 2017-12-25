@@ -17,6 +17,8 @@
 set attempts:int32 10
 set x:int32 0
 
+set user-class pixiecore
+
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
 :loop

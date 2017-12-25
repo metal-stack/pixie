@@ -36,7 +36,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			s.debug("DHCP", "Ignoring packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
-		mach, isIpxe, fwtype, err := s.validateDHCP(pkt)
+		mach, client, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
 			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
@@ -56,7 +56,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		}
 
 		s.log("DHCP", "Offering to boot %s", pkt.HardwareAddr)
-		if isIpxe {
+		if client == clientSoftwarePixiecoreIPXE {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
 		} else {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCP, "Offering to boot")
@@ -69,7 +69,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			continue
 		}
 
-		resp, err := s.offerDHCP(pkt, mach, serverIP, isIpxe, fwtype)
+		resp, err := s.offerDHCP(pkt, mach, serverIP, client, fwtype)
 		if err != nil {
 			s.log("DHCP", "Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
@@ -94,14 +94,22 @@ func (s *Server) isBootDHCP(pkt *dhcp4.Packet) error {
 	return nil
 }
 
-func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwtype Firmware, err error) {
+type clientSoftware int
+
+const (
+	clientSoftwareGeneric clientSoftware = iota
+	clientSoftwareIPXE
+	clientSoftwarePixiecoreIPXE
+)
+
+func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, client clientSoftware, fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return mach, false, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return mach, 0, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
 	}
 	fwtype = Firmware(fwt)
 	if s.Ipxe[fwtype] == nil {
-		return mach, false, 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
+		return mach, 0, 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
 	}
 
 	guid := pkt.Options[97]
@@ -114,41 +122,30 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, isIpxe bool, fwt
 		// well accept these buggy ROMs.
 	case 17:
 		if guid[0] != 0 {
-			return mach, false, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
+			return mach, 0, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
 		}
 	default:
-		return mach, false, 0, errors.New("malformed client GUID (option 97), wrong size")
+		return mach, 0, 0, errors.New("malformed client GUID (option 97), wrong size")
 	}
 
-	// iPXE options
-	supportsHTTP, supportsBzImage := false, false
-	if len(pkt.Options[175]) > 0 {
-		bs := pkt.Options[175]
-		for len(bs) > 0 {
-			if len(bs) < 2 || len(bs)-2 < int(bs[1]) {
-				return mach, false, 0, errors.New("malformed iPXE option")
-			}
-			switch bs[0] {
-			case 19:
-				// This iPXE build supports HTTP.
-				supportsHTTP = true
-			case 24:
-				// This iPXE build supports bzImage.
-				supportsBzImage = true
-			}
-			bs = bs[2+int(bs[1]):]
+	// We need to identify two special kinds of PXE clients: generic
+	// iPXE, and the iPXE embedded in Pixiecore.
+	client = clientSoftwareGeneric
+	if userClass, err := pkt.Options.String(77); err == nil {
+		switch userClass {
+		case "iPXE":
+			client = clientSoftwareIPXE
+		case "pixiecore":
+			client = clientSoftwarePixiecoreIPXE
 		}
 	}
-	// This firmware is an appropriate iPXE if it can speak HTTP and
-	// bzImage. If not, we'll chainload our own internal iPXE.
-	isIpxe = supportsHTTP && supportsBzImage
 
 	mach.MAC = pkt.HardwareAddr
 	mach.Arch = fwToArch[fwtype]
-	return mach, isIpxe, fwtype, nil
+	return mach, client, fwtype, nil
 }
 
-func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, isIpxe bool, fwtype Firmware) (*dhcp4.Packet, error) {
+func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, client clientSoftware, fwtype Firmware) (*dhcp4.Packet, error) {
 	resp := &dhcp4.Packet{
 		Type:          dhcp4.MsgOffer,
 		TransactionID: pkt.TransactionID,
@@ -166,11 +163,14 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, isI
 		resp.Options[97] = pkt.Options[97]
 	}
 
-	if isIpxe {
-		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
-	} else {
+	switch client {
+	case clientSoftwareGeneric:
 		resp.BootServerName = serverIP.String()
 		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
+	case clientSoftwareIPXE:
+		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)
+	case clientSoftwarePixiecoreIPXE:
+		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
 	}
 
 	if fwtype == FirmwareX86PC {
