@@ -10,3 +10,8 @@ import:
   - bpf
   - icmp
   - ipv4
+testImport:
+- package: github.com/google/go-cmp
+  version: ^0.1.0
+  subpackages:
+  - cmp

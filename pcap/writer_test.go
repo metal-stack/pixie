@@ -17,9 +17,10 @@ package pcap
 import (
 	"bytes"
 	"encoding/binary"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestReadback(t *testing.T) {
@@ -81,8 +82,8 @@ func TestReadback(t *testing.T) {
 			t.Fatalf("Reading packets back: %s", r.Err())
 		}
 
-		if !reflect.DeepEqual(pkts, readBack) {
-			t.Fatalf("Packets were mutated by write-then-read")
+		if diff := cmp.Diff(pkts, readBack); diff != "" {
+			t.Fatalf("Packets mutated by write-then-read (-want +got):\n%s", diff)
 		}
 	}
 
