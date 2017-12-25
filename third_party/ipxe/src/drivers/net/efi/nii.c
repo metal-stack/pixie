@@ -202,7 +202,7 @@ static int nii_pci_open ( struct nii_nic *nii ) {
 		EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *acpi;
 		void *resource;
 	} desc;
-	unsigned int bar;
+	int bar;
 	EFI_STATUS efirc;
 	int rc;
 
@@ -230,7 +230,7 @@ static int nii_pci_open ( struct nii_nic *nii ) {
 	/* Identify memory and I/O BARs */
 	nii->mem_bar = PCI_MAX_BAR;
 	nii->io_bar = PCI_MAX_BAR;
-	for ( bar = 0 ; bar < PCI_MAX_BAR ; bar++ ) {
+	for ( bar = ( PCI_MAX_BAR - 1 ) ; bar >= 0 ; bar-- ) {
 		efirc = nii->pci_io->GetBarAttributes ( nii->pci_io, bar, NULL,
 							&desc.resource );
 		if ( efirc == EFI_UNSUPPORTED ) {
@@ -402,7 +402,9 @@ static EFIAPI VOID nii_block ( UINT64 unique_id, UINT32 acquire ) {
  */
 static int nii_issue_cpb_db ( struct nii_nic *nii, unsigned int op, void *cpb,
 			      size_t cpb_len, void *db, size_t db_len ) {
+	EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
 	PXE_CDB cdb;
+	UINTN tpl;
 
 	/* Prepare command descriptor block */
 	memset ( &cdb, 0, sizeof ( cdb ) );
@@ -414,6 +416,9 @@ static int nii_issue_cpb_db ( struct nii_nic *nii, unsigned int op, void *cpb,
 	cdb.DBsize = db_len;
 	cdb.IFnum = nii->nii->IfNum;
 
+	/* Raise task priority level */
+	tpl = bs->RaiseTPL ( TPL_CALLBACK );
+
 	/* Issue command */
 	DBGC2 ( nii, "NII %s issuing %02x:%04x ifnum %d%s%s\n",
 		nii->dev.name, cdb.OpCode, cdb.OpFlags, cdb.IFnum,
@@ -423,6 +428,9 @@ static int nii_issue_cpb_db ( struct nii_nic *nii, unsigned int op, void *cpb,
 	if ( db )
 		DBGC2_HD ( nii, db, db_len );
 	nii->issue ( ( intptr_t ) &cdb );
+
+	/* Restore task priority level */
+	bs->RestoreTPL ( tpl );
 
 	/* Check completion status */
 	if ( cdb.StatCode != PXE_STATCODE_SUCCESS )
@@ -629,22 +637,6 @@ static int nii_initialise ( struct nii_nic *nii ) {
 
 	/* Initialise UNDI */
 	flags = PXE_OPFLAGS_INITIALIZE_DO_NOT_DETECT_CABLE;
-	return nii_initialise_flags ( nii, flags );
-}
-
-/**
- * Initialise UNDI and detect cable
- *
- * @v nii		NII NIC
- * @ret rc		Return status code
- */
-static int nii_initialise_and_detect ( struct nii_nic *nii ) {
-	unsigned int flags;
-
-	/* Initialise UNDI and detect cable.  This is required to work
-	 * around bugs in some Emulex NII drivers.
-	 */
-	flags = PXE_OPFLAGS_INITIALIZE_DETECT_CABLE;
 	return nii_initialise_flags ( nii, flags );
 }
 
@@ -968,20 +960,32 @@ static void nii_poll ( struct net_device *netdev ) {
  */
 static int nii_open ( struct net_device *netdev ) {
 	struct nii_nic *nii = netdev->priv;
+	unsigned int flags;
 	int rc;
 
 	/* Initialise NIC
 	 *
+	 * We don't care about link state here, and would prefer to
+	 * have the NIC initialise even if no cable is present, to
+	 * match the behaviour of all other iPXE drivers.
+	 *
 	 * Some Emulex NII drivers have a bug which prevents packets
 	 * from being sent or received unless we specifically ask it
-	 * to detect cable presence during initialisation.  Work
-	 * around these buggy drivers by requesting cable detection at
-	 * this point, even though we don't care about link state here
-	 * (and would prefer to have the NIC initialise even if no
-	 * cable is present, to match the behaviour of all other iPXE
-	 * drivers).
+	 * to detect cable presence during initialisation.
+	 *
+	 * Unfortunately, some other NII drivers (e.g. Mellanox) may
+	 * time out and report failure if asked to detect cable
+	 * presence during initialisation on links that are physically
+	 * slow to reach link-up.
+	 *
+	 * Attempt to work around both of these problems by requesting
+	 * cable detection at this point if any only if the driver is
+	 * not capable of reporting link status changes at runtime via
+	 * PXE_OPCODE_GET_STATUS.
 	 */
-	if ( ( rc = nii_initialise_and_detect ( nii ) ) != 0 )
+	flags = ( nii->media ? PXE_OPFLAGS_INITIALIZE_DO_NOT_DETECT_CABLE
+		  : PXE_OPFLAGS_INITIALIZE_DETECT_CABLE );
+	if ( ( rc = nii_initialise_flags ( nii, flags ) ) != 0 )
 		goto err_initialise;
 
 	/* Attempt to set station address */

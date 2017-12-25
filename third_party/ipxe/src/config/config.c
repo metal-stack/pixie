@@ -248,6 +248,9 @@ REQUIRE_OBJECT ( cpuid_cmd );
 #ifdef SYNC_CMD
 REQUIRE_OBJECT ( sync_cmd );
 #endif
+#ifdef SHELL_CMD
+REQUIRE_OBJECT ( shell );
+#endif
 #ifdef NSLOOKUP_CMD
 REQUIRE_OBJECT ( nslookup_cmd );
 #endif
@@ -336,6 +339,9 @@ REQUIRE_OBJECT ( memmap_settings );
 #endif
 #ifdef VRAM_SETTINGS
 REQUIRE_OBJECT ( vram_settings );
+#endif
+#ifdef ACPI_SETTINGS
+REQUIRE_OBJECT ( acpi_settings );
 #endif
 
 /*

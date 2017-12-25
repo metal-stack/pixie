@@ -21,6 +21,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define ENTROPY_EFI
 #define TIME_EFI
 #define REBOOT_EFI
+#define ACPI_EFI
 
 #define DOWNLOAD_PROTO_FILE	/* Local filesystem access */
 
@@ -31,6 +32,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #define	SANBOOT_PROTO_AOE	/* AoE protocol */
 #define	SANBOOT_PROTO_IB_SRP	/* Infiniband SCSI RDMA protocol */
 #define	SANBOOT_PROTO_FCP	/* Fibre Channel protocol */
+#define	SANBOOT_PROTO_HTTP	/* HTTP SAN protocol */
 
 #define	USB_HCD_XHCI		/* xHCI USB host controller */
 #define	USB_HCD_EHCI		/* EHCI USB host controller */

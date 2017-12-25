@@ -40,6 +40,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #include <ipxe/malloc.h>
 #include <ipxe/device.h>
 #include <ipxe/timer.h>
+#include <ipxe/quiesce.h>
 #include <ipxe/cpuid.h>
 #include <ipxe/msr.h>
 #include <ipxe/hyperv.h>
@@ -169,7 +170,7 @@ static int hv_check_hv ( void ) {
 	}
 
 	/* Check that hypervisor is Hyper-V */
-	cpuid ( HV_CPUID_INTERFACE_ID, &interface_id, &discard_ebx,
+	cpuid ( HV_CPUID_INTERFACE_ID, 0, &interface_id, &discard_ebx,
 		&discard_ecx, &discard_edx );
 	if ( interface_id != HV_INTERFACE_ID ) {
 		DBGC ( HV_INTERFACE_ID, "HV not running in Hyper-V (interface "
@@ -193,7 +194,7 @@ static int hv_check_features ( struct hv_hypervisor *hv ) {
 	uint32_t discard_edx;
 
 	/* Check that required features and privileges are available */
-	cpuid ( HV_CPUID_FEATURES, &available, &permissions, &discard_ecx,
+	cpuid ( HV_CPUID_FEATURES, 0, &available, &permissions, &discard_ecx,
 		&discard_edx );
 	if ( ! ( available & HV_FEATURES_AVAIL_HYPERCALL_MSR ) ) {
 		DBGC ( hv, "HV %p has no hypercall MSRs (features %08x:%08x)\n",
@@ -220,12 +221,34 @@ static int hv_check_features ( struct hv_hypervisor *hv ) {
 }
 
 /**
- * Map hypercall page
+ * Check that Gen 2 UEFI firmware is not running
  *
  * @v hv		Hyper-V hypervisor
  * @ret rc		Return status code
+ *
+ * We must not steal ownership from the Gen 2 UEFI firmware, since
+ * doing so will cause an immediate crash.  Avoid this by checking for
+ * the guest OS identity known to be used by the Gen 2 UEFI firmware.
  */
-static int hv_map_hypercall ( struct hv_hypervisor *hv ) {
+static int hv_check_uefi ( struct hv_hypervisor *hv ) {
+	uint64_t guest_os_id;
+
+	/* Check for UEFI firmware's guest OS identity */
+	guest_os_id = rdmsr ( HV_X64_MSR_GUEST_OS_ID );
+	if ( guest_os_id == HV_GUEST_OS_ID_UEFI ) {
+		DBGC ( hv, "HV %p is owned by UEFI firmware\n", hv );
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+/**
+ * Map hypercall page
+ *
+ * @v hv		Hyper-V hypervisor
+ */
+static void hv_map_hypercall ( struct hv_hypervisor *hv ) {
 	union {
 		struct {
 			uint32_t ebx;
@@ -245,19 +268,18 @@ static int hv_map_hypercall ( struct hv_hypervisor *hv ) {
 	/* Report guest OS identity */
 	guest_os_id = rdmsr ( HV_X64_MSR_GUEST_OS_ID );
 	if ( guest_os_id != 0 ) {
-		DBGC ( hv, "HV %p guest OS ID MSR already set to %#08llx\n",
+		DBGC ( hv, "HV %p guest OS ID MSR was %#08llx\n",
 		       hv, guest_os_id );
-		return -EBUSY;
 	}
 	guest_os_id = HV_GUEST_OS_ID_IPXE;
 	DBGC2 ( hv, "HV %p guest OS ID MSR is %#08llx\n", hv, guest_os_id );
 	wrmsr ( HV_X64_MSR_GUEST_OS_ID, guest_os_id );
 
 	/* Get hypervisor system identity (for debugging) */
-	cpuid ( HV_CPUID_VENDOR_ID, &discard_eax, &vendor_id.ebx,
+	cpuid ( HV_CPUID_VENDOR_ID, 0, &discard_eax, &vendor_id.ebx,
 		&vendor_id.ecx, &vendor_id.edx );
 	vendor_id.text[ sizeof ( vendor_id.text ) - 1 ] = '\0';
-	cpuid ( HV_CPUID_HYPERVISOR_ID, &build, &version, &discard_ecx,
+	cpuid ( HV_CPUID_HYPERVISOR_ID, 0, &build, &version, &discard_ecx,
 		&discard_edx );
 	DBGC ( hv, "HV %p detected \"%s\" version %d.%d build %d\n", hv,
 	       vendor_id.text, ( version >> 16 ), ( version & 0xffff ), build );
@@ -268,8 +290,6 @@ static int hv_map_hypercall ( struct hv_hypervisor *hv ) {
 	hypercall |= ( virt_to_phys ( hv->hypercall ) | HV_HYPERCALL_ENABLE );
 	DBGC2 ( hv, "HV %p hypercall MSR is %#08llx\n", hv, hypercall );
 	wrmsr ( HV_X64_MSR_HYPERCALL, hypercall );
-
-	return 0;
 }
 
 /**
@@ -297,12 +317,15 @@ static void hv_unmap_hypercall ( struct hv_hypervisor *hv ) {
  * Map synthetic interrupt controller
  *
  * @v hv		Hyper-V hypervisor
- * @ret rc		Return status code
  */
-static int hv_map_synic ( struct hv_hypervisor *hv ) {
+static void hv_map_synic ( struct hv_hypervisor *hv ) {
 	uint64_t simp;
 	uint64_t siefp;
 	uint64_t scontrol;
+
+	/* Zero SynIC message and event pages */
+	memset ( hv->synic.message, 0, PAGE_SIZE );
+	memset ( hv->synic.event, 0, PAGE_SIZE );
 
 	/* Map SynIC message page */
 	simp = rdmsr ( HV_X64_MSR_SIMP );
@@ -323,25 +346,16 @@ static int hv_map_synic ( struct hv_hypervisor *hv ) {
 	scontrol |= HV_SCONTROL_ENABLE;
 	DBGC2 ( hv, "HV %p SCONTROL MSR is %#08llx\n", hv, scontrol );
 	wrmsr ( HV_X64_MSR_SCONTROL, scontrol );
-
-	return 0;
 }
 
 /**
- * Unmap synthetic interrupt controller
+ * Unmap synthetic interrupt controller, leaving SCONTROL untouched
  *
  * @v hv		Hyper-V hypervisor
  */
-static void hv_unmap_synic ( struct hv_hypervisor *hv ) {
-	uint64_t scontrol;
+static void hv_unmap_synic_no_scontrol ( struct hv_hypervisor *hv ) {
 	uint64_t siefp;
 	uint64_t simp;
-
-	/* Disable SynIC */
-	scontrol = rdmsr ( HV_X64_MSR_SCONTROL );
-	scontrol &= ~HV_SCONTROL_ENABLE;
-	DBGC2 ( hv, "HV %p SCONTROL MSR is %#08llx\n", hv, scontrol );
-	wrmsr ( HV_X64_MSR_SCONTROL, scontrol );
 
 	/* Unmap SynIC event page */
 	siefp = rdmsr ( HV_X64_MSR_SIEFP );
@@ -354,6 +368,24 @@ static void hv_unmap_synic ( struct hv_hypervisor *hv ) {
 	simp &= ( ( PAGE_SIZE - 1 ) & ~HV_SIMP_ENABLE );
 	DBGC2 ( hv, "HV %p SIMP MSR is %#08llx\n", hv, simp );
 	wrmsr ( HV_X64_MSR_SIMP, simp );
+}
+
+/**
+ * Unmap synthetic interrupt controller
+ *
+ * @v hv		Hyper-V hypervisor
+ */
+static void hv_unmap_synic ( struct hv_hypervisor *hv ) {
+	uint64_t scontrol;
+
+	/* Disable SynIC */
+	scontrol = rdmsr ( HV_X64_MSR_SCONTROL );
+	scontrol &= ~HV_SCONTROL_ENABLE;
+	DBGC2 ( hv, "HV %p SCONTROL MSR is %#08llx\n", hv, scontrol );
+	wrmsr ( HV_X64_MSR_SCONTROL, scontrol );
+
+	/* Unmap SynIC event and message pages */
+	hv_unmap_synic_no_scontrol ( hv );
 }
 
 /**
@@ -392,8 +424,12 @@ void hv_disable_sint ( struct hv_hypervisor *hv, unsigned int sintx ) {
 	unsigned long msr = HV_X64_MSR_SINT ( sintx );
 	uint64_t sint;
 
-	/* Disable synthetic interrupt */
+	/* Do nothing if interrupt is already disabled */
 	sint = rdmsr ( msr );
+	if ( sint & HV_SINT_MASKED )
+		return;
+
+	/* Disable synthetic interrupt */
 	sint &= ~HV_SINT_AUTO_EOI;
 	sint |= HV_SINT_MASKED;
 	DBGC2 ( hv, "HV %p SINT%d MSR is %#08llx\n", hv, sintx, sint );
@@ -543,6 +579,10 @@ static int hv_probe ( struct root_device *rootdev ) {
 	if ( ( rc = hv_check_features ( hv ) ) != 0 )
 		goto err_check_features;
 
+	/* Check that Gen 2 UEFI firmware is not running */
+	if ( ( rc = hv_check_uefi ( hv ) ) != 0 )
+		goto err_check_uefi;
+
 	/* Allocate pages */
 	if ( ( rc = hv_alloc_pages ( hv, &hv->hypercall, &hv->synic.message,
 				     &hv->synic.event, NULL ) ) != 0 )
@@ -553,12 +593,10 @@ static int hv_probe ( struct root_device *rootdev ) {
 		goto err_alloc_message;
 
 	/* Map hypercall page */
-	if ( ( rc = hv_map_hypercall ( hv ) ) != 0 )
-		goto err_map_hypercall;
+	hv_map_hypercall ( hv );
 
 	/* Map synthetic interrupt controller */
-	if ( ( rc = hv_map_synic ( hv ) ) != 0 )
-		goto err_map_synic;
+	hv_map_synic ( hv );
 
 	/* Probe Hyper-V devices */
 	if ( ( rc = vmbus_probe ( hv, &rootdev->dev ) ) != 0 )
@@ -570,14 +608,13 @@ static int hv_probe ( struct root_device *rootdev ) {
 	vmbus_remove ( hv, &rootdev->dev );
  err_vmbus_probe:
 	hv_unmap_synic ( hv );
- err_map_synic:
 	hv_unmap_hypercall ( hv );
- err_map_hypercall:
 	hv_free_message ( hv );
  err_alloc_message:
 	hv_free_pages ( hv, hv->hypercall, hv->synic.message, hv->synic.event,
 			NULL );
  err_alloc_pages:
+ err_check_uefi:
  err_check_features:
 	free ( hv );
  err_alloc:
@@ -600,6 +637,7 @@ static void hv_remove ( struct root_device *rootdev ) {
 	hv_free_pages ( hv, hv->hypercall, hv->synic.message, hv->synic.event,
 			NULL );
 	free ( hv );
+	rootdev_set_drvdata ( rootdev, NULL );
 }
 
 /** Hyper-V root device driver */
@@ -612,6 +650,100 @@ static struct root_driver hv_root_driver = {
 struct root_device hv_root_device __root_device = {
 	.dev = { .name = "Hyper-V" },
 	.driver = &hv_root_driver,
+};
+
+/**
+ * Quiesce system
+ *
+ */
+static void hv_quiesce ( void ) {
+	struct hv_hypervisor *hv = rootdev_get_drvdata ( &hv_root_device );
+	unsigned int i;
+
+	/* Do nothing if we are not running in Hyper-V */
+	if ( ! hv )
+		return;
+
+	/* The "enlightened" portions of the Windows Server 2016 boot
+	 * process will not cleanly take ownership of an active
+	 * Hyper-V connection.  Experimentation shows that the minimum
+	 * requirement is that we disable the SynIC message page
+	 * (i.e. zero the SIMP MSR).
+	 *
+	 * We cannot perform a full shutdown of the Hyper-V
+	 * connection.  Experimentation shows that if we disable the
+	 * SynIC (i.e. zero the SCONTROL MSR) then Windows Server 2016
+	 * will enter an indefinite wait loop.
+	 *
+	 * Attempt to create a safe handover environment by resetting
+	 * all MSRs except for SCONTROL.
+	 *
+	 * Note that we do not shut down our VMBus devices, since we
+	 * may need to unquiesce the system and continue operation.
+	 */
+
+	/* Disable all synthetic interrupts */
+	for ( i = 0 ; i <= HV_SINT_MAX ; i++ )
+		hv_disable_sint ( hv, i );
+
+	/* Unmap synthetic interrupt controller, leaving SCONTROL
+	 * enabled (see above).
+	 */
+	hv_unmap_synic_no_scontrol ( hv );
+
+	/* Unmap hypercall page */
+	hv_unmap_hypercall ( hv );
+
+	DBGC ( hv, "HV %p quiesced\n", hv );
+}
+
+/**
+ * Unquiesce system
+ *
+ */
+static void hv_unquiesce ( void ) {
+	struct hv_hypervisor *hv = rootdev_get_drvdata ( &hv_root_device );
+	uint64_t simp;
+	int rc;
+
+	/* Do nothing if we are not running in Hyper-V */
+	if ( ! hv )
+		return;
+
+	/* Experimentation shows that the "enlightened" portions of
+	 * Windows Server 2016 will break our Hyper-V connection at
+	 * some point during a SAN boot.  Surprisingly it does not
+	 * change the guest OS ID MSR, but it does leave the SynIC
+	 * message page disabled.
+	 *
+	 * Our own explicit quiescing procedure will also disable the
+	 * SynIC message page.  We can therefore use the SynIC message
+	 * page enable bit as a heuristic to determine when we need to
+	 * reestablish our Hyper-V connection.
+	 */
+	simp = rdmsr ( HV_X64_MSR_SIMP );
+	if ( simp & HV_SIMP_ENABLE )
+		return;
+
+	/* Remap hypercall page */
+	hv_map_hypercall ( hv );
+
+	/* Remap synthetic interrupt controller */
+	hv_map_synic ( hv );
+
+	/* Reset Hyper-V devices */
+	if ( ( rc = vmbus_reset ( hv, &hv_root_device.dev ) ) != 0 ) {
+		DBGC ( hv, "HV %p could not unquiesce: %s\n",
+		       hv, strerror ( rc ) );
+		/* Nothing we can do */
+		return;
+	}
+}
+
+/** Hyper-V quiescer */
+struct quiescer hv_quiescer __quiescer = {
+	.quiesce = hv_quiesce,
+	.unquiesce = hv_unquiesce,
 };
 
 /**
@@ -631,7 +763,7 @@ static int hv_timer_probe ( void ) {
 		return rc;
 
 	/* Check for available reference counter */
-	cpuid ( HV_CPUID_FEATURES, &available, &discard_ebx, &discard_ecx,
+	cpuid ( HV_CPUID_FEATURES, 0, &available, &discard_ebx, &discard_ecx,
 		&discard_edx );
 	if ( ! ( available & HV_FEATURES_AVAIL_TIME_REF_COUNT_MSR ) ) {
 		DBGC ( HV_INTERFACE_ID, "HV has no time reference counter\n" );

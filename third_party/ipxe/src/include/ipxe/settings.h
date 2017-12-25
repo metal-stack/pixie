@@ -40,7 +40,7 @@ struct setting {
 	 * (such as a DHCP option number, or an SMBIOS structure and
 	 * field number).
 	 */
-	unsigned long tag;
+	uint64_t tag;
 	/** Setting scope (or NULL)
 	 *
 	 * For historic reasons, a NULL scope with a non-zero tag
@@ -452,6 +452,8 @@ filename_setting __setting ( SETTING_BOOT, filename );
 extern const struct setting
 root_path_setting __setting ( SETTING_SANBOOT, root-path );
 extern const struct setting
+san_filename_setting __setting ( SETTING_SANBOOT, san-filename );
+extern const struct setting
 username_setting __setting ( SETTING_AUTH, username );
 extern const struct setting
 password_setting __setting ( SETTING_AUTH, password );
@@ -467,6 +469,8 @@ extern const struct setting
 busid_setting __setting ( SETTING_NETDEV, busid );
 extern const struct setting
 user_class_setting __setting ( SETTING_HOST_EXTRA, user-class );
+extern const struct setting
+vendor_class_setting __setting ( SETTING_HOST_EXTRA, vendor-class );
 extern const struct setting
 manufacturer_setting __setting ( SETTING_HOST_EXTRA, manufacturer );
 extern const struct setting

@@ -43,19 +43,29 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
  */
 
 /**
- * Transcribe ACPI table signature (for debugging)
+ * Compute ACPI table checksum
  *
- * @v signature		ACPI table signature
- * @ret name		ACPI table signature name
+ * @v table		Any ACPI table
+ * @ret checksum	0 if checksum is good
  */
-static const char * acpi_name ( uint32_t signature ) {
-	static union {
-		uint32_t signature;
-		char name[5];
-	} u;
+static uint8_t acpi_checksum ( userptr_t table ) {
+	struct acpi_header acpi;
+	uint8_t sum = 0;
+	uint8_t data = 0;
+	unsigned int i;
 
-	u.signature = cpu_to_le32 ( signature );
-	return u.name;
+	/* Read table length */
+	copy_from_user ( &acpi.length, table,
+			 offsetof ( typeof ( acpi ), length ),
+			 sizeof ( acpi.length ) );
+
+	/* Compute checksum */
+	for ( i = 0 ; i < le32_to_cpu ( acpi.length ) ; i++ ) {
+		copy_from_user ( &data, table, i, sizeof ( data ) );
+		sum += data;
+	}
+
+	return sum;
 }
 
 /**
@@ -63,97 +73,35 @@ static const char * acpi_name ( uint32_t signature ) {
  *
  * @v acpi		ACPI table header
  */
-void acpi_fix_checksum ( struct acpi_description_header *acpi ) {
-	unsigned int i = 0;
-	uint8_t sum = 0;
+void acpi_fix_checksum ( struct acpi_header *acpi ) {
 
-	for ( i = 0 ; i < acpi->length ; i++ ) {
-		sum += *( ( ( uint8_t * ) acpi ) + i );
-	}
-	acpi->checksum -= sum;
-}
-
-/**
- * Locate ACPI root system description table within a memory range
- *
- * @v start		Start address to search
- * @v len		Length to search
- * @ret rsdt		ACPI root system description table, or UNULL
- */
-static userptr_t acpi_find_rsdt_range ( userptr_t start, size_t len ) {
-	static const char signature[8] = RSDP_SIGNATURE;
-	struct acpi_rsdp rsdp;
-	userptr_t rsdt;
-	size_t offset;
-	uint8_t sum;
-	unsigned int i;
-
-	/* Search for RSDP */
-	for ( offset = 0 ; ( ( offset + sizeof ( rsdp ) ) < len ) ;
-	      offset += RSDP_STRIDE ) {
-
-		/* Check signature and checksum */
-		copy_from_user ( &rsdp, start, offset, sizeof ( rsdp ) );
-		if ( memcmp ( rsdp.signature, signature,
-			      sizeof ( signature ) ) != 0 )
-			continue;
-		for ( sum = 0, i = 0 ; i < sizeof ( rsdp ) ; i++ )
-			sum += *( ( ( uint8_t * ) &rsdp ) + i );
-		if ( sum != 0 )
-			continue;
-
-		/* Extract RSDT */
-		rsdt = phys_to_user ( le32_to_cpu ( rsdp.rsdt ) );
-		DBGC ( rsdt, "RSDT %#08lx found via RSDP %#08lx\n",
-		       user_to_phys ( rsdt, 0 ),
-		       user_to_phys ( start, offset ) );
-		return rsdt;
-	}
-
-	return UNULL;
-}
-
-/**
- * Locate ACPI root system description table
- *
- * @v ebda		Extended BIOS data area, or UNULL
- * @ret rsdt		ACPI root system description table, or UNULL
- */
-userptr_t acpi_find_rsdt ( userptr_t ebda ) {
-	userptr_t rsdt;
-
-	/* Search EBDA, if applicable */
-	if ( ebda ) {
-		rsdt = acpi_find_rsdt_range ( ebda, RSDP_EBDA_LEN );
-		if ( rsdt )
-			return rsdt;
-	}
-
-	/* Search fixed BIOS area */
-	rsdt = acpi_find_rsdt_range ( phys_to_user ( RSDP_BIOS_START ),
-				      RSDP_BIOS_LEN );
-	if ( rsdt )
-		return rsdt;
-
-	return UNULL;
+	/* Update checksum */
+	acpi->checksum -= acpi_checksum ( virt_to_user ( acpi ) );
 }
 
 /**
  * Locate ACPI table
  *
- * @v rsdt		ACPI root system description table
  * @v signature		Requested table signature
  * @v index		Requested index of table with this signature
  * @ret table		Table, or UNULL if not found
  */
-userptr_t acpi_find ( userptr_t rsdt, uint32_t signature, unsigned int index ) {
-	struct acpi_description_header acpi;
+userptr_t acpi_find ( uint32_t signature, unsigned int index ) {
+	struct acpi_header acpi;
 	struct acpi_rsdt *rsdtab;
 	typeof ( rsdtab->entry[0] ) entry;
+	userptr_t rsdt;
 	userptr_t table;
 	size_t len;
 	unsigned int count;
 	unsigned int i;
+
+	/* Locate RSDT */
+	rsdt = acpi_find_rsdt();
+	if ( ! rsdt ) {
+		DBG ( "RSDT not found\n" );
+		return UNULL;
+	}
 
 	/* Read RSDT header */
 	copy_from_user ( &acpi, rsdt, 0, sizeof ( acpi ) );
@@ -197,6 +145,15 @@ userptr_t acpi_find ( userptr_t rsdt, uint32_t signature, unsigned int index ) {
 		if ( index-- )
 			continue;
 
+		/* Check table integrity */
+		if ( acpi_checksum ( table ) != 0 ) {
+			DBGC ( rsdt, "RSDT %#08lx found %s with bad checksum "
+			       "at %08lx\n", user_to_phys ( rsdt, 0 ),
+			       acpi_name ( signature ),
+			       user_to_phys ( table, 0 ) );
+			break;
+		}
+
 		DBGC ( rsdt, "RSDT %#08lx found %s at %08lx\n",
 		       user_to_phys ( rsdt, 0 ), acpi_name ( signature ),
 		       user_to_phys ( table, 0 ) );
@@ -227,7 +184,7 @@ userptr_t acpi_find ( userptr_t rsdt, uint32_t signature, unsigned int index ) {
  * the ACPI specification itself.
  */
 static int acpi_sx_zsdt ( userptr_t zsdt, uint32_t signature ) {
-	struct acpi_description_header acpi;
+	struct acpi_header acpi;
 	union {
 		uint32_t dword;
 		uint8_t byte[4];
@@ -294,20 +251,27 @@ static int acpi_sx_zsdt ( userptr_t zsdt, uint32_t signature ) {
 /**
  * Extract \_Sx value from DSDT/SSDT
  *
- * @v rsdt		ACPI root system description table
  * @v signature		Signature (e.g. "_S5_")
  * @ret sx		\_Sx value, or negative error
  */
-int acpi_sx ( userptr_t rsdt, uint32_t signature ) {
+int acpi_sx ( uint32_t signature ) {
 	struct acpi_fadt fadtab;
+	userptr_t rsdt;
 	userptr_t fadt;
 	userptr_t dsdt;
 	userptr_t ssdt;
 	unsigned int i;
 	int sx;
 
+	/* Locate RSDT */
+	rsdt = acpi_find_rsdt();
+	if ( ! rsdt ) {
+		DBG ( "RSDT not found\n" );
+		return -ENOENT;
+	}
+
 	/* Try DSDT first */
-	fadt = acpi_find ( rsdt, FADT_SIGNATURE, 0 );
+	fadt = acpi_find ( FADT_SIGNATURE, 0 );
 	if ( fadt ) {
 		copy_from_user ( &fadtab, fadt, 0, sizeof ( fadtab ) );
 		dsdt = phys_to_user ( fadtab.dsdt );
@@ -317,7 +281,7 @@ int acpi_sx ( userptr_t rsdt, uint32_t signature ) {
 
 	/* Try all SSDTs */
 	for ( i = 0 ; ; i++ ) {
-		ssdt = acpi_find ( rsdt, SSDT_SIGNATURE, i );
+		ssdt = acpi_find ( SSDT_SIGNATURE, i );
 		if ( ! ssdt )
 			break;
 		if ( ( sx = acpi_sx_zsdt ( ssdt, signature ) ) >= 0 )
@@ -331,34 +295,73 @@ int acpi_sx ( userptr_t rsdt, uint32_t signature ) {
 
 /******************************************************************************
  *
- * Interface methods
+ * Descriptors
  *
  ******************************************************************************
  */
 
 /**
- * Describe object in an ACPI table
+ * Add ACPI descriptor
+ *
+ * @v desc		ACPI descriptor
+ */
+void acpi_add ( struct acpi_descriptor *desc ) {
+
+	/* Add to list of descriptors */
+	ref_get ( desc->refcnt );
+	list_add_tail ( &desc->list, &desc->model->descs );
+}
+
+/**
+ * Remove ACPI descriptor
+ *
+ * @v desc		ACPI descriptor
+ */
+void acpi_del ( struct acpi_descriptor *desc ) {
+
+	/* Remove from list of descriptors */
+	list_check_contains_entry ( desc, &desc->model->descs, list );
+	list_del ( &desc->list );
+	ref_put ( desc->refcnt );
+}
+
+/**
+ * Get object's ACPI descriptor
  *
  * @v intf		Interface
- * @v acpi		ACPI table
- * @v len		Length of ACPI table
- * @ret rc		Return status code
+ * @ret desc		ACPI descriptor, or NULL
  */
-int acpi_describe ( struct interface *intf,
-		    struct acpi_description_header *acpi, size_t len ) {
+struct acpi_descriptor * acpi_describe ( struct interface *intf ) {
 	struct interface *dest;
 	acpi_describe_TYPE ( void * ) *op =
 		intf_get_dest_op ( intf, acpi_describe, &dest );
 	void *object = intf_object ( dest );
-	int rc;
+	struct acpi_descriptor *desc;
 
 	if ( op ) {
-		rc = op ( object, acpi, len );
+		desc = op ( object );
 	} else {
-		/* Default is to fail to describe */
-		rc = -EOPNOTSUPP;
+		desc = NULL;
 	}
 
 	intf_put ( dest );
-	return rc;
+	return desc;
+}
+
+/**
+ * Install ACPI tables
+ *
+ * @v install		Table installation method
+ * @ret rc		Return status code
+ */
+int acpi_install ( int ( * install ) ( struct acpi_header *acpi ) ){
+	struct acpi_model *model;
+	int rc;
+
+	for_each_table_entry ( model, ACPI_MODELS ) {
+		if ( ( rc = model->install ( install ) ) != 0 )
+			return rc;
+	}
+
+	return 0;
 }
