@@ -8,7 +8,7 @@ go:
 - 1.9
 
 install:
-- go get github.com/Masterminds/glide
+- go get github.com/golang/dep/cmd/dep
 - go get github.com/golang/lint/golint
 
 script:
@@ -17,13 +17,13 @@ script:
 # want the arch to change, we have to do this layer of
 # indirection. Blargh.
 - export GOARCH=$MY_GOARCH
-- glide install
+- dep ensure
 # Try to build on all architectures.
 - go install ./cmd/pixiecore
 # Only do testing and things that requires stuff to be executable on amd64.
-- "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(glide novendor); fi"
-- "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(glide novendor); fi"
-- "if [ \"$GOARCH\" = \"amd64\" ]; then glide novendor | xargs -n1 golint; fi"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go test $(go list ./... | grep -v /vendor/); fi"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go vet $(go list ./... | grep -v /vendor/); fi"
+- "if [ \"$GOARCH\" = \"amd64\" ]; then go list ./... | grep -v /vendor/ | xargs -n1 golint; fi"
 
 
 jobs:
@@ -33,10 +33,10 @@ jobs:
       env:
         - NAME=debian_packages
       install:
-      - go get github.com/Masterminds/glide
+      - go get github.com/golang/dep/cmd/dep
       - gem install fpm
       script:
-      - glide install
+      - dep ensure
       - GOARCH=amd64 go build -o pixiecore.amd64 ./cmd/pixiecore
       - GOARCH=arm go build -o pixiecore.arm ./cmd/pixiecore
       - fpm -s dir -t deb -n pixiecore -v $(date '+%Y%m%d%H%M%S')
