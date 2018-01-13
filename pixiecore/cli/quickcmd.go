@@ -270,6 +270,50 @@ func archRecipe(parent *cobra.Command) {
 	parent.AddCommand(archCmd)
 }
 
+func coreosRecipe(parent *cobra.Command) {
+	versions := []string{
+		"stable",
+		"beta",
+		"alpha",
+	}
+
+	var coreosCmd = &cobra.Command{
+		Use:   "coreos version",
+		Short: "Boot a CoreOS installer",
+		Long:  fmt.Sprintf(`Boot a CoreOS installer for the given version (one of %s)`, strings.Join(versions, ",")),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) < 1 {
+				fatalf("you must specify a CoreOS version")
+			}
+			var version string
+			for _, v := range versions {
+				if args[0] == v {
+					version = v
+					break
+				}
+			}
+			if version == "" {
+				fatalf("Unknown CoreOS version %q", version)
+			}
+
+			arch, err := cmd.Flags().GetString("arch")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			kernel := fmt.Sprintf("https://%s.release.core-os.net/%s-usr/current/coreos_production_pxe.vmlinuz", version, arch)
+			initrd := fmt.Sprintf("https://%s.release.core-os.net/%s-usr/current/coreos_production_pxe_image.cpio.gz", version, arch)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, "").Serve())
+		},
+	}
+
+	coreosCmd.Flags().String("arch", "amd64", "CPU architecture of the CoreOS installer files")
+	serverConfigFlags(coreosCmd)
+	staticConfigFlags(coreosCmd)
+	parent.AddCommand(coreosCmd)
+}
+
 func netbootRecipe(parent *cobra.Command) {
 	var netbootCmd = &cobra.Command{
 		Use:   "xyz",
@@ -277,8 +321,8 @@ func netbootRecipe(parent *cobra.Command) {
 		Long: `https://network.xyz allows to boot multiple operating
 	systems and useful system utilities.`,
 		Run: func(cmd *cobra.Command, args []string) {
-		        kernel := "https://boot.netboot.xyz/ipxe/netboot.xyz.lkrn"
-			fmt.Println(staticFromFlags(cmd, kernel, []string {}, "").Serve())
+			kernel := "https://boot.netboot.xyz/ipxe/netboot.xyz.lkrn"
+			fmt.Println(staticFromFlags(cmd, kernel, []string{}, "").Serve())
 		},
 	}
 	serverConfigFlags(netbootCmd)
@@ -294,6 +338,7 @@ func init() {
 	centosRecipe(quickCmd)
 	//archRecipe(quickCmd)
 	netbootRecipe(quickCmd)
+	coreosRecipe(quickCmd)
 
 	// TODO: some kind of caching support where quick OSes get
 	// downloaded locally, so you don't have to fetch from a remote
