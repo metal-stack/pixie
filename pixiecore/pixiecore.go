@@ -83,6 +83,16 @@ type Spec struct {
 	Cmdline string
 	// Message to print on the client machine before booting.
 	Message string
+
+	// A raw iPXE script to run. Overrides all of the above.
+	//
+	// THIS IS NOT A STABLE INTERFACE. This will only work for
+	// machines that get booted via iPXE. Currently, that is all of
+	// them, but there is no guarantee that this will remain
+	// true. When passing a custom iPXE script, it is your
+	// responsibility to make the boot succeed, Pixiecore's
+	// involvement ends when it serves your script.
+	IpxeScript string
 }
 
 func expandCmdline(tpl string, funcs template.FuncMap) (string, error) {

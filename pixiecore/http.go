@@ -181,6 +181,10 @@ func (s *Server) handleBooting(w http.ResponseWriter, r *http.Request) {
 }
 
 func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
+	if spec.IpxeScript != "" {
+		return []byte(spec.IpxeScript), nil
+	}
+
 	if spec.Kernel == "" {
 		return nil, errors.New("spec is missing Kernel")
 	}

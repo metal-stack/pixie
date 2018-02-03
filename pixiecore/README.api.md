@@ -172,6 +172,47 @@ reasonable starting point nonetheless. It will instruct pixecore
 to boot Tiny Core Linux' kernel and initrd(s),
 directly from upstream servers.
 
+## Advanced, non-guaranteed features
+
+### Custom iPXE boot script
+
+Pixiecore aims to abstract away the details of the network boot
+process. This gives it the freedom to adjust the exact sequence of
+events as more firmware bugs and quirks are discovered in the wild,
+and simplifies API design because you only have to specify what you
+want the _end_ state to be, not manage the intermediate stages.
+
+However, in some use cases, you may want to do advanced things within
+the bootloader, prior to booting the OS. For these cases, the API
+supports passing a raw iPXE boot script.
+
+Please note that **this is not a stable interface**, and never will
+be. iPXE is an implementation detail of Pixiecore's boot process, and
+may change at some point in the future without warning. Additionally,
+new booting methods may be added that don't use iPXE at all (for
+example, the new RedFish machine management APIs).
+
+By using this advanced feature, you understand that this may break in
+future versions of Pixiecore. It's up to you to verify that your use
+case continues to work as Pixiecore updates. We still welcome bug
+reports if you're using this feature, just be aware that some of them
+may end up being "won't fix, working as intended."
+
+Additionally, note that it is _your_ responsibility to successfully
+complete the boot process, Pixiecore's involvement ends with serving
+your iPXE script. Pixiecore does no sanity checking on your script, it
+just hands it verbatim to iPXE.
+
+If you're okay with this disclaimer, you can use this functionality by
+just passing an `ipxe-script` element as the only element of your
+response:
+
+```json
+{
+  "ipxe-script": "#!ipxe\nyour-ipxe-script-here"
+}
+```
+
 ## Deprecated features
 
 ### Kernel commandline as an object

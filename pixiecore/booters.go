@@ -171,13 +171,20 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	r := struct {
-		Kernel  string      `json:"kernel"`
-		Initrd  []string    `json:"initrd"`
-		Cmdline interface{} `json:"cmdline"`
-		Message string      `json:"message"`
+		Kernel     string      `json:"kernel"`
+		Initrd     []string    `json:"initrd"`
+		Cmdline    interface{} `json:"cmdline"`
+		Message    string      `json:"message"`
+		IpxeScript string      `json:"ipxe-script"`
 	}{}
 	if err = json.NewDecoder(body).Decode(&r); err != nil {
 		return nil, err
+	}
+
+	if r.IpxeScript != "" {
+		return &Spec{
+			IpxeScript: r.IpxeScript,
+		}, nil
 	}
 
 	r.Kernel, err = b.makeURLAbsolute(r.Kernel)
