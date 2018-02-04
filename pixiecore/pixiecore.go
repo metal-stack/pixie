@@ -148,6 +148,10 @@ const (
 	FirmwareEFI32          = 6 // 32-bit x86 processor running EFI
 	FirmwareEFI64          = 7 // 64-bit x86 processor running EFI
 	FirmwareEFIBC          = 9 // 64-bit x86 processor running EFI
+
+	// This is a "fictional" firmware, representing an x86 BIOS
+	// running iPXE, which does not have UNDI available.
+	FirmwareX86Ipxe = 42
 )
 
 var fwToArch = map[Firmware]Architecture{
@@ -155,6 +159,8 @@ var fwToArch = map[Firmware]Architecture{
 	FirmwareEFI32: ArchIA32,
 	FirmwareEFI64: ArchX64,
 	FirmwareEFIBC: ArchX64,
+
+	FirmwareX86Ipxe: ArchIA32,
 }
 
 // A Server boots machines using a Booter.

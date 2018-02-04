@@ -168,6 +168,11 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, cli
 		resp.BootServerName = serverIP.String()
 		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
 	case clientSoftwareIPXE:
+		// TODO: this selection logic is getting increasingly messy,
+		// it needs a refactor.
+		if fwtype == FirmwareX86PC {
+			fwtype = FirmwareX86Ipxe
+		}
 		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)
 	case clientSoftwarePixiecoreIPXE:
 		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
