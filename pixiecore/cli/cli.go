@@ -80,6 +80,7 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Int("status-port", 0, "HTTP port for status information (can be the same as --port)")
 	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
 	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
+	cmd.Flags().String("ipxe-ipxe", "", "Path to an iPXE binary for chainloading from another iPXE")
 	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
 	cmd.Flags().String("ipxe-efi64", "", "Path to an iPXE binary for 64-bit UEFI")
 
@@ -160,6 +161,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	ipxeIpxe, err := cmd.Flags().GetString("ipxe-ipxe")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 	ipxeEFI32, err := cmd.Flags().GetString("ipxe-efi32")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
@@ -191,14 +196,15 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if ipxeBios != "" {
 		ret.Ipxe[pixiecore.FirmwareX86PC] = mustFile(ipxeBios)
 	}
+	if ipxeIpxe != "" {
+		ret.Ipxe[pixiecore.FirmwareX86Ipxe] = mustFile(ipxeIpxe)
+	}
 	if ipxeEFI32 != "" {
 		ret.Ipxe[pixiecore.FirmwareEFI32] = mustFile(ipxeEFI32)
 	}
 	if ipxeEFI64 != "" {
 		ret.Ipxe[pixiecore.FirmwareEFI64] = mustFile(ipxeEFI64)
-	}
-	if ipxeEFI64 != "" {
-		ret.Ipxe[pixiecore.FirmwareEFIBC] = mustFile(ipxeEFI64)
+		ret.Ipxe[pixiecore.FirmwareEFIBC] = ret.Ipxe[pixiecore.FirmwareEFI64]
 	}
 
 	if timestamps {

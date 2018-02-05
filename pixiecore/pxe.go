@@ -96,7 +96,16 @@ func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
 	}
-	fwtype = Firmware(fwt)
+	switch fwt {
+	case 6:
+		fwtype = FirmwareEFI32
+	case 7:
+		fwtype = FirmwareEFI64
+	case 9:
+		fwtype = FirmwareEFIBC
+	default:
+		return 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwt)
+	}
 	if s.Ipxe[fwtype] == nil {
 		return 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
 	}

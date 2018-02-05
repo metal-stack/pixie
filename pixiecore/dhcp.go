@@ -36,7 +36,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			s.debug("DHCP", "Ignoring packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
-		mach, client, fwtype, err := s.validateDHCP(pkt)
+		mach, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
 			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
@@ -56,7 +56,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		}
 
 		s.log("DHCP", "Offering to boot %s", pkt.HardwareAddr)
-		if client == clientSoftwarePixiecoreIPXE {
+		if fwtype == FirmwarePixiecoreIpxe {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
 		} else {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCP, "Offering to boot")
@@ -69,7 +69,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			continue
 		}
 
-		resp, err := s.offerDHCP(pkt, mach, serverIP, client, fwtype)
+		resp, err := s.offerDHCP(pkt, mach, serverIP, fwtype)
 		if err != nil {
 			s.log("DHCP", "Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
@@ -94,22 +94,51 @@ func (s *Server) isBootDHCP(pkt *dhcp4.Packet) error {
 	return nil
 }
 
-type clientSoftware int
-
-const (
-	clientSoftwareGeneric clientSoftware = iota
-	clientSoftwareIPXE
-	clientSoftwarePixiecoreIPXE
-)
-
-func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, client clientSoftware, fwtype Firmware, err error) {
+func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return mach, 0, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return mach, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
 	}
-	fwtype = Firmware(fwt)
-	if s.Ipxe[fwtype] == nil {
-		return mach, 0, 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
+
+	// Basic architecture and firmware identification, based purely on
+	// the PXE architecture option.
+	switch fwt {
+	case 0:
+		mach.Arch = ArchIA32
+		fwtype = FirmwareX86PC
+	case 6:
+		mach.Arch = ArchIA32
+		fwtype = FirmwareEFI32
+	case 7:
+		mach.Arch = ArchX64
+		fwtype = FirmwareEFI64
+	case 9:
+		mach.Arch = ArchX64
+		fwtype = FirmwareEFIBC
+	default:
+		return mach, 0, fmt.Errorf("unsupported client firmware type '%d' (please file a bug!)", fwtype)
+	}
+
+	// Now, identify special sub-breeds of client firmware based on
+	// the user-class option. Note these only change the "firmware
+	// type", not the architecture we're reporting to Booters. We need
+	// to identify these as part of making the internal chainloading
+	// logic work properly.
+	if userClass, err := pkt.Options.String(77); err == nil {
+		// If the client has had iPXE burned into its ROM (or is a VM
+		// that uses iPXE as the PXE "ROM"), special handling is
+		// needed because in this mode the client is using iPXE native
+		// drivers and chainloading to a UNDI stack won't work.
+		if userClass == "iPXE" && fwtype == FirmwareX86PC {
+			fwtype = FirmwareX86Ipxe
+		}
+		// If the client identifies as "pixiecore", we've already
+		// chainloaded this client to the full-featured copy of iPXE
+		// we supply. We have to distinguish this case so we don't
+		// loop on the chainload step.
+		if userClass == "pixiecore" {
+			fwtype = FirmwarePixiecoreIpxe
+		}
 	}
 
 	guid := pkt.Options[97]
@@ -122,30 +151,17 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, client clientSof
 		// well accept these buggy ROMs.
 	case 17:
 		if guid[0] != 0 {
-			return mach, 0, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
+			return mach, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
 		}
 	default:
-		return mach, 0, 0, errors.New("malformed client GUID (option 97), wrong size")
-	}
-
-	// We need to identify two special kinds of PXE clients: generic
-	// iPXE, and the iPXE embedded in Pixiecore.
-	client = clientSoftwareGeneric
-	if userClass, err := pkt.Options.String(77); err == nil {
-		switch userClass {
-		case "iPXE":
-			client = clientSoftwareIPXE
-		case "pixiecore":
-			client = clientSoftwarePixiecoreIPXE
-		}
+		return mach, 0, errors.New("malformed client GUID (option 97), wrong size")
 	}
 
 	mach.MAC = pkt.HardwareAddr
-	mach.Arch = fwToArch[fwtype]
-	return mach, client, fwtype, nil
+	return mach, fwtype, nil
 }
 
-func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, client clientSoftware, fwtype Firmware) (*dhcp4.Packet, error) {
+func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwtype Firmware) (*dhcp4.Packet, error) {
 	resp := &dhcp4.Packet{
 		Type:          dhcp4.MsgOffer,
 		TransactionID: pkt.TransactionID,
@@ -163,38 +179,11 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, cli
 		resp.Options[97] = pkt.Options[97]
 	}
 
-	switch client {
-	case clientSoftwareGeneric:
-		resp.BootServerName = serverIP.String()
-		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
-	case clientSoftwareIPXE:
-		// TODO: this selection logic is getting increasingly messy,
-		// it needs a refactor.
-		if fwtype == FirmwareX86PC {
-			fwtype = FirmwareX86Ipxe
-		}
-		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)
-	case clientSoftwarePixiecoreIPXE:
-		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
-	}
-
-	if fwtype == FirmwareX86PC {
-		// In theory, the PXE boot options are required by PXE
-		// clients. However, some UEFI firmwares don't actually
-		// support PXE properly, and will ignore ProxyDHCP responses
-		// that include the option.
-		//
-		// On the other hand, seemingly all firmwares support a
-		// variant of the protocol where option 43 is not
-		// provided. They behave as if option 43 had pointed them to a
-		// PXE boot server on port 4011 of the machine sending the
-		// ProxyDHCP response. Looking at TianoCore sources, I believe
-		// this is the BINL protocol, which is Microsoft-specific and
-		// lacks a specification. However, empirically, this code
-		// seems to work.
-		//
-		// But this code block is for classic old BIOS, which does
-		// behave and want option 43 to tell it how to boot.
+	switch fwtype {
+	case FirmwareX86PC:
+		// This is completely standard PXE: we tell the PXE client to
+		// bypass all the boot discovery rubbish that PXE supports,
+		// and just load a file from TFTP.
 
 		pxe := dhcp4.Options{
 			// PXE Boot Server Discovery Control - bypass, just boot from filename.
@@ -205,7 +194,53 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, cli
 			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
 		}
 		resp.Options[43] = bs
+		resp.BootServerName = serverIP.String()
+		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
+
+	case FirmwareX86Ipxe:
+		// Almost standard PXE, but the boot filename needs to be a URL.
+		pxe := dhcp4.Options{
+			// PXE Boot Server Discovery Control - bypass, just boot from filename.
+			6: []byte{8},
+		}
+		bs, err := pxe.Marshal()
+		if err != nil {
+			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
+		}
+		resp.Options[43] = bs
+		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)
+
+	case FirmwareEFI32, FirmwareEFI64, FirmwareEFIBC:
+		// In theory, the response we send for FirmwareX86PC should
+		// also work for EFI. However, some UEFI firmwares don't
+		// support PXE properly, and will ignore ProxyDHCP responses
+		// that try to bypass boot server discovery control.
+		//
+		// On the other hand, seemingly all firmwares support a
+		// variant of the protocol where option 43 is not
+		// provided. They behave as if option 43 had pointed them to a
+		// PXE boot server on port 4011 of the machine sending the
+		// ProxyDHCP response. Looking at TianoCore sources, I believe
+		// this is the BINL protocol, which is Microsoft-specific and
+		// lacks a specification. However, empirically, this code
+		// seems to work.
+		//
+		// So, for EFI, we just provide a server name and filename,
+		// and expect to be called again on port 4011 (which is in
+		// pxe.go).
+		resp.BootServerName = serverIP.String()
+		resp.BootFilename = fmt.Sprintf("%s/%d", mach.MAC, fwtype)
+
+	case FirmwarePixiecoreIpxe:
+		// We've already gone through one round of chainloading, now
+		// we can finally chainload to HTTP for the actual boot
+		// script.
+		resp.BootFilename = fmt.Sprintf("http://%s:%d/_/ipxe?arch=%d&mac=%s", serverIP, s.HTTPPort, mach.Arch, mach.MAC)
+
+	default:
+		return nil, fmt.Errorf("unknown firmware type %d", fwtype)
 	}
+
 	return resp, nil
 }
 

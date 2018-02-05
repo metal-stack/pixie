@@ -143,25 +143,13 @@ type Firmware int
 
 // The bootloaders that Pixiecore knows how to handle.
 const (
-	// Note the values match the values from RFC4578.
-	FirmwareX86PC Firmware = 0 // "Classic" x86 BIOS with PXE/UNDI support.
-	FirmwareEFI32          = 6 // 32-bit x86 processor running EFI
-	FirmwareEFI64          = 7 // 64-bit x86 processor running EFI
-	FirmwareEFIBC          = 9 // 64-bit x86 processor running EFI
-
-	// This is a "fictional" firmware, representing an x86 BIOS
-	// running iPXE, which does not have UNDI available.
-	FirmwareX86Ipxe = 42
+	FirmwareX86PC         Firmware = iota // "Classic" x86 BIOS with PXE/UNDI support
+	FirmwareEFI32                         // 32-bit x86 processor running EFI
+	FirmwareEFI64                         // 64-bit x86 processor running EFI
+	FirmwareEFIBC                         // 64-bit x86 processor running EFI
+	FirmwareX86Ipxe                       // "Classic" x86 BIOS running iPXE (no UNDI support)
+	FirmwarePixiecoreIpxe                 // Pixiecore's iPXE, which has replaced the underlying firmware
 )
-
-var fwToArch = map[Firmware]Architecture{
-	FirmwareX86PC: ArchIA32,
-	FirmwareEFI32: ArchIA32,
-	FirmwareEFI64: ArchX64,
-	FirmwareEFIBC: ArchX64,
-
-	FirmwareX86Ipxe: ArchIA32,
-}
 
 // A Server boots machines using a Booter.
 type Server struct {
