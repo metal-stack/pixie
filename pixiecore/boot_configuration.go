@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const X86_HTTP_CLIENT = 0x10
+const x86HTTPClient = 0x10
 
 // StaticBootConfiguration provides values for dhcp options that remain unchanged until restart
 type StaticBootConfiguration struct {
@@ -35,7 +35,7 @@ func MakeStaticBootConfiguration(httpBootURL, ipxeBootURL string, preference uin
 
 // GetBootURL returns Boot File URL, see RFC 5970
 func (bc *StaticBootConfiguration) GetBootURL(id []byte, clientArchType uint16) ([]byte, error) {
-	if clientArchType == X86_HTTP_CLIENT {
+	if clientArchType == x86HTTPClient {
 		return bc.HTTPBootURL, nil
 	}
 	return bc.IPxeBootURL, nil
