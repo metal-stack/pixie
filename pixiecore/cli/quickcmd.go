@@ -241,35 +241,6 @@ func centosRecipe(parent *cobra.Command) {
 	parent.AddCommand(centosCmd)
 }
 
-func archRecipe(parent *cobra.Command) {
-	archCmd := &cobra.Command{
-		Use:   "arch",
-		Short: "Boot an Arch Linux installer",
-		Run: func(cmd *cobra.Command, args []string) {
-			arch, err := cmd.Flags().GetString("arch")
-			if err != nil {
-				fatalf("Error reading flag: %s", err)
-			}
-			mirror, err := cmd.Flags().GetString("mirror")
-			if err != nil {
-				fatalf("Error reading flag: %s", err)
-			}
-
-			kernel := fmt.Sprintf("%s/iso/latest/arch/boot/%s/vmlinuz", mirror, arch)
-			initrd := fmt.Sprintf("%s/iso/latest/arch/boot/%s/archiso.img", mirror, arch)
-			stage2 := fmt.Sprintf("archisobasedir=arch archiso_http_srv=%s/iso/latest/", mirror)
-
-			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, stage2).Serve())
-		},
-	}
-
-	archCmd.Flags().String("arch", "x86_64", "CPU architecture of the Debian installer files")
-	archCmd.Flags().String("mirror", "https://mirrors.kernel.org/archlinux", "Root of the debian mirror to use")
-	serverConfigFlags(archCmd)
-	staticConfigFlags(archCmd)
-	parent.AddCommand(archCmd)
-}
-
 func coreosRecipe(parent *cobra.Command) {
 	versions := []string{
 		"stable",
@@ -336,7 +307,6 @@ func init() {
 	ubuntuRecipe(quickCmd)
 	fedoraRecipe(quickCmd)
 	centosRecipe(quickCmd)
-	//archRecipe(quickCmd)
 	netbootRecipe(quickCmd)
 	coreosRecipe(quickCmd)
 

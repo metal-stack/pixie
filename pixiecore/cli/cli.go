@@ -64,10 +64,6 @@ func fatalf(msg string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func todo(msg string, args ...interface{}) {
-	fatalf("TODO: "+msg, args...)
-}
-
 func staticConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String("cmdline", "", "Kernel commandline arguments")
 	cmd.Flags().String("bootmsg", "", "Message to print on machines before booting")

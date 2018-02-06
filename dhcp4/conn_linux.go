@@ -27,10 +27,6 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-const (
-	udpProtocolNumber = 17
-)
-
 type linuxConn struct {
 	port uint16
 	conn *ipv4.RawConn
