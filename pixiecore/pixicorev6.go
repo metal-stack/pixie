@@ -3,11 +3,13 @@ package pixiecore
 import (
 	"encoding/binary"
 	"fmt"
-	"go.universe.tf/netboot/dhcp6"
 	"net"
 	"time"
+
+	"go.universe.tf/netboot/dhcp6"
 )
 
+// ServerV6 boots machines using a Booter.
 type ServerV6 struct {
 	Address string
 	Port    string
@@ -23,6 +25,7 @@ type ServerV6 struct {
 	Debug func(subsystem, msg string)
 }
 
+// NewServerV6 returns a new ServerV6.
 func NewServerV6() *ServerV6 {
 	ret := &ServerV6{
 		Port: "547",
@@ -30,6 +33,8 @@ func NewServerV6() *ServerV6 {
 	return ret
 }
 
+// Serve listens for machines attempting to boot, and responds to
+// their DHCPv6 requests.
 func (s *ServerV6) Serve() error {
 	s.log("dhcp", "starting...")
 
@@ -47,7 +52,7 @@ func (s *ServerV6) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.SetDUID(dhcp.SourceHardwareAddress())
+	s.setDUID(dhcp.SourceHardwareAddress())
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 
@@ -81,7 +86,7 @@ func (s *ServerV6) debug(subsystem, format string, args ...interface{}) {
 	s.Debug(subsystem, fmt.Sprintf(format, args...))
 }
 
-func (s *ServerV6) SetDUID(addr net.HardwareAddr) {
+func (s *ServerV6) setDUID(addr net.HardwareAddr) {
 	duid := make([]byte, len(addr)+8) // see rfc3315, section 9.2, DUID-LT
 
 	copy(duid[0:], []byte{0, 1}) //fixed, x0001
