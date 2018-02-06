@@ -102,14 +102,14 @@ func (s *staticBooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 		return s.serveFile(s.kernel)
 
 	case strings.HasPrefix(path, "initrd-"):
-		i, err := strconv.Atoi(string(path[7:]))
+		i, err := strconv.Atoi(path[7:])
 		if err != nil || i < 0 || i >= len(s.initrd) {
 			return nil, -1, fmt.Errorf("no file with ID %q", id)
 		}
 		return s.serveFile(s.initrd[i])
 
 	case strings.HasPrefix(path, "other-"):
-		i, err := strconv.Atoi(string(path[6:]))
+		i, err := strconv.Atoi(path[6:])
 		if err != nil || i < 0 || i >= len(s.otherIDs) {
 			return nil, -1, fmt.Errorf("no file with ID %q", id)
 		}

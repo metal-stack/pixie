@@ -18,16 +18,14 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"time"
 
 	"go.universe.tf/netboot/dhcp4"
-	"golang.org/x/net/icmp"
 )
 
 type dhcpServer struct {
-	dhcpConn *dhcp4.Conn // Used for sending only
-	icmpConn icmp.PacketConn
-	leases   []lease
+	//dhcpConn *dhcp4.Conn // Used for sending only
+	//icmpConn icmp.PacketConn
+	leases []lease
 }
 
 const (
@@ -37,9 +35,9 @@ const (
 )
 
 type lease struct {
-	state   int
-	mac     net.HardwareAddr
-	expires time.Time
+	state int
+	//mac     net.HardwareAddr
+	//expires time.Time
 }
 
 func newDHCPServer(address string, dhcpConn *dhcp4.Conn) (*dhcpServer, error) {

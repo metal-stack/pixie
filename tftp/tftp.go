@@ -222,7 +222,7 @@ func (s *Server) transfer(addr net.Addr, req *rrq) error {
 			conn.Write(tftpError("internal server error"))
 			return fmt.Errorf("writing seqnum: %s", err)
 		}
-		n, err := io.CopyN(&b, file, int64(req.BlockSize))
+		n, err := io.CopyN(&b, file, req.BlockSize)
 		if err != nil && err != io.EOF {
 			conn.Write(tftpError("internal server error"))
 			return fmt.Errorf("reading bytes for block %d: %s", seq, err)

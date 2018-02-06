@@ -58,7 +58,7 @@ func getURL(id ID, key *[32]byte) (string, error) {
 
 	var nonce [24]byte
 	copy(nonce[:], signed)
-	out, ok := secretbox.Open(nil, []byte(signed[24:]), &nonce, key)
+	out, ok := secretbox.Open(nil, signed[24:], &nonce, key)
 	if !ok {
 		return "", errors.New("signature verification failed")
 	}

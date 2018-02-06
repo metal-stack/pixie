@@ -31,7 +31,7 @@ ci-test:
 ci-lint:
 	$(GOCMD) get -u github.com/alecthomas/gometalinter
 	gometalinter --install golint
-	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=vetshadow --enable=structcheck --enable=unconvert --vendor ./...
+	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=structcheck --enable=unconvert --vendor ./...
 
 .PHONY: update-ipxe
 update-ipxe:
