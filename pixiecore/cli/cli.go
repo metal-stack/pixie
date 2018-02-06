@@ -39,6 +39,7 @@ func CLI() {
 		return
 	}
 
+	cobra.OnInitialize(initConfig)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
