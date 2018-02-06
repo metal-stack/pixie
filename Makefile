@@ -18,17 +18,17 @@ ci-prepare:
 	$(GOCMD) get -u github.com/estesp/manifest-tool
 	dep ensure
 
-.PHONY: ci-build
-ci-build:
+.PHONY: build
+build:
 	$(GOCMD) install -v ./cmd/pixiecore
 
-.PHONY: ci-test
-ci-test:
+.PHONY: test
+test: build
 	$(GOCMD) test ./...
 	$(GOCMD) test -race ./...
 
-.PHONY: ci-lint
-ci-lint:
+.PHONY: lint
+lint:
 	$(GOCMD) get -u github.com/alecthomas/gometalinter
 	gometalinter --install golint
 	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=deadcode --enable=structcheck --enable=unconvert --vendor ./...
