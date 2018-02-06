@@ -52,19 +52,19 @@ func TestInterop(t *testing.T) {
 	defer f.Close()
 
 	servers := []*Server{
-		&Server{
+		{
 			Handler:     ConstantHandler([]byte(testFile)),
 			InfoLog:     infoLog,
 			TransferLog: transferLog,
 		},
-		&Server{
+		{
 			Handler:     ConstantHandler([]byte(testFile)),
 			InfoLog:     infoLog,
 			TransferLog: transferLog,
 			// This Server clamps to a smaller block size.
 			MaxBlockSize: 500,
 		},
-		&Server{
+		{
 			Handler:     ConstantHandler([]byte(testFile)),
 			InfoLog:     infoLog,
 			TransferLog: transferLog,
