@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"github.com/spf13/cobra"
 	"fmt"
+	"github.com/spf13/cobra"
 	"go.universe.tf/netboot/dhcp6"
 	"go.universe.tf/netboot/dhcp6/pool"
+	"go.universe.tf/netboot/pixiecore"
 	"net"
 	"strings"
-	"go.universe.tf/netboot/pixiecore"
 )
 
 // pixiecore bootipv6 --listen-addr=2001:db8:f00f:cafe::4/64 --httpboot-url=http://[2001:db8:f00f:cafe::4]/bootx64.efi --ipxe-url=http://[2001:db8:f00f:cafe::4]/script.ipxe
@@ -35,7 +35,9 @@ var bootIPv6Cmd = &cobra.Command{
 		if err != nil {
 			s.Debug = logWithStdFmt
 		}
-		if debug { s.Debug = logWithStdFmt }
+		if debug {
+			s.Debug = logWithStdFmt
+		}
 
 		if addr == "" {
 			fatalf("Please specify address to bind to")
@@ -79,7 +81,7 @@ var bootIPv6Cmd = &cobra.Command{
 			fatalf("Error reading flag: %s", err)
 		}
 		s.AddressPool = pool.NewRandomAddressPool(net.ParseIP(addressPoolStart), addressPoolSize, addressPoolValidLifetime)
-		s.PacketBuilder = dhcp6.MakePacketBuilder(addressPoolValidLifetime - addressPoolValidLifetime*3/100, addressPoolValidLifetime)
+		s.PacketBuilder = dhcp6.MakePacketBuilder(addressPoolValidLifetime-addressPoolValidLifetime*3/100, addressPoolValidLifetime)
 
 		fmt.Println(s.Serve())
 	},

@@ -1,13 +1,13 @@
 package pixiecore
 
 import (
-	"net/http"
-	"time"
-	"strings"
-	"fmt"
-	"net/url"
 	"bytes"
+	"fmt"
 	"net"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
 )
 
 const X86_HTTP_CLIENT = 0x10
@@ -23,7 +23,7 @@ type StaticBootConfiguration struct {
 
 // MakeStaticBootConfiguration creates a new StaticBootConfiguration with provided values
 func MakeStaticBootConfiguration(httpBootURL, ipxeBootURL string, preference uint8, usePreference bool,
-		dnsServerAddresses []net.IP) *StaticBootConfiguration {
+	dnsServerAddresses []net.IP) *StaticBootConfiguration {
 	ret := &StaticBootConfiguration{HTTPBootURL: []byte(httpBootURL), IPxeBootURL: []byte(ipxeBootURL), UsePreference: usePreference}
 	if usePreference {
 		ret.Preference = make([]byte, 1)
@@ -63,7 +63,7 @@ type APIBootConfiguration struct {
 
 // MakeAPIBootConfiguration creates a new APIBootConfiguration initialized with provided values
 func MakeAPIBootConfiguration(url string, timeout time.Duration, preference uint8, usePreference bool,
-		dnsServerAddresses []net.IP) *APIBootConfiguration {
+	dnsServerAddresses []net.IP) *APIBootConfiguration {
 	if !strings.HasSuffix(url, "/") {
 		url += "/"
 	}

@@ -1,18 +1,18 @@
 package dhcp6
 
 import (
-	"net"
-	"golang.org/x/net/ipv6"
 	"fmt"
+	"golang.org/x/net/ipv6"
+	"net"
 )
 
 // Conn is dhcpv6-specific socket
 type Conn struct {
-	conn *ipv6.PacketConn
-	group net.IP
-	ifi *net.Interface
+	conn          *ipv6.PacketConn
+	group         net.IP
+	ifi           *net.Interface
 	listenAddress string
-	listenPort string
+	listenPort    string
 }
 
 // NewConn creates a new Conn bound to specified address and port
@@ -23,7 +23,7 @@ func NewConn(addr, port string) (*Conn, error) {
 	}
 
 	group := net.ParseIP("ff02::1:2")
-	c, err := net.ListenPacket("udp6", "[::]:" + port)
+	c, err := net.ListenPacket("udp6", "[::]:"+port)
 	if err != nil {
 		return nil, err
 	}
@@ -33,17 +33,17 @@ func NewConn(addr, port string) (*Conn, error) {
 		return nil, err
 	}
 
-	if err := pc.SetControlMessage(ipv6.FlagSrc | ipv6.FlagDst, true); err != nil {
+	if err := pc.SetControlMessage(ipv6.FlagSrc|ipv6.FlagDst, true); err != nil {
 		pc.Close()
 		return nil, err
 	}
 
 	return &Conn{
-		conn:    pc,
-		group: 	 group,
-		ifi: ifi,
+		conn:          pc,
+		group:         group,
+		ifi:           ifi,
 		listenAddress: addr,
-		listenPort: port,
+		listenPort:    port,
 	}, nil
 }
 
@@ -110,10 +110,11 @@ func (c *Conn) RecvDHCP() (*Packet, net.IP, error) {
 // SendDHCP sends a dhcp packet to the specified ip address using Conn
 func (c *Conn) SendDHCP(dst net.IP, p []byte) error {
 	dstAddr := &net.UDPAddr{
-		IP: dst,
+		IP:   dst,
 		Port: 546,
 	}
-	_, err := c.conn.WriteTo(p, nil, dstAddr); if err != nil {
+	_, err := c.conn.WriteTo(p, nil, dstAddr)
+	if err != nil {
 		return fmt.Errorf("Error sending a reply to %s: %s", dst.String(), err)
 	}
 	return nil

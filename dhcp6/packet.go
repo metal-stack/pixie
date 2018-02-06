@@ -1,8 +1,8 @@
 package dhcp6
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 )
 
 // MessageType contains ID identifying DHCP message type. See RFC 3315
@@ -50,7 +50,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 		return nil, fmt.Errorf("packet has malformed options section: %s", err)
 	}
 
-	ret := make([]byte, len(marshalledOptions) + 4, len(marshalledOptions) + 4)
+	ret := make([]byte, len(marshalledOptions)+4, len(marshalledOptions)+4)
 	ret[0] = byte(p.Type)
 	copy(ret[1:], p.TransactionID[:])
 	copy(ret[4:], marshalledOptions)

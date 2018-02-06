@@ -1,9 +1,9 @@
 package dhcp6
 
 import (
-	"testing"
 	"encoding/binary"
 	"net"
+	"testing"
 )
 
 func TestMarshalOption(t *testing.T) {
@@ -85,8 +85,8 @@ func TestMakeStatusOption(t *testing.T) {
 	if noAddrOption.ID != OptStatusCode {
 		t.Fatalf("Expected option id %d, got %d", OptStatusCode, noAddrOption.ID)
 	}
-	if noAddrOption.Length != uint16(2 + len(expectedMessage)) {
-		t.Fatalf("Expected option length of %d, got %d", 2 + len(expectedMessage), noAddrOption.Length)
+	if noAddrOption.Length != uint16(2+len(expectedMessage)) {
+		t.Fatalf("Expected option length of %d, got %d", 2+len(expectedMessage), noAddrOption.Length)
 	}
 	if binary.BigEndian.Uint16(noAddrOption.Value[0:2]) != expectedStatusCode {
 		t.Fatalf("Expected status code 2, got %d", binary.BigEndian.Uint16(noAddrOption.Value[0:2]))

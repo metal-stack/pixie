@@ -1,25 +1,25 @@
 package pixiecore
 
 import (
-	"go.universe.tf/netboot/dhcp6"
-	"fmt"
-	"time"
 	"encoding/binary"
+	"fmt"
+	"go.universe.tf/netboot/dhcp6"
 	"net"
+	"time"
 )
 
 type ServerV6 struct {
-	Address    		string
-	Port       		string
-	Duid       		[]byte
+	Address string
+	Port    string
+	Duid    []byte
 
-	BootConfig		dhcp6.BootConfiguration
-	PacketBuilder	*dhcp6.PacketBuilder
-	AddressPool 	dhcp6.AddressPool
+	BootConfig    dhcp6.BootConfiguration
+	PacketBuilder *dhcp6.PacketBuilder
+	AddressPool   dhcp6.AddressPool
 
 	errs chan error
 
-	Log func(subsystem, msg string)
+	Log   func(subsystem, msg string)
 	Debug func(subsystem, msg string)
 }
 
@@ -82,7 +82,7 @@ func (s *ServerV6) debug(subsystem, format string, args ...interface{}) {
 }
 
 func (s *ServerV6) SetDUID(addr net.HardwareAddr) {
-	duid := make([]byte, len(addr) + 8) // see rfc3315, section 9.2, DUID-LT
+	duid := make([]byte, len(addr)+8) // see rfc3315, section 9.2, DUID-LT
 
 	copy(duid[0:], []byte{0, 1}) //fixed, x0001
 	copy(duid[2:], []byte{0, 1}) //hw type ethernet, x0001

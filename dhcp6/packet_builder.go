@@ -1,8 +1,8 @@
 package dhcp6
 
 import (
-	"hash/fnv"
 	"encoding/binary"
+	"hash/fnv"
 	"net"
 )
 
@@ -38,8 +38,8 @@ func (b *PacketBuilder) BuildResponse(in *Packet, serverDUID []byte, configurati
 		}
 		associations, err := addresses.ReserveAddresses(in.Options.ClientID(), in.Options.IaNaIDs())
 		return b.makeMsgReply(in.TransactionID, serverDUID, in.Options.ClientID(),
-				in.Options.ClientArchType(), associations, iasWithoutAddesses(associations, in.Options.IaNaIDs()), bootFileURL,
-				configuration.GetRecursiveDNS(), err), err
+			in.Options.ClientArchType(), associations, iasWithoutAddesses(associations, in.Options.IaNaIDs()), bootFileURL,
+			configuration.GetRecursiveDNS(), err), err
 	case MsgInformationRequest:
 		bootFileURL, err := configuration.GetBootURL(b.extractLLAddressOrID(in.Options.ClientID()), in.Options.ClientArchType())
 		if err != nil {
@@ -59,18 +59,21 @@ func (b *PacketBuilder) makeMsgAdvertise(transactionID [3]byte, serverDUID, clie
 	associations []*IdentityAssociation, bootFileURL, preference []byte, dnsServers []net.IP) *Packet {
 	retOptions := make(Options)
 	retOptions.Add(MakeOption(OptClientID, clientID))
-	for _, association := range(associations) {
+	for _, association := range associations {
 		retOptions.Add(MakeIaNaOption(association.InterfaceID, b.calculateT1(), b.calculateT2(),
 			MakeIaAddrOption(association.IPAddress, b.PreferredLifetime, b.ValidLifetime)))
 	}
 	retOptions.Add(MakeOption(OptServerID, serverDUID))
-	if 0x10 ==  clientArchType { // HTTPClient
-		retOptions.Add(MakeOption(OptVendorClass, []byte {0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
+	if 0x10 == clientArchType { // HTTPClient
+		retOptions.Add(MakeOption(OptVendorClass, []byte{0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
 	}
 	retOptions.Add(MakeOption(OptBootfileURL, bootFileURL))
 	if preference != nil {
-		retOptions.Add(MakeOption(OptPreference, preference))}
-	if len(dnsServers) > 0 { retOptions.Add(MakeDNSServersOption(dnsServers)) }
+		retOptions.Add(MakeOption(OptPreference, preference))
+	}
+	if len(dnsServers) > 0 {
+		retOptions.Add(MakeDNSServersOption(dnsServers))
+	}
 
 	return &Packet{Type: MsgAdvertise, TransactionID: transactionID, Options: retOptions}
 }
@@ -79,20 +82,22 @@ func (b *PacketBuilder) makeMsgReply(transactionID [3]byte, serverDUID, clientID
 	associations []*IdentityAssociation, iasWithoutAddresses [][]byte, bootFileURL []byte, dnsServers []net.IP, err error) *Packet {
 	retOptions := make(Options)
 	retOptions.Add(MakeOption(OptClientID, clientID))
-	for _, association := range(associations) {
+	for _, association := range associations {
 		retOptions.Add(MakeIaNaOption(association.InterfaceID, b.calculateT1(), b.calculateT2(),
 			MakeIaAddrOption(association.IPAddress, b.PreferredLifetime, b.ValidLifetime)))
 	}
-	for _, ia := range(iasWithoutAddresses) {
+	for _, ia := range iasWithoutAddresses {
 		retOptions.Add(MakeIaNaOption(ia, b.calculateT1(), b.calculateT2(),
 			MakeStatusOption(2, err.Error())))
 	}
 	retOptions.Add(MakeOption(OptServerID, serverDUID))
-	if 0x10 ==  clientArchType { // HTTPClient
-		retOptions.Add(MakeOption(OptVendorClass, []byte {0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
+	if 0x10 == clientArchType { // HTTPClient
+		retOptions.Add(MakeOption(OptVendorClass, []byte{0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
 	}
 	retOptions.Add(MakeOption(OptBootfileURL, bootFileURL))
-	if len(dnsServers) > 0 { retOptions.Add(MakeDNSServersOption(dnsServers)) }
+	if len(dnsServers) > 0 {
+		retOptions.Add(MakeDNSServersOption(dnsServers))
+	}
 
 	return &Packet{Type: MsgReply, TransactionID: transactionID, Options: retOptions}
 }
@@ -102,11 +107,13 @@ func (b *PacketBuilder) makeMsgInformationRequestReply(transactionID [3]byte, se
 	retOptions := make(Options)
 	retOptions.Add(MakeOption(OptClientID, clientID))
 	retOptions.Add(MakeOption(OptServerID, serverDUID))
-	if 0x10 ==  clientArchType { // HTTPClient
-		retOptions.Add(MakeOption(OptVendorClass, []byte {0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
+	if 0x10 == clientArchType { // HTTPClient
+		retOptions.Add(MakeOption(OptVendorClass, []byte{0, 0, 0, 0, 0, 10, 72, 84, 84, 80, 67, 108, 105, 101, 110, 116})) // HTTPClient
 	}
 	retOptions.Add(MakeOption(OptBootfileURL, bootFileURL))
-	if len(dnsServers) > 0 { retOptions.Add(MakeDNSServersOption(dnsServers)) }
+	if len(dnsServers) > 0 {
+		retOptions.Add(MakeDNSServersOption(dnsServers))
+	}
 
 	return &Packet{Type: MsgReply, TransactionID: transactionID, Options: retOptions}
 }
@@ -136,7 +143,7 @@ func (b *PacketBuilder) calculateT1() uint32 {
 }
 
 func (b *PacketBuilder) calculateT2() uint32 {
-	return (b.PreferredLifetime * 4)/5
+	return (b.PreferredLifetime * 4) / 5
 }
 
 func (b *PacketBuilder) extractLLAddressOrID(optClientID []byte) []byte {
@@ -155,12 +162,13 @@ func iasWithoutAddesses(availableAssociations []*IdentityAssociation, allIAs [][
 	ret := make([][]byte, 0)
 	iasWithAddresses := make(map[uint64]bool)
 
-	for _, association := range(availableAssociations) {
+	for _, association := range availableAssociations {
 		iasWithAddresses[calculateIAIDHash(association.InterfaceID)] = true
 	}
 
-	for _, ia := range(allIAs) {
-		_, exists := iasWithAddresses[calculateIAIDHash(ia)]; if !exists {
+	for _, ia := range allIAs {
+		_, exists := iasWithAddresses[calculateIAIDHash(ia)]
+		if !exists {
 			ret = append(ret, ia)
 		}
 	}

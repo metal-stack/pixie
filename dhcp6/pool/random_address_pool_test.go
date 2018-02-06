@@ -1,8 +1,8 @@
 package pool
 
 import (
-	"testing"
 	"net"
+	"testing"
 	"time"
 )
 
@@ -22,26 +22,26 @@ func TestReserveAddress(t *testing.T) {
 	if len(ias) != 2 {
 		t.Fatalf("Expected 2 identity associations but received %d", len(ias))
 	}
-	if string(ias[0].IPAddress) !=  string(expectedIP1) && string(ias[0].IPAddress) !=  string(expectedIP2) {
+	if string(ias[0].IPAddress) != string(expectedIP1) && string(ias[0].IPAddress) != string(expectedIP2) {
 		t.Fatalf("Unexpected ip address: %v", ias[0].IPAddress)
 	}
-	if string(ias[0].ClientID) !=  string(expectedClientID) {
+	if string(ias[0].ClientID) != string(expectedClientID) {
 		t.Fatalf("Expected Client id: %v, but got: %v", expectedClientID, ias[0].ClientID)
 	}
-	if string(ias[0].InterfaceID) !=  string(expectedIAID1) {
+	if string(ias[0].InterfaceID) != string(expectedIAID1) {
 		t.Fatalf("Expected interface id: %v, but got: %v", expectedIAID1, ias[0].InterfaceID)
 	}
 	if ias[0].CreatedAt != expectedTime {
 		t.Fatalf("Expected creation time: %v, but got: %v", expectedTime, ias[0].CreatedAt)
 	}
 
-	if string(ias[1].IPAddress) !=  string(expectedIP1) && string(ias[1].IPAddress) !=  string(expectedIP2) {
+	if string(ias[1].IPAddress) != string(expectedIP1) && string(ias[1].IPAddress) != string(expectedIP2) {
 		t.Fatalf("Unexpected ip address: %v", ias[0].IPAddress)
 	}
-	if string(ias[1].ClientID) !=  string(expectedClientID) {
+	if string(ias[1].ClientID) != string(expectedClientID) {
 		t.Fatalf("Expected Client id: %v, but got: %v", expectedClientID, ias[1].ClientID)
 	}
-	if string(ias[1].InterfaceID) !=  string(expectedIAID2) {
+	if string(ias[1].InterfaceID) != string(expectedIAID2) {
 		t.Fatalf("Expected interface id: %v, but got: %v", expectedIAID2, ias[1].InterfaceID)
 	}
 	if ias[1].CreatedAt != expectedTime {
@@ -80,7 +80,8 @@ func TestReserveAddressKeepsTrackOfUsedAddresses(t *testing.T) {
 	pool.timeNow = func() time.Time { return expectedTime }
 	pool.ReserveAddresses(expectedClientID, [][]byte{expectedIAID})
 
-	_, exists := pool.usedIps[0x01]; if !exists {
+	_, exists := pool.usedIps[0x01]
+	if !exists {
 		t.Fatal("'2001:db8:f00f:cafe::1' should be marked as in use")
 	}
 }
@@ -139,7 +140,8 @@ func TestReleaseAddress(t *testing.T) {
 
 	pool.ReleaseAddresses(expectedClientID, [][]byte{expectedIAID})
 
-	_, exists := pool.identityAssociations[pool.calculateIAIDHash(expectedClientID, expectedIAID)]; if exists {
+	_, exists := pool.identityAssociations[pool.calculateIAIDHash(expectedClientID, expectedIAID)]
+	if exists {
 		t.Fatalf("identity association for %v should've been removed, but is still available", a[0].IPAddress)
 	}
 }

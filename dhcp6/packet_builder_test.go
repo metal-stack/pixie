@@ -1,10 +1,10 @@
 package dhcp6
 
 import (
-	"testing"
 	"encoding/binary"
-	"net"
 	"fmt"
+	"net"
+	"testing"
 )
 
 func TestMakeMsgAdvertise(t *testing.T) {
@@ -86,7 +86,8 @@ func TestMakeMsgAdvertiseShouldSkipDnsServersIfNoneConfigured(t *testing.T) {
 	msg := builder.makeMsgAdvertise(transactionID, expectedServerID, expectedClientID, 0x11,
 		[]*IdentityAssociation{identityAssociation}, expectedBootFileURL, nil, []net.IP{})
 
-	_, exists := msg.Options[OptRecursiveDNS]; if exists {
+	_, exists := msg.Options[OptRecursiveDNS]
+	if exists {
 		t.Fatalf("DNS servers option should not be set")
 	}
 }
@@ -168,7 +169,8 @@ func TestMakeNoAddrsAvailable(t *testing.T) {
 		t.Fatalf("Expected server id %v, got %v", expectedClientID, serverIDOption)
 	}
 
-	_, exists := msg.Options[OptStatusCode]; if !exists {
+	_, exists := msg.Options[OptStatusCode]
+	if !exists {
 		t.Fatalf("Expected status code option to be present")
 	}
 	statusCodeOption := msg.Options[OptStatusCode][0].Value
@@ -258,7 +260,8 @@ func TestMakeMsgReplyShouldSkipDnsServersIfNoneWereConfigured(t *testing.T) {
 	msg := builder.makeMsgReply(transactionID, expectedServerID, expectedClientID, 0x11,
 		[]*IdentityAssociation{identityAssociation}, make([][]byte, 0), expectedBootFileURL, []net.IP{}, nil)
 
-	_, exists := msg.Options[OptRecursiveDNS]; if exists {
+	_, exists := msg.Options[OptRecursiveDNS]
+	if exists {
 		t.Fatalf("Dns servers option shouldn't be present")
 	}
 }
@@ -413,7 +416,8 @@ func TestMakeMsgInformationRequestReplyShouldSkipDnsServersIfNoneWereConfigured(
 	msg := builder.makeMsgInformationRequestReply(transactionID, expectedServerID, expectedClientID, 0x11,
 		expectedBootFileURL, []net.IP{})
 
-	_, exists := msg.Options[OptRecursiveDNS]; if exists {
+	_, exists := msg.Options[OptRecursiveDNS]
+	if exists {
 		t.Fatalf("Dns servers option shouldn't be present")
 	}
 }

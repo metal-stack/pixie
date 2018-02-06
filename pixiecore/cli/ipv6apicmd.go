@@ -1,14 +1,14 @@
 package cli
 
 import (
-	"github.com/spf13/cobra"
 	"fmt"
+	"github.com/spf13/cobra"
 	"go.universe.tf/netboot/dhcp6"
 	"go.universe.tf/netboot/dhcp6/pool"
-	"time"
+	"go.universe.tf/netboot/pixiecore"
 	"net"
 	"strings"
-	"go.universe.tf/netboot/pixiecore"
+	"time"
 )
 
 // pixiecore ipv6api --listen-addr=2001:db8:f00f:cafe::4  --api-request-url=http://[2001:db8:f00f:cafe::4]:8888
@@ -36,7 +36,9 @@ var ipv6ApiCmd = &cobra.Command{
 		if err != nil {
 			s.Debug = logWithStdFmt
 		}
-		if debug { s.Debug = logWithStdFmt }
+		if debug {
+			s.Debug = logWithStdFmt
+		}
 
 		if addr == "" {
 			fatalf("Please specify address to bind to")
@@ -76,7 +78,7 @@ var ipv6ApiCmd = &cobra.Command{
 			fatalf("Error reading flag: %s", err)
 		}
 		s.AddressPool = pool.NewRandomAddressPool(net.ParseIP(addressPoolStart), addressPoolSize, addressPoolValidLifetime)
-		s.PacketBuilder = dhcp6.MakePacketBuilder(addressPoolValidLifetime - addressPoolValidLifetime*3/100, addressPoolValidLifetime)
+		s.PacketBuilder = dhcp6.MakePacketBuilder(addressPoolValidLifetime-addressPoolValidLifetime*3/100, addressPoolValidLifetime)
 
 		fmt.Println(s.Serve())
 	},
@@ -98,4 +100,3 @@ func init() {
 	rootCmd.AddCommand(ipv6ApiCmd)
 	serverv6APIConfigFlags(ipv6ApiCmd)
 }
-

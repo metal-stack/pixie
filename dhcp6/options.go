@@ -1,58 +1,58 @@
 package dhcp6
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
-	"bytes"
 	"net"
 )
 
 // DHCPv6 option IDs
 const (
 	// Client ID Option
-	OptClientID     uint16 = 1
+	OptClientID uint16 = 1
 	// Server ID Option
-	OptServerID            = 2
+	OptServerID = 2
 	// Identity Association for Non-temporary Addresses Option
-	OptIaNa                = 3
+	OptIaNa = 3
 	// Identity Association for Temporary Addresses Option
-	OptIaTa                = 4
+	OptIaTa = 4
 	// IA Address Option
-	OptIaAddr              = 5
+	OptIaAddr = 5
 	// Option Request Option
-	OptOro            = 6
+	OptOro = 6
 	// Preference Option
-	OptPreference     = 7
+	OptPreference = 7
 	// Elapsed Time Option
-	OptElapsedTime    = 8
+	OptElapsedTime = 8
 	// Relay Message Option
-	OptRelayMessage   = 9
+	OptRelayMessage = 9
 	// Authentication Option
-	OptAuth           = 11
+	OptAuth = 11
 	// Server Unicast Option
-	OptUnicast        = 12
+	OptUnicast = 12
 	// Status Code Option
-	OptStatusCode     = 13
+	OptStatusCode = 13
 	// Rapid Commit Option
-	OptRapidCommit    = 14
+	OptRapidCommit = 14
 	// User Class Option
-	OptUserClass      = 15
+	OptUserClass = 15
 	// Vendor Class Option
-	OptVendorClass    = 16
+	OptVendorClass = 16
 	// Vendor-specific Information Option
-	OptVendorOpts     = 17
+	OptVendorOpts = 17
 	// Interface-Id Option
-	OptInterfaceID    = 18
+	OptInterfaceID = 18
 	// Reconfigure Message Option
-	OptReconfMsg      = 19
+	OptReconfMsg = 19
 	// Reconfigure Accept Option
-	OptReconfAccept   = 20
+	OptReconfAccept = 20
 	// Recursive DNS name servers Option
-	OptRecursiveDNS   = 23
+	OptRecursiveDNS = 23
 	// Boot File URL Option
-	OptBootfileURL    = 59
+	OptBootfileURL = 59
 	// Boot File Parameters Option
-	OptBootfileParam  = 60
+	OptBootfileParam = 60
 	// Client Architecture Type Option
 	OptClientArchType = 61
 )
@@ -66,7 +66,7 @@ type Option struct {
 
 // MakeOption creates an Option with given ID and value
 func MakeOption(id uint16, value []byte) *Option {
-	return &Option{ ID: id, Length: uint16(len(value)), Value: value}
+	return &Option{ID: id, Length: uint16(len(value)), Value: value}
 }
 
 // Options contains all options of a DHCPv6 packet
@@ -80,7 +80,7 @@ func UnmarshalOptions(bs []byte) (Options, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[o.ID] = append(ret[o.ID], &Option{ ID: o.ID, Length: o.Length, Value: bs[4 : 4+o.Length]})
+		ret[o.ID] = append(ret[o.ID], &Option{ID: o.ID, Length: o.Length, Value: bs[4 : 4+o.Length]})
 		bs = bs[4+o.Length:]
 	}
 	return ret, nil
@@ -95,7 +95,7 @@ func UnmarshalOption(bs []byte) (*Option, error) {
 	// parse server_id
 	//parse ipaddr
 	case OptOro:
-		if optionLength% 2 != 0 {
+		if optionLength%2 != 0 {
 			return nil, fmt.Errorf("OptionID request for options (6) length should be even number of bytes: %d", optionLength)
 		}
 	default:
@@ -104,14 +104,14 @@ func UnmarshalOption(bs []byte) (*Option, error) {
 			return nil, fmt.Errorf("option %d claims to have %d bytes of payload, but only has %d bytes", optionID, optionLength, len(bs[4:]))
 		}
 	}
-	return &Option{ ID: optionID, Length: optionLength, Value: bs[4 : 4+optionLength]}, nil
+	return &Option{ID: optionID, Length: optionLength, Value: bs[4 : 4+optionLength]}, nil
 }
 
 // HumanReadable presents DHCPv6 options in a human-readable form
 func (o Options) HumanReadable() []string {
 	ret := make([]string, 0, len(o))
-	for _, multipleOptions := range(o) {
-		for _, option := range(multipleOptions) {
+	for _, multipleOptions := range o {
+		for _, option := range multipleOptions {
 			switch option.ID {
 			case 3:
 				ret = append(ret, o.humanReadableIaNa(*option)...)
@@ -137,7 +137,6 @@ func (o Options) humanReadableIaNa(opt Option) []string {
 		l := uint16(binary.BigEndian.Uint16(iaOptions[2:4]))
 		id := uint16(binary.BigEndian.Uint16(iaOptions[0:2]))
 
-
 		switch id {
 		case OptIaAddr:
 			ip := make(net.IP, 16)
@@ -157,7 +156,8 @@ func (o Options) humanReadableIaNa(opt Option) []string {
 
 // Add adds an option to Options
 func (o Options) Add(option *Option) {
-	_, present := o[option.ID]; if !present {
+	_, present := o[option.ID]
+	if !present {
 		o[option.ID] = make([]*Option, 0)
 	}
 	o[option.ID] = append(o[option.ID], option)
@@ -168,7 +168,7 @@ func (o Options) Add(option *Option) {
 // (an IA Address Option or a Status Option)
 func MakeIaNaOption(iaid []byte, t1, t2 uint32, iaOption *Option) *Option {
 	serializedIaOption, _ := iaOption.Marshal()
-	value := make([]byte, 12 + len(serializedIaOption))
+	value := make([]byte, 12+len(serializedIaOption))
 	copy(value[0:], iaid[0:4])
 	binary.BigEndian.PutUint32(value[4:], t1)
 	binary.BigEndian.PutUint32(value[8:], t2)
@@ -188,7 +188,7 @@ func MakeIaAddrOption(addr net.IP, preferredLifetime, validLifetime uint32) *Opt
 
 // MakeStatusOption creates a Status Option with given status code and message
 func MakeStatusOption(statusCode uint16, message string) *Option {
-	value := make([]byte, 2 + len(message))
+	value := make([]byte, 2+len(message))
 	binary.BigEndian.PutUint16(value[0:], statusCode)
 	copy(value[2:], []byte(message))
 	return MakeOption(OptStatusCode, value)
@@ -206,8 +206,8 @@ func MakeDNSServersOption(addresses []net.IP) *Option {
 // Marshal serializes Options
 func (o Options) Marshal() ([]byte, error) {
 	buffer := bytes.NewBuffer(make([]byte, 0, 1446))
-	for _, multipleOptions := range(o) {
-		for _, o := range (multipleOptions) {
+	for _, multipleOptions := range o {
+		for _, o := range multipleOptions {
 			serialized, err := o.Marshal()
 			if err != nil {
 				return nil, fmt.Errorf("Error serializing option value: %s", err)
@@ -222,7 +222,7 @@ func (o Options) Marshal() ([]byte, error) {
 
 // Marshal serializes the Option
 func (o *Option) Marshal() ([]byte, error) {
-	buffer := bytes.NewBuffer(make([]byte, 0, o.Length + 2))
+	buffer := bytes.NewBuffer(make([]byte, 0, o.Length+2))
 
 	err := binary.Write(buffer, binary.BigEndian, o.ID)
 	if err != nil {
@@ -243,7 +243,8 @@ func (o *Option) Marshal() ([]byte, error) {
 func (o Options) UnmarshalOptionRequestOption() map[uint16]bool {
 	ret := make(map[uint16]bool)
 
-	_, present := o[OptOro]; if !present {
+	_, present := o[OptOro]
+	if !present {
 		return ret
 	}
 
@@ -315,8 +316,8 @@ func (o Options) IaNaIDs() [][]byte {
 	options, exists := o[OptIaNa]
 	ret := make([][]byte, 0)
 	if exists {
-		for _, option := range(options) {
-			 ret = append(ret, option.Value[0:4])
+		for _, option := range options {
+			ret = append(ret, option.Value[0:4])
 		}
 		return ret
 	}
@@ -340,4 +341,3 @@ func (o Options) BootFileURL() []byte {
 	}
 	return nil
 }
-

@@ -1,8 +1,8 @@
 package dhcp6
 
 import (
-	"testing"
 	"encoding/binary"
+	"testing"
 )
 
 func TestShouldDiscardSolicitWithoutBootfileUrlOption(t *testing.T) {
@@ -93,10 +93,9 @@ func TestShouldDiscardRequestWithWrongServerId(t *testing.T) {
 
 func MakeOptionRequestOptions(options []uint16) *Option {
 	value := make([]byte, len(options)*2)
-	for i, option := range(options) {
+	for i, option := range options {
 		binary.BigEndian.PutUint16(value[i*2:], option)
 	}
 
-	return &Option{ID: OptOro, Length: uint16(len(options)*2), Value: value}
+	return &Option{ID: OptOro, Length: uint16(len(options) * 2), Value: value}
 }
-
