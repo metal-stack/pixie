@@ -88,8 +88,8 @@ func UnmarshalOptions(bs []byte) (Options, error) {
 
 // UnmarshalOption de-serializes an Option
 func UnmarshalOption(bs []byte) (*Option, error) {
-	optionLength := uint16(binary.BigEndian.Uint16(bs[2:4]))
-	optionID := uint16(binary.BigEndian.Uint16(bs[0:2]))
+	optionLength := binary.BigEndian.Uint16(bs[2:4])
+	optionID := binary.BigEndian.Uint16(bs[0:2])
 	switch optionID {
 	// parse client_id
 	// parse server_id
@@ -134,8 +134,8 @@ func (o Options) humanReadableIaNa(opt Option) []string {
 
 	iaOptions := opt.Value[12:]
 	for len(iaOptions) > 0 {
-		l := uint16(binary.BigEndian.Uint16(iaOptions[2:4]))
-		id := uint16(binary.BigEndian.Uint16(iaOptions[0:2]))
+		l := binary.BigEndian.Uint16(iaOptions[2:4])
+		id := binary.BigEndian.Uint16(iaOptions[0:2])
 
 		switch id {
 		case OptIaAddr:
@@ -250,7 +250,7 @@ func (o Options) UnmarshalOptionRequestOption() map[uint16]bool {
 
 	value := o[OptOro][0].Value
 	for i := 0; i < int(o[OptOro][0].Length)/2; i++ {
-		ret[uint16(binary.BigEndian.Uint16(value[i*2:(i+1)*2]))] = true
+		ret[binary.BigEndian.Uint16(value[i*2:(i+1)*2])] = true
 	}
 	return ret
 }

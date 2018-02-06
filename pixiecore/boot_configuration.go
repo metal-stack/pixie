@@ -27,7 +27,7 @@ func MakeStaticBootConfiguration(httpBootURL, ipxeBootURL string, preference uin
 	ret := &StaticBootConfiguration{HTTPBootURL: []byte(httpBootURL), IPxeBootURL: []byte(ipxeBootURL), UsePreference: usePreference}
 	if usePreference {
 		ret.Preference = make([]byte, 1)
-		ret.Preference[0] = byte(preference)
+		ret.Preference[0] = preference
 	}
 	ret.RecursiveDNS = dnsServerAddresses
 	return ret
@@ -74,7 +74,7 @@ func MakeAPIBootConfiguration(url string, timeout time.Duration, preference uint
 	}
 	if usePreference {
 		ret.Preference = make([]byte, 1)
-		ret.Preference[0] = byte(preference)
+		ret.Preference[0] = preference
 	}
 	ret.RecursiveDNS = dnsServerAddresses
 
