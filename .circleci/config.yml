@@ -32,7 +32,7 @@ jobs:
       - run: echo $CIRCLE_BRANCH
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
       - run: make ci-prepare
-      - run: ci-push-images TAG=${CIRCLE_BRANCH:-${CIRCLE_TAG}}
+      - run: make ci-push-images TAG=${CIRCLE_BRANCH:-${CIRCLE_TAG}}
 workflows:
   version: 2
   test-and-deploy:
