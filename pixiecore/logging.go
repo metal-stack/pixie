@@ -53,8 +53,7 @@ func (m machineState) Progress() string {
 }
 
 const (
-	machineStateUnknown machineState = iota
-	machineStateProxyDHCP
+	machineStateProxyDHCP = iota
 	machineStatePXE
 	machineStateTFTP
 	machineStateProxyDHCPIpxe
