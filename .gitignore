@@ -4,3 +4,4 @@ dhcp4/dhcp4.test
 pcap/pcap.test
 pixiecore/pixiecore.test
 vendor/
+build/

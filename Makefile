@@ -8,10 +8,6 @@ endif
 all:
 	$(error Please request a specific thing, there is no default target)
 
-.PHONY: ci-config
-ci-config:
-	(cd .circleci && go run gen-config.go >config.yml)
-
 .PHONY: ci-prepare
 ci-prepare:
 	$(GOCMD) get -u github.com/golang/dep/cmd/dep
@@ -23,7 +19,7 @@ build:
 	$(GOCMD) install -v ./cmd/pixiecore
 
 .PHONY: test
-test: build
+test:
 	$(GOCMD) test ./...
 	$(GOCMD) test -race ./...
 
@@ -32,6 +28,21 @@ lint:
 	$(GOCMD) get -u github.com/alecthomas/gometalinter
 	gometalinter --install golint
 	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=deadcode --enable=structcheck --enable=unconvert --vendor ./...
+
+REGISTRY=pixiecore
+TAG=dev
+.PHONY: ci-push-images
+ci-push-images:
+	make -f Makefile.inc push GOARCH=amd64   TAG=$(TAG)-amd64   BINARY=pixiecore REGISTRY=$(REGISTRY)
+	make -f Makefile.inc push GOARCH=arm     TAG=$(TAG)-arm     BINARY=pixiecore REGISTRY=$(REGISTRY)
+	make -f Makefile.inc push GOARCH=arm64   TAG=$(TAG)-arm64   BINARY=pixiecore REGISTRY=$(REGISTRY)
+	make -f Makefile.inc push GOARCH=ppc64le TAG=$(TAG)-ppc64le BINARY=pixiecore REGISTRY=$(REGISTRY)
+	make -f Makefile.inc push GOARCH=s390x   TAG=$(TAG)-s390x   BINARY=pixiecore REGISTRY=$(REGISTRY)
+	manifest-tool push from-args --platforms linux/amd64,linux/arm,linux/arm64,linux/ppc64le,linux/s390x --template $(REGISTRY)/pixiecore:$(TAG)-ARCH --target $(REGISTRY)/pixiecore:$(TAG)
+
+.PHONY: ci-config
+ci-config:
+	(cd .circleci && go run gen-config.go >config.yml)
 
 .PHONY: update-ipxe
 update-ipxe:
