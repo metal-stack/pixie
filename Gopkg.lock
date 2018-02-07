@@ -105,14 +105,13 @@
     "poly1305",
     "salsa20/salsa"
   ]
-  revision = "1875d0a70c90e57f11972aefd42276df65e895b9"
+  revision = "d9133f5469342136e669e85192a26056b587f503"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
     "bpf",
-    "icmp",
     "internal/iana",
     "internal/socket",
     "ipv4",
@@ -148,6 +147,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "86122bdd04a04af087e77acddc607a47316146f9f70371dfc5742faa963c4a92"
+  inputs-digest = "dc821cdd7d4db1b55db9f2aadd683a339a9d506df884d98cb9d346145e30158a"
   solver-name = "gps-cdcl"
   solver-version = 1
