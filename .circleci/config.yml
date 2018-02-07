@@ -2,16 +2,6 @@
 
 version: 2
 jobs:
-  test-1.8:
-    working_directory: /go/src/go.universe.tf/netboot
-    docker:
-      - image: circleci/golang:1.8
-    steps:
-      - checkout
-      - run: make ci-prepare
-      - run: make build
-      - run: make test
-      - run: make lint
   test-1.9:
     working_directory: /go/src/go.universe.tf/netboot
     docker:
@@ -47,10 +37,6 @@ workflows:
   version: 2
   test-and-deploy:
     jobs:
-      - test-1.8:
-          filters:
-            tags:
-              only: /.*/
       - test-1.9:
           filters:
             tags:
