@@ -15,7 +15,7 @@ jobs:
       - run: make lint
 {{- end }}
   deploy:
-    working_directory: /go/src/go.universe.tf/metallb
+    working_directory: /go/src/go.universe.tf/netboot
     docker:
       - image: circleci/golang:1.9
     steps:
