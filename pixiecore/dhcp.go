@@ -109,7 +109,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	case 6:
 		mach.Arch = ArchIA32
 		fwtype = FirmwareEFI32
-	case 7:
+	case 7, 16:
 		mach.Arch = ArchX64
 		fwtype = FirmwareEFI64
 	case 9:
