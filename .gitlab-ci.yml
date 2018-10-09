@@ -1,0 +1,11 @@
+---
+image: registry.cloud.fits/fits/builder:7-dev
+
+stages:
+    - push
+
+push:
+    stage: push
+    script:
+      - cd cmd/pixiecore
+      - docker-make --exclude-linting-rules rule3 --summary
