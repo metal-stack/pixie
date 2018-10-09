@@ -7,5 +7,4 @@ stages:
 push:
     stage: push
     script:
-      - cd cmd/pixiecore
       - docker-make --exclude-linting-rules rule3 --summary

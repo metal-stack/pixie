@@ -1,6 +1,5 @@
 **/.dockerignore
 **/Dockerfile
 .git
-Makefile
 *.md
 LICENSE
