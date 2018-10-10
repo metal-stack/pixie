@@ -5,7 +5,7 @@ COPY . /go/src/go.universe.tf/netboot
 WORKDIR /go/src/go.universe.tf/netboot
 RUN make ci-prepare
 RUN cd cmd/pixiecore \
- && go build
+ && CGO_ENABLE=0 go build -tags netgo
 
 FROM alpine:latest
 LABEL maintainer FI-TS Devops <devops@f-i-ts.de>
