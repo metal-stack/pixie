@@ -2,7 +2,7 @@
 
 ipxe:
 	rm -rf ipxe
-	git clone git://git.ipxe.org/ipxe.git
+	git clone https://git.ipxe.org/ipxe.git
 	(cd ipxe && git rev-parse HEAD >COMMIT-ID)
 	rm -rf ipxe/.git
 	(cd ipxe/src &&\
