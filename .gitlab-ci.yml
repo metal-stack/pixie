@@ -12,7 +12,7 @@ dev:
     only:
         - develop
     script:
-        - docker-make --exclude-linting-rules rule3 --summary
+        - docker-make --exclude-linting-rules rule2,rule3 --summary
 
 prod:
     stage: prod
@@ -21,4 +21,4 @@ prod:
     only:
         - prod
     script:
-        - docker-make --exclude-linting-rules rule3 --summary
+        - docker-make --exclude-linting-rules rule2,rule3 --summary
