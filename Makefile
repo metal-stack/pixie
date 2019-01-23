@@ -24,7 +24,7 @@ test:
 
 .PHONY: lint
 lint:
-	$(GOMODULECMD) tool vet
+	$(GOMODULECMD) tool vet .
 
 REGISTRY=pixiecore
 TAG=dev
