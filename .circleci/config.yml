@@ -15,7 +15,7 @@ jobs:
   deploy:
     working_directory: /go/src/go.universe.tf/netboot
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.11
     steps:
       - checkout
       - setup_remote_docker
