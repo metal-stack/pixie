@@ -24,9 +24,7 @@ test:
 
 .PHONY: lint
 lint:
-	$(GOCMD) get -u github.com/alecthomas/gometalinter
-	gometalinter --install golint
-	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=deadcode --enable=structcheck --enable=unconvert --vendor ./...
+	$(GOMODULECMD) tool vet
 
 REGISTRY=pixiecore
 TAG=dev
