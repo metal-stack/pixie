@@ -10,9 +10,7 @@ all:
 
 .PHONY: ci-prepare
 ci-prepare:
-	$(GOCMD) get -u github.com/golang/dep/cmd/dep
 	$(GOCMD) get -u github.com/estesp/manifest-tool
-	dep ensure -v
 
 .PHONY: build
 build:
