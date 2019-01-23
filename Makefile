@@ -1,4 +1,4 @@
-GOCMD:=go
+GOCMD:=GO111MODULE=on go
 
 # Local customizations to the above.
 ifneq ($(wildcard Makefile.defaults),)
