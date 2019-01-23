@@ -6,7 +6,6 @@ BINARY:=
 TAG:=
 REGISTRY:=
 GOCMD:=go
-GOMODULECMD:=GO111MODULE=on go
 DOCKER_SUDO:=
 GITCOMMIT:=
 GITBRANCH:=
@@ -56,8 +55,8 @@ dockerfile: build-dir
 
 .PHONY: binary
 binary: build-dir
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) GOARM=6 \
-		$(GOMODULECMD) build -o $(BUILD_DIR)/$(BINARY) \
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) GOARM=6 GO111MODULE=on \
+		$(GOCMD) build -o $(BUILD_DIR)/$(BINARY) \
 		go.universe.tf/netboot/cmd/$(BINARY)
 
 .PHONY: build-dir
