@@ -1,4 +1,5 @@
-GOCMD:=GO111MODULE=on go
+GOCMD:=go
+GOMODULECMD:=GO111MODULE=on go
 
 # Local customizations to the above.
 ifneq ($(wildcard Makefile.defaults),)
@@ -14,12 +15,12 @@ ci-prepare:
 
 .PHONY: build
 build:
-	$(GOCMD) install -v ./cmd/pixiecore
+	$(GOMODULECMD) install -v ./cmd/pixiecore
 
 .PHONY: test
 test:
-	$(GOCMD) test ./...
-	$(GOCMD) test -race ./...
+	$(GOMODULECMD) test ./...
+	$(GOMODULECMD) test -race ./...
 
 .PHONY: lint
 lint:
