@@ -99,7 +99,7 @@ func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	// see: https://ipxe.org/cfg/platform for reference
 	switch fwt {
 	case 0:
-		fwtype = FirmwareX86Ipxe
+		fwtype = FirmwareX86PC
 	case 6:
 		fwtype = FirmwareEFI32
 	case 7:
