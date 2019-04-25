@@ -41,8 +41,14 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
+ 
+		guid, err := pkt.Options.String(97)
+		if err != nil {
+			return fmt.Errorf("malformed DHCP option 97 (required for PXE): %s", err)
+		}
+		mach.GUID = guid
 
-		s.debug("DHCP", "Got valid request to boot %s (%s)", mach.MAC, mach.Arch)
+		s.debug("DHCP", "Got valid request to boot %s (%s, %s)", mach.MAC, mach.GUID, mach.Arch)
 
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {

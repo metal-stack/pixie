@@ -13,13 +13,12 @@
 // limitations under the License.
 
 package pixiecore
-
+ 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -147,8 +146,8 @@ type apibooter struct {
 	key       [32]byte
 }
 
-func (b *apibooter) getAPIResponse(hw net.HardwareAddr) (io.ReadCloser, error) {
-	reqURL := fmt.Sprintf("%s/boot/%s", b.urlPrefix, hw)
+func (b *apibooter) getAPIResponse(guid string) (io.ReadCloser, error) {
+	reqURL := fmt.Sprintf("%s/boot/%s", b.urlPrefix, guid)
 	resp, err := b.client.Get(reqURL)
 	if err != nil {
 		return nil, err
@@ -162,7 +161,7 @@ func (b *apibooter) getAPIResponse(hw net.HardwareAddr) (io.ReadCloser, error) {
 }
 
 func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
-	body, err := b.getAPIResponse(m.MAC)
+	body, err := b.getAPIResponse(m.GUID)
 	if body != nil {
 		defer body.Close()
 	}
