@@ -41,12 +41,6 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
- 
-		guid, err := pkt.Options.String(97)
-		if err != nil {
-			return fmt.Errorf("malformed DHCP option 97 (required for PXE): %s", err)
-		}
-		mach.GUID = guid
 
 		s.debug("DHCP", "Got valid request to boot %s (%s, %s)", mach.MAC, mach.GUID, mach.Arch)
 
@@ -155,6 +149,9 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 		// expect to boot. The only thing we do with the GUID is
 		// mirror it back to the client if it's there, so we might as
 		// well accept these buggy ROMs.
+
+		// But for the metal project, we cannot tolerate a missing GUID!
+		return mach, 0, errors.New("missing client GUID (option 97)")
 	case 17:
 		if guid[0] != 0 {
 			return mach, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
@@ -164,6 +161,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	}
 
 	mach.MAC = pkt.HardwareAddr
+	mach.GUID = string(guid)
 	return mach, fwtype, nil
 }
 
