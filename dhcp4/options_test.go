@@ -196,3 +196,17 @@ func TestCopy(t *testing.T) {
 		t.Fatalf("Mutating Option copy mutated the original")
 	}
 }
+
+func TestOptionGUID(t *testing.T) {
+	o := Options{
+		97: []byte{0, 142, 18, 55, 75, 114, 110, 141, 74, 135, 218, 138, 212, 215, 117, 88, 44},
+	}
+
+	guid, err := o.GUID(97)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if guid != "4b37128e-6e72-4a8d-87da-8ad4d775582c" {
+		t.Fatalf("wrong guid, got %s", guid)
+	}
+}

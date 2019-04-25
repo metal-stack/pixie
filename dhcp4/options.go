@@ -17,6 +17,7 @@ package dhcp4
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -282,4 +283,39 @@ func (o Options) IPMask(n Option) (net.IPMask, error) {
 		return nil, fmt.Errorf("option %d is the wrong size for an IPMask", n)
 	}
 	return net.IPMask(bs), nil
+}
+
+// GUID returns the value of option n as a guid string.
+func (o Options) GUID(n Option) (string, error) {
+	bs, err := o.Bytes(n)
+	if err != nil {
+		return "", err
+	}
+	if len(bs) != 17 {
+		return "", fmt.Errorf("option %d is the wrong size for a guid", n)
+	}
+	if bs[0] != 0 {
+		return "", fmt.Errorf("option %d is malformed", n)
+	}
+
+	bs = bs[1:17]
+
+	// The guid is mixed endian, therefore we have to reverse some bytes:
+	// https://en.wikipedia.org/wiki/Universally_unique_identifier#Encoding
+	mixedEndian := append(reverse(bs[0:4]), reverse(bs[4:6])...)
+	mixedEndian = append(mixedEndian, reverse(bs[6:8])...)
+	mixedEndian = append(mixedEndian, bs[8:16]...)
+
+	dst := make([]byte, hex.EncodedLen(16))
+	hex.Encode(dst, mixedEndian)
+
+	return fmt.Sprintf("%s-%s-%s-%s-%s", dst[0:8], dst[8:12], dst[12:16], dst[16:20], dst[20:32]), nil
+}
+
+func reverse(bytes []byte) []byte {
+	for i := 0; i < len(bytes)/2; i++ {
+		j := len(bytes) - i - 1
+		bytes[i], bytes[j] = bytes[j], bytes[i]
+	}
+	return bytes
 }
