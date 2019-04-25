@@ -161,8 +161,8 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	}
 
 	mach.MAC = pkt.HardwareAddr
-	mach.GUID = "test " + string(guid) + " test"
-	s.log("DHCP Validate", "here is the guid: %s %s %s %s", guid[0], guid[1], guid[2], len(guid))
+	mach.GUID = string(guid)
+	s.log("DHCP Validate", "here is the guid: %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s", guid[0], guid[1], guid[2], guid[3], guid[4], guid[5], guid[6], guid[7], guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15], guid[16])
 	return mach, fwtype, nil
 }
 
