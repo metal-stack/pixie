@@ -149,9 +149,6 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 		// expect to boot. The only thing we do with the GUID is
 		// mirror it back to the client if it's there, so we might as
 		// well accept these buggy ROMs.
-
-		// But for the metal project, we cannot tolerate a missing GUID!
-		return mach, 0, errors.New("missing client GUID (option 97)")
 	case 17:
 		if guid[0] != 0 {
 			return mach, 0, errors.New("malformed client GUID (option 97), leading byte must be zero")
