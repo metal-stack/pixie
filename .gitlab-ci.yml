@@ -1,24 +1,18 @@
 ---
 image: registry.cloud.fits/fits/buildtools:1
 
-stages:
-    - dev
-    - prod
-
-dev:
-    stage: dev
+merge-requests:
     variables:
         TAG: "-${CI_COMMIT_REF_NAME}"
-    except:
-        - prod
+    only:
+        - merge_requests
     script:
         - docker-make --exclude-linting-rules rule2,rule3 --summary
 
-prod:
-    stage: prod
+fits:
     variables:
         TAG: ""
     only:
-        - prod
+        - develop
     script:
         - docker-make --exclude-linting-rules rule2,rule3 --summary
