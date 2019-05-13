@@ -68,8 +68,9 @@ func (a Architecture) String() string {
 type Machine struct {
 	MAC  net.HardwareAddr
 	Arch Architecture
+	GUID string
 }
-
+ 
 // A Spec describes a kernel and associated configuration.
 type Spec struct {
 	// The kernel to boot

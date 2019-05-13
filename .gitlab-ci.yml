@@ -8,9 +8,9 @@ stages:
 dev:
     stage: dev
     variables:
-        TAG: "-dev"
-    only:
-        - develop
+        TAG: "-${CI_COMMIT_REF_NAME}"
+    except:
+        - prod
     script:
         - docker-make --exclude-linting-rules rule2,rule3 --summary
 
