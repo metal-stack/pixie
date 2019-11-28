@@ -1,12 +1,10 @@
 # Netboot, packages and utilities for network booting
 
-[![license](https://img.shields.io/github/license/google/netboot.svg)](https://github.com/danderson/netboot/blob/master/LICENSE) [![CircleCI](https://img.shields.io/circleci/project/github/google/netboot.svg)](https://circleci.com/gh/danderson/netboot)     [![api](https://img.shields.io/badge/api-unstable-red.svg)](https://godoc.org/go.universe.tf/netboot)
-
 This repository contains Go implementations of network protocols used
 in booting machines over the network, as well as utilites built on top
 of these libraries.
 
-This is not an official Google project.
+**This project is no longer actively developed. I'm glad if you find it useful, but don't expect any significant changes.**
 
 ## Programs
 
