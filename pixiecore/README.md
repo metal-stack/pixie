@@ -6,8 +6,6 @@ management infrastructure.
 
 [![license](https://img.shields.io/github/license/google/netboot.svg)](https://github.com/google/netboot/blob/master/LICENSE) ![api](https://img.shields.io/badge/api-unstable-red.svg) ![cli](https://img.shields.io/badge/cli-stable-green.svg) [![cli](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/go.universe.tf/netboot/pixiecore)
 
-![Pixiecore UI](https://cdn.rawgit.com/google/netboot/master/pixiecore/pixiecore-ui.png)
-
 ## TL;DR
 
     pixiecore quick xyz --dhcp-no-bind
