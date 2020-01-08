@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
+	httppprof "net/http/pprof"
 	"strings"
 	"sync"
 	"text/template"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.universe.tf/netboot/dhcp4"
 )
 
@@ -70,7 +73,7 @@ type Machine struct {
 	Arch Architecture
 	GUID string
 }
- 
+
 // A Spec describes a kernel and associated configuration.
 type Spec struct {
 	// The kernel to boot
@@ -164,6 +167,11 @@ type Server struct {
 	// HTTPPort.
 	HTTPStatusPort int
 
+	// MetricsPort is the port of the metrics server.
+	MetricsPort int
+	// MetricsAddress is the bind address that the metrics server listens on.
+	MetricsAddress string
+
 	// Ipxe lists the supported bootable Firmwares, and their
 	// associated ipxe binary.
 	Ipxe map[Firmware][]byte
@@ -241,6 +249,14 @@ func (s *Server) Serve() error {
 		pxe.Close()
 		return err
 	}
+	metrics, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.MetricsAddress, s.MetricsPort))
+	if err != nil {
+		dhcp.Close()
+		tftp.Close()
+		pxe.Close()
+		http.Close()
+		return err
+	}
 
 	s.events = make(map[string][]machineEvent)
 	// 5 buffer slots, one for each goroutine, plus one for
@@ -256,6 +272,7 @@ func (s *Server) Serve() error {
 	go func() { s.errs <- s.servePXE(pxe) }()
 	go func() { s.errs <- s.serveTFTP(tftp) }()
 	go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
+	go func() { s.errs <- serveHTTP(metrics, s.serveMetrics) }()
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
@@ -263,6 +280,7 @@ func (s *Server) Serve() error {
 	tftp.Close()
 	pxe.Close()
 	http.Close()
+	metrics.Close()
 	return err
 }
 
@@ -272,4 +290,14 @@ func (s *Server) Shutdown() {
 	case s.errs <- nil:
 	default:
 	}
+}
+
+func (s *Server) serveMetrics(mux *http.ServeMux) {
+	mux.Handle("/metrics", promhttp.Handler())
+	// see: https://dev.to/davidsbond/golang-debugging-memory-leaks-using-pprof-5di8
+	// inspect via
+	// go tool pprof -http :8080 localhost:2112/pprof/heap
+	// go tool pprof -http :8080 localhost:2112/pprof/goroutine
+	mux.Handle("/pprof/heap", httppprof.Handler("heap"))
+	mux.Handle("/pprof/goroutine", httppprof.Handler("goroutine"))
 }

@@ -74,6 +74,8 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
+	cmd.Flags().String("metrics-listen-addr", "0.0.0.0", "IPv4 address of the metrics server to listen on")
+	cmd.Flags().Int("metrics-port", 2113, "Metrics server port")
 	cmd.Flags().Int("status-port", 0, "HTTP port for status information (can be the same as --port)")
 	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
 	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
@@ -146,6 +148,14 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	metricsAddr, err := cmd.Flags().GetString("metrics-listen-addr")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	metricsPort, err := cmd.Flags().GetInt("metrics-port")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 	httpStatusPort, err := cmd.Flags().GetInt("status-port")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
@@ -184,6 +194,8 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		Log:            logWithStdFmt,
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
+		MetricsPort:    metricsPort,
+		MetricsAddress: metricsAddr,
 		DHCPNoBind:     dhcpNoBind,
 		UIAssetsDir:    uiAssetsDir,
 	}
