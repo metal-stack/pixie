@@ -1,0 +1,19 @@
+name: build
+on: 
+  push:
+    branches:
+      - develop
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: build and test
+      run: |
+        docker login -u metalstackci -p ${{ secrets.DOCKER_HUB_TOKEN }} .
+        docker build -t metalstack/pixiecore:${{ github.ref }}
+        docker push metalstack/pixiecore:${{ github.ref }}
