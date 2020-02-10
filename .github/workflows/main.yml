@@ -14,5 +14,5 @@ jobs:
     - name: docker build
       run: |
         docker login -u metalstackci -p ${{ secrets.DOCKER_HUB_TOKEN }}
-        docker build -t metalstack/pixiecore:${{ github.ref }} .
-        docker push metalstack/pixiecore:${{ github.ref }}
+        docker build -t metalstack/pixiecore:${{ github.sha }} .
+        docker push metalstack/pixiecore:${{ github.sha }}
