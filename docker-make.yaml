@@ -14,4 +14,4 @@ builds:
   -
     name: "pixiecore"
     tags:
-      - fits${TAG}
+      - ${TAG}
