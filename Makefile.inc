@@ -55,9 +55,9 @@ dockerfile: build-dir
 
 .PHONY: binary
 binary: build-dir
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) GOARM=6 \
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) GOARM=6 \
 		$(GOCMD) build -o $(BUILD_DIR)/$(BINARY) \
-		go.universe.tf/netboot/cmd/$(BINARY)
+		./cmd/$(BINARY)
 
 .PHONY: build-dir
 build-dir:

@@ -90,11 +90,12 @@ func ubuntuRecipe(parent *cobra.Command) {
 	versions := []string{
 		"precise",
 		"trusty",
-		"vivid",
-		"wily",
 		"xenial",
-		"yakkety",
-		"zesty",
+		"bionic",
+		"cosmic",
+		"disco",
+		"eoan",
+		"focal",
 	}
 
 	ubuntuCmd := &cobra.Command{
@@ -141,10 +142,9 @@ func ubuntuRecipe(parent *cobra.Command) {
 
 func fedoraRecipe(parent *cobra.Command) {
 	versions := []string{
-		"22",
-		"23",
-		"24",
-		"25",
+		"29",
+		"30",
+		"31",
 	}
 
 	fedoraCmd := &cobra.Command{
@@ -196,6 +196,7 @@ func centosRecipe(parent *cobra.Command) {
 		"5",
 		"6",
 		"7",
+		"8",
 	}
 
 	centosCmd := &cobra.Command{
@@ -301,6 +302,38 @@ func netbootRecipe(parent *cobra.Command) {
 	parent.AddCommand(netbootCmd)
 }
 
+func archRecipe(parent *cobra.Command) {
+	archCmd := &cobra.Command{
+		Use:   "arch [version]",
+		Short: "Boot Arch Linux live image",
+		Long: `Boot Arch Linux live image for the given version
+version defaults to latest, can also be a YYYY.MM.DD iso release version`,
+		Run: func(cmd *cobra.Command, args []string) {
+			version := "latest"
+			if len(args) >= 1 {
+				version = args[0]
+			}
+
+			arch := "x86_64"
+			mirror, err := cmd.Flags().GetString("mirror")
+			if err != nil {
+				fatalf("Error reading flag: %s", err)
+			}
+
+			httpSrv := fmt.Sprintf("%s/iso/%s", mirror, version)
+			kernel := fmt.Sprintf("%s/arch/boot/%s/vmlinuz", httpSrv, arch)
+			initrd := fmt.Sprintf("%s/arch/boot/%s/archiso.img", httpSrv, arch)
+			cmdline := fmt.Sprintf("archisobasedir=arch archiso_http_srv=%s/ ip=dhcp verify=y net.ifnames=0", httpSrv)
+
+			fmt.Println(staticFromFlags(cmd, kernel, []string{initrd}, cmdline).Serve())
+		},
+	}
+	archCmd.Flags().String("mirror", "https://mirrors.kernel.org/archlinux", "Root of the archlinux mirror to use")
+	serverConfigFlags(archCmd)
+	staticConfigFlags(archCmd)
+	parent.AddCommand(archCmd)
+}
+
 func init() {
 	rootCmd.AddCommand(quickCmd)
 	debianRecipe(quickCmd)
@@ -309,6 +342,7 @@ func init() {
 	centosRecipe(quickCmd)
 	netbootRecipe(quickCmd)
 	coreosRecipe(quickCmd)
+	archRecipe(quickCmd)
 
 	// TODO: some kind of caching support where quick OSes get
 	// downloaded locally, so you don't have to fetch from a remote

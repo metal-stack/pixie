@@ -10,7 +10,7 @@ import (
 func main() {
 	tmpl := template.Must(template.ParseFiles("config.yml.tmpl"))
 	v := map[string][]string{
-		"GoVersions": []string{"1.9", "1.10", "1.11beta2"},
+		"GoVersions": []string{"1.11"},
 		"Arch":       []string{"amd64", "arm", "arm64", "ppc64le", "s390x"},
 	}
 	if err := tmpl.Execute(os.Stdout, v); err != nil {

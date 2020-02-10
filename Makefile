@@ -1,4 +1,5 @@
 GOCMD:=go
+GOMODULECMD:=GO111MODULE=on go
 
 # Local customizations to the above.
 ifneq ($(wildcard Makefile.defaults),)
@@ -10,24 +11,20 @@ all:
 
 .PHONY: ci-prepare
 ci-prepare:
-	$(GOCMD) get -u github.com/golang/dep/cmd/dep
 	$(GOCMD) get -u github.com/estesp/manifest-tool
-	dep ensure -v
 
 .PHONY: build
 build:
-	$(GOCMD) install -v ./cmd/pixiecore
+	$(GOMODULECMD) install -v ./cmd/pixiecore
 
 .PHONY: test
 test:
-	$(GOCMD) test ./...
-	$(GOCMD) test -race ./...
+	$(GOMODULECMD) test ./...
+	$(GOMODULECMD) test -race ./...
 
 .PHONY: lint
 lint:
-	$(GOCMD) get -u github.com/alecthomas/gometalinter
-	gometalinter --install golint
-	gometalinter --deadline=1m --disable-all --enable=gofmt --enable=golint --enable=vet --enable=deadcode --enable=structcheck --enable=unconvert --vendor ./...
+	$(GOMODULECMD) tool vet .
 
 REGISTRY=pixiecore
 TAG=dev
