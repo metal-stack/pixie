@@ -11,7 +11,7 @@ all:
 
 .PHONY: ci-prepare
 ci-prepare:
-	# $(GOCMD) get -u github.com/estesp/manifest-tool
+	$(GOCMD) get -u github.com/estesp/manifest-tool
 
 .PHONY: build
 build:
@@ -35,7 +35,7 @@ ci-push-images:
 	make -f Makefile.inc push GOARCH=arm64   TAG=$(TAG)-arm64   BINARY=pixiecore REGISTRY=$(REGISTRY)
 	make -f Makefile.inc push GOARCH=ppc64le TAG=$(TAG)-ppc64le BINARY=pixiecore REGISTRY=$(REGISTRY)
 	make -f Makefile.inc push GOARCH=s390x   TAG=$(TAG)-s390x   BINARY=pixiecore REGISTRY=$(REGISTRY)
-	# manifest-tool push from-args --platforms linux/amd64,linux/arm,linux/arm64,linux/ppc64le,linux/s390x --template $(REGISTRY)/pixiecore:$(TAG)-ARCH --target $(REGISTRY)/pixiecore:$(TAG)
+	manifest-tool push from-args --platforms linux/amd64,linux/arm,linux/arm64,linux/ppc64le,linux/s390x --template $(REGISTRY)/pixiecore:$(TAG)-ARCH --target $(REGISTRY)/pixiecore:$(TAG)
 
 .PHONY: ci-config
 ci-config:
