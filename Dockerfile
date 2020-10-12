@@ -1,6 +1,4 @@
 FROM golang:1.15-buster as builder
-RUN apt update \
- && apt-get install make
 COPY . /work/
 WORKDIR /work
 RUN cd cmd/pixiecore \
