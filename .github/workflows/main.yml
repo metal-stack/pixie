@@ -9,12 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
 
+    - name: Docker Login
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ secrets.DOCKER_REGISTRY }}
+        username: ${{ secrets.DOCKER_REGISTRY_USER }}
+        password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+    
     - name: docker build
       run: |
-        docker login -u metalstackci -p ${{ secrets.DOCKER_HUB_TOKEN }}
-        docker build -t metalstack/pixiecore:${{ github.sha }} .
-        docker tag metalstack/pixiecore:${{ github.sha }} metalstack/pixiecore:latest
-        docker push metalstack/pixiecore:${{ github.sha }}
-        docker push metalstack/pixiecore:latest
+        docker build -t ghcr.io/metal-stack/pixiecore:${{ github.sha }} .
+        docker tag ghcr.io/metal-stack/pixiecore:${{ github.sha }} ghcr.io/metal-stack/pixiecore:latest
+        docker push ghcr.io/metal-stack/pixiecore:${{ github.sha }}
+        docker push ghcr.io/metal-stack/pixiecore:latest
