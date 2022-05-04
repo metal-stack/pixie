@@ -26,6 +26,7 @@ import (
 	"text/template"
 
 	"github.com/metal-stack/pixiecore/dhcp4"
+	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -266,7 +267,7 @@ func (s *Server) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.debug("Init", "Starting Pixiecore goroutines")
+	s.debug("Init", "Starting Pixiecore goroutines version:%q", v.V)
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()

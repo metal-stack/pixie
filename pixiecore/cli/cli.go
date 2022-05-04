@@ -61,7 +61,6 @@ func fatalf(msg string, args ...any) {
 
 func staticConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String("cmdline", "", "Kernel commandline arguments")
-	cmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
 }
 
 func serverConfigFlags(cmd *cobra.Command) {
@@ -178,6 +177,5 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if addr != "" {
 		ret.Address = addr
 	}
-
 	return ret
 }

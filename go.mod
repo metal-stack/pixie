@@ -3,6 +3,7 @@ module github.com/metal-stack/pixiecore
 go 1.18
 
 require (
+	github.com/metal-stack/v v1.0.3
 	github.com/prometheus/client_golang v1.12.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
