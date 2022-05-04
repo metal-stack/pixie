@@ -17,12 +17,10 @@ package pixiecore
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -55,80 +53,6 @@ func mustRead(f io.ReadCloser, sz int64, err error) string {
 		panic(fmt.Errorf("sz = %d, but ReadCloser has %d bytes", sz, len(bs)))
 	}
 	return string(bs)
-}
-
-func TestStaticBooter(t *testing.T) {
-	dir, err := os.MkdirTemp("", "pixiecore-static-booter-test")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-	mustWrite(dir, "foo", "foo file")
-	mustWrite(dir, "bar", "bar file")
-	mustWrite(dir, "baz", "baz file")
-	mustWrite(dir, "quux", "quux file")
-
-	s := &Spec{
-		Kernel: ID(filepath.Join(dir, "foo")),
-		Initrd: []ID{
-			ID(filepath.Join(dir, "bar")),
-			ID(filepath.Join(dir, "baz")),
-		},
-		Cmdline: fmt.Sprintf(`test={{ ID "%s" }} thing=other`, filepath.Join(dir, "quux")),
-		Message: "Hello from testing world!",
-	}
-
-	b, err := StaticBooter(s)
-	if err != nil {
-		t.Fatalf("Constructing StaticBooter: %s", err)
-	}
-
-	m := Machine{
-		MAC:  mustMAC("01:02:03:04:05:06"),
-		Arch: ArchIA32,
-	}
-
-	spec, err := b.BootSpec(m)
-	if err != nil {
-		t.Fatalf("Getting bootspec: %s", err)
-	}
-
-	expected := &Spec{
-		Kernel:  ID("kernel"),
-		Initrd:  []ID{"initrd-0", "initrd-1"},
-		Cmdline: `test={{ ID "other-0" }} thing=other`,
-		Message: "Hello from testing world!",
-	}
-
-	if !reflect.DeepEqual(spec, expected) {
-		t.Fatalf("Expected equal specs, but they differed:\nwant: %#v\ngot:  %#v", expected, spec)
-	}
-
-	// Different machine gets the same spec
-	m.MAC = mustMAC("02:03:04:05:06:07")
-	m.Arch = ArchX64
-
-	spec, err = b.BootSpec(m)
-	if err != nil {
-		t.Fatalf("Getting bootspec: %s", err)
-	}
-	if !reflect.DeepEqual(spec, expected) {
-		t.Fatalf("Expected equal specs, but they differed:\nwant: %#v\ngot:  %#v", expected, spec)
-	}
-
-	// Check that the referenced files exist
-	fs := map[ID]string{
-		"kernel":   "foo file",
-		"initrd-0": "bar file",
-		"initrd-1": "baz file",
-		"other-0":  "quux file",
-	}
-	for id, contents := range fs {
-		v := mustRead(b.ReadBootFile(id))
-		if v != contents {
-			t.Fatalf("Wrong file contents for %q: wanted %q, got %q", id, contents, v)
-		}
-	}
 }
 
 func TestAPIBooter(t *testing.T) {

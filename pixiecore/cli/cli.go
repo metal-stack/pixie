@@ -66,7 +66,6 @@ func staticConfigFlags(cmd *cobra.Command) {
 
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
-	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().String("metrics-listen-addr", "0.0.0.0", "IPv4 address of the metrics server to listen on")
@@ -92,46 +91,8 @@ func mustFile(path string) []byte {
 	return bs
 }
 
-func staticFromFlags(cmd *cobra.Command, kernel string, initrds []string, extraCmdline string) *pixiecore.Server {
-	cmdline, err := cmd.Flags().GetString("cmdline")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-	bootmsg, err := cmd.Flags().GetString("bootmsg")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-
-	if extraCmdline != "" {
-		cmdline = fmt.Sprintf("%s %s", extraCmdline, cmdline)
-	}
-
-	spec := &pixiecore.Spec{
-		Kernel:  pixiecore.ID(kernel),
-		Cmdline: cmdline,
-		Message: bootmsg,
-	}
-	for _, initrd := range initrds {
-		spec.Initrd = append(spec.Initrd, pixiecore.ID(initrd))
-	}
-
-	booter, err := pixiecore.StaticBooter(spec)
-	if err != nil {
-		fatalf("Couldn't make static booter: %s", err)
-	}
-
-	s := serverFromFlags(cmd)
-	s.Booter = booter
-
-	return s
-}
-
 func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	debug, err := cmd.Flags().GetBool("debug")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-	timestamps, err := cmd.Flags().GetBool("log-timestamps")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
@@ -186,7 +147,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
-		Log:            logWithStdFmt,
+		Log:            logWithStdLog,
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
 		MetricsPort:    metricsPort,
@@ -211,9 +172,6 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		ret.Ipxe[pixiecore.FirmwareEFIBC] = ret.Ipxe[pixiecore.FirmwareEFI64]
 	}
 
-	if timestamps {
-		ret.Log = logWithStdLog
-	}
 	if debug {
 		ret.Debug = ret.Log
 	}

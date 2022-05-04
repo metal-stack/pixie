@@ -32,13 +32,13 @@ var ipv6ApiCmd = &cobra.Command{
 		}
 
 		s := pixiecore.NewServerV6()
-		s.Log = logWithStdFmt
+		s.Log = logWithStdLog
 		debug, err := cmd.Flags().GetBool("debug")
 		if err != nil {
-			s.Debug = logWithStdFmt
+			s.Debug = s.Log
 		}
 		if debug {
-			s.Debug = logWithStdFmt
+			s.Debug = s.Log
 		}
 
 		if addr == "" {

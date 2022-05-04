@@ -15,7 +15,6 @@
 package cli
 
 import (
-	"fmt"
 	"log"
 	"sync"
 )
@@ -26,10 +25,4 @@ func logWithStdLog(subsys, msg string) {
 	logSync.Lock()
 	defer logSync.Unlock()
 	log.Printf("[%s] %s", subsys, msg)
-}
-
-func logWithStdFmt(subsys, msg string) {
-	logSync.Lock()
-	defer logSync.Unlock()
-	fmt.Printf("[%s] %s\n", subsys, msg)
 }

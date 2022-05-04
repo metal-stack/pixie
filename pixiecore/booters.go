@@ -23,104 +23,10 @@ import (
 	"net/url"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
 )
-
-// StaticBooter boots all machines with the same Spec.
-//
-// IDs in spec should be either local file paths, or HTTP/HTTPS URLs.
-func StaticBooter(spec *Spec) (Booter, error) {
-	ret := &staticBooter{
-		kernel: string(spec.Kernel),
-		spec: &Spec{
-			Kernel:  "kernel",
-			Message: spec.Message,
-		},
-	}
-	for i, initrd := range spec.Initrd {
-		ret.initrd = append(ret.initrd, string(initrd))
-		ret.spec.Initrd = append(ret.spec.Initrd, ID(fmt.Sprintf("initrd-%d", i)))
-	}
-
-	f := func(id string) string {
-		ret.otherIDs = append(ret.otherIDs, id)
-		return fmt.Sprintf("{{ ID \"other-%d\" }}", len(ret.otherIDs)-1)
-	}
-	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
-	if err != nil {
-		return nil, err
-	}
-	ret.spec.Cmdline = cmdline
-
-	return ret, nil
-}
-
-type staticBooter struct {
-	kernel   string
-	initrd   []string
-	otherIDs []string
-
-	spec *Spec
-}
-
-func (s *staticBooter) BootSpec(m Machine) (*Spec, error) {
-	return s.spec, nil
-}
-
-func (s *staticBooter) serveFile(path string) (io.ReadCloser, int64, error) {
-	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
-		resp, err := http.Get(path)
-		if err != nil {
-			return nil, -1, err
-		}
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			return nil, -1, fmt.Errorf("%s: %s", path, http.StatusText(resp.StatusCode))
-		}
-		return resp.Body, resp.ContentLength, nil
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, -1, err
-	}
-	fi, err := f.Stat()
-	if err != nil {
-		f.Close()
-		return nil, -1, err
-	}
-	return f, fi.Size(), nil
-}
-
-func (s *staticBooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
-	path := string(id)
-	switch {
-	case path == "kernel":
-		return s.serveFile(s.kernel)
-
-	case strings.HasPrefix(path, "initrd-"):
-		i, err := strconv.Atoi(path[7:])
-		if err != nil || i < 0 || i >= len(s.initrd) {
-			return nil, -1, fmt.Errorf("no file with ID %q", id)
-		}
-		return s.serveFile(s.initrd[i])
-
-	case strings.HasPrefix(path, "other-"):
-		i, err := strconv.Atoi(path[6:])
-		if err != nil || i < 0 || i >= len(s.otherIDs) {
-			return nil, -1, fmt.Errorf("no file with ID %q", id)
-		}
-		return s.serveFile(s.otherIDs[i])
-	}
-
-	return nil, -1, fmt.Errorf("no file with ID %q", id)
-}
-
-func (s *staticBooter) WriteBootFile(ID, io.Reader) error {
-	return nil
-}
 
 // APIBooter gets a BootSpec from a remote server over HTTP.
 //
