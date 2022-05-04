@@ -33,13 +33,13 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		return fmt.Errorf("Couldn't get interface metadata on PXE port: %s", err)
+		return fmt.Errorf("Couldn't get interface metadata on PXE port: %w", err)
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			return fmt.Errorf("Receiving packet: %s", err)
+			return fmt.Errorf("Receiving packet: %w", err)
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
@@ -94,7 +94,7 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %w", err)
 	}
 	// see: https://ipxe.org/cfg/platform for reference
 	switch fwt {

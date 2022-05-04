@@ -26,7 +26,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
-			return fmt.Errorf("Receiving DHCP packet: %s", err)
+			return fmt.Errorf("Receiving DHCP packet: %w", err)
 		}
 		if intf == nil {
 			return fmt.Errorf("Received DHCP packet with no interface information (this is a violation of dhcp4.Conn's contract, please file a bug)")
@@ -97,7 +97,7 @@ func (s *Server) isBootDHCP(pkt *dhcp4.Packet) error {
 func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return mach, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return mach, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %w", err)
 	}
 
 	// Basic architecture and firmware identification, based purely on
@@ -160,7 +160,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	mach.MAC = pkt.HardwareAddr
 	mach.GUID, err = pkt.Options.GUID(97)
 	if err != nil {
-		return mach, 0, fmt.Errorf("error decoding client GUID (option 97): %s", err)
+		return mach, 0, fmt.Errorf("error decoding client GUID (option 97): %w", err)
 	}
 	return mach, fwtype, nil
 }
@@ -195,7 +195,7 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 		}
 		bs, err := pxe.Marshal()
 		if err != nil {
-			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
+			return nil, fmt.Errorf("failed to serialize PXE vendor options: %w", err)
 		}
 		resp.Options[43] = bs
 		resp.BootServerName = serverIP.String()
@@ -209,7 +209,7 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 		}
 		bs, err := pxe.Marshal()
 		if err != nil {
-			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
+			return nil, fmt.Errorf("failed to serialize PXE vendor options: %w", err)
 		}
 		resp.Options[43] = bs
 		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)

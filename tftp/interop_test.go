@@ -37,7 +37,7 @@ func TestInterop(t *testing.T) {
 	fmt.Println(len(testFile))
 	prog, err := exec.LookPath("atftp")
 	if err != nil {
-		if e, ok := err.(*exec.Error); ok && e.Err == exec.ErrNotFound {
+		if e, ok := err.(*exec.Error); ok && e.Err == exec.ErrNotFound { // nolint:errorlint
 			t.Skip("atftp is not installed")
 		}
 		t.Fatalf("Error while looking for atftp: %s", err)
@@ -79,7 +79,7 @@ func TestInterop(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "\nUsing server: %#v\n", s)
 		l, port := mkListener(t)
 		defer l.Close()
-		go s.Serve(l)
+		go s.Serve(l) // nolint:errcheck
 
 		options := [][]string{
 			{"blksize 8"},
@@ -133,7 +133,7 @@ type lossyConn struct {
 }
 
 func (c *lossyConn) Write(b []byte) (int, error) {
-	if c.dropsLeft > 0 && rand.Intn(100) < c.lossPercent {
+	if c.dropsLeft > 0 && rand.Intn(100) < c.lossPercent { // nolint:gosec
 		// Pretend to send, to simulate a network failure.
 		c.dropsLeft--
 		c.droppedWrites++
@@ -144,7 +144,7 @@ func (c *lossyConn) Write(b []byte) (int, error) {
 
 func (c *lossyConn) Read(b []byte) (int, error) {
 	n, err := c.Conn.Read(b)
-	if c.dropsLeft > 0 && rand.Intn(100) < c.lossPercent {
+	if c.dropsLeft > 0 && rand.Intn(100) < c.lossPercent { // nolint:gosec
 		// nope, didn't receive anything, read next packet.
 		c.dropsLeft--
 		c.droppedReads++

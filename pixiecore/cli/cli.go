@@ -59,10 +59,6 @@ func fatalf(msg string, args ...any) {
 	os.Exit(1)
 }
 
-func staticConfigFlags(cmd *cobra.Command) {
-	cmd.Flags().String("cmdline", "", "Kernel commandline arguments")
-}
-
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
@@ -75,10 +71,6 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String("ipxe-ipxe", "", "Path to an iPXE binary for chainloading from another iPXE")
 	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
 	cmd.Flags().String("ipxe-efi64", "", "Path to an iPXE binary for 64-bit UEFI")
-
-	// Development flags, hidden from normal use.
-	cmd.Flags().String("ui-assets-dir", "", "UI assets directory (used for development)")
-	cmd.Flags().MarkHidden("ui-assets-dir")
 }
 
 func mustFile(path string) []byte {
@@ -135,10 +127,6 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
-	uiAssetsDir, err := cmd.Flags().GetString("ui-assets-dir")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
 
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
@@ -152,7 +140,6 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		MetricsPort:    metricsPort,
 		MetricsAddress: metricsAddr,
 		DHCPNoBind:     dhcpNoBind,
-		UIAssetsDir:    uiAssetsDir,
 	}
 	for fwtype, bs := range Ipxe {
 		ret.Ipxe[fwtype] = bs

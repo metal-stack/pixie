@@ -34,7 +34,7 @@ func (s *Server) serveTFTP(l net.PacketConn) error {
 	}
 	err := ts.Serve(l)
 	if err != nil {
-		return fmt.Errorf("TFTP server shut down: %s", err)
+		return fmt.Errorf("TFTP server shut down: %w", err)
 	}
 	return nil
 }

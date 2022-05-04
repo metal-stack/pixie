@@ -240,9 +240,9 @@ func (p *Packet) Marshal() ([]byte, error) {
 func writeIP(w io.Writer, ip net.IP) {
 	ip = ip.To4()
 	if ip == nil {
-		w.Write([]byte{0, 0, 0, 0})
+		_, _ = w.Write([]byte{0, 0, 0, 0})
 	} else {
-		w.Write([]byte(ip))
+		_, _ = w.Write([]byte(ip))
 	}
 }
 
@@ -280,7 +280,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 	ret.RelayAddr = net.IP(bs[24:28])
 
 	if err := ret.Options.Unmarshal(bs[240:]); err != nil {
-		return nil, fmt.Errorf("packet has malformed options section: %s", err)
+		return nil, fmt.Errorf("packet has malformed options section: %w", err)
 	}
 
 	// The 'file' and 'sname' BOOTP fields can either have the obvious
@@ -293,7 +293,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 	}
 	if sname {
 		if err := ret.Options.Unmarshal(bs[44:108]); err != nil {
-			return nil, fmt.Errorf("packet has malformed options in 'sname' field: %s", err)
+			return nil, fmt.Errorf("packet has malformed options in 'sname' field: %w", err)
 		}
 	} else {
 		s, ok := nullStr(bs[44:108])
@@ -304,7 +304,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 	}
 	if file {
 		if err := ret.Options.Unmarshal(bs[108:236]); err != nil {
-			return nil, fmt.Errorf("packet has malformed options in 'file' field: %s", err)
+			return nil, fmt.Errorf("packet has malformed options in 'file' field: %w", err)
 		}
 	} else {
 		s, ok := nullStr(bs[108:236])
@@ -318,7 +318,7 @@ func Unmarshal(bs []byte) (*Packet, error) {
 	// option.
 	typ, err := ret.Options.Byte(OptDHCPMessageType)
 	if err != nil {
-		return nil, fmt.Errorf("getting DHCP Message type: %s", err)
+		return nil, fmt.Errorf("getting DHCP Message type: %w", err)
 	}
 	ret.Type = MessageType(typ)
 	delete(ret.Options, OptDHCPMessageType)

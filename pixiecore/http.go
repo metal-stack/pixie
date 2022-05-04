@@ -33,7 +33,7 @@ func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
 		h(mux)
 	}
 	if err := http.Serve(l, mux); err != nil {
-		return fmt.Errorf("HTTP server shut down: %s", err)
+		return fmt.Errorf("HTTP server shut down: %w", err)
 	}
 	return nil
 }
@@ -113,7 +113,7 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	start = time.Now()
 	s.machineEvent(mac, machineStateIpxeScript, "Sent iPXE boot script")
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write(script)
+	_, _ = w.Write(script)
 	s.debug("HTTP", "Writing ipxe script to %s took %s", mac, time.Since(start))
 	s.debug("HTTP", "handleIpxe for %s took %s", mac, time.Since(overallStart))
 }
@@ -212,7 +212,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	}
 	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
 	if err != nil {
-		return nil, fmt.Errorf("expanding cmdline %q: %s", spec.Cmdline, err)
+		return nil, fmt.Errorf("expanding cmdline %q: %w", spec.Cmdline, err)
 	}
 	b.WriteString(cmdline)
 	b.WriteByte('\n')

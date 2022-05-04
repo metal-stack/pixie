@@ -79,7 +79,7 @@ func (p *RandomAddressPool) ReserveAddresses(clientID []byte, interfaceIDs [][]b
 	p.expireIdentityAssociations()
 
 	ret := make([]*dhcp6.IdentityAssociation, 0, len(interfaceIDs))
-	rng := rand.New(rand.NewSource(p.timeNow().UnixNano()))
+	rng := rand.New(rand.NewSource(p.timeNow().UnixNano())) // nolint:gosec
 
 	for _, interfaceID := range interfaceIDs {
 		clientIDHash := p.calculateIAIDHash(clientID, interfaceID)

@@ -103,11 +103,11 @@ type Spec struct {
 func expandCmdline(tpl string, funcs template.FuncMap) (string, error) {
 	tmpl, err := template.New("cmdline").Option("missingkey=error").Funcs(funcs).Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("parsing cmdline %q: %s", tpl, err)
+		return "", fmt.Errorf("parsing cmdline %q: %w", tpl, err)
 	}
 	var out bytes.Buffer
 	if err = tmpl.Execute(&out, nil); err != nil {
-		return "", fmt.Errorf("expanding cmdline template %q: %s", tpl, err)
+		return "", fmt.Errorf("expanding cmdline template %q: %w", tpl, err)
 	}
 	cmdline := strings.TrimSpace(out.String())
 	if strings.Contains(cmdline, "\n") {
@@ -196,10 +196,6 @@ type Server struct {
 	//
 	// Currently only supported on Linux.
 	DHCPNoBind bool
-
-	// Read UI assets from this path, rather than use the builtin UI
-	// assets. Used for development of Pixiecore.
-	UIAssetsDir string
 
 	errs chan error
 

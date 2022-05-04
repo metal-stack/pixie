@@ -40,7 +40,7 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 		urlPrefix: url + "v1",
 	}
 	if _, err := io.ReadFull(rand.Reader, ret.key[:]); err != nil {
-		return nil, fmt.Errorf("failed to get randomness for signing key: %s", err)
+		return nil, fmt.Errorf("failed to get randomness for signing key: %w", err)
 	}
 
 	return ret, nil
@@ -139,7 +139,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	f := func(u string) (string, error) {
 		urlStr, err := b.makeURLAbsolute(u)
 		if err != nil {
-			return "", fmt.Errorf("invalid url %q for cmdline: %s", urlStr, err)
+			return "", fmt.Errorf("invalid url %q for cmdline: %w", urlStr, err)
 		}
 		id, err := signURL(urlStr, &b.key)
 		if err != nil {
@@ -185,7 +185,7 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 		// urlStr will get reparsed by http.Get, which is mildly
 		// wasteful, but the code looks nicer than constructing a
 		// Request.
-		resp, err := http.Get(urlStr)
+		resp, err := http.Get(urlStr) // nolint:gosec
 		if err != nil {
 			return nil, -1, err
 		}
@@ -207,7 +207,7 @@ func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
 		return err
 	}
 
-	resp, err := http.Post(u, "application/octet-stream", body)
+	resp, err := http.Post(u, "application/octet-stream", body) // nolint:gosec
 	if err != nil {
 		return err
 	}

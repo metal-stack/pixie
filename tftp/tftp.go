@@ -149,7 +149,7 @@ func (s *Server) transferLog(addr net.Addr, path string, err error) {
 func (s *Server) transferAndLog(addr net.Addr, req *rrq) {
 	err := s.transfer(addr, req)
 	if err != nil {
-		err = fmt.Errorf("%q: %s", addr, err)
+		err = fmt.Errorf("%q: %w", addr, err)
 	}
 	s.transferLog(addr, req.Filename, err)
 }
@@ -161,14 +161,14 @@ func (s *Server) transfer(addr net.Addr, req *rrq) error {
 	}
 	conn, err := d("udp", addr.String())
 	if err != nil {
-		return fmt.Errorf("creating socket: %s", err)
+		return fmt.Errorf("creating socket: %w", err)
 	}
 	defer conn.Close()
 
 	file, size, err := s.Handler(req.Filename, addr)
 	if err != nil {
-		conn.Write(tftpError("failed to get file"))
-		return fmt.Errorf("getting file bytes: %s", err)
+		_, _ = conn.Write(tftpError("failed to get file"))
+		return fmt.Errorf("getting file bytes: %w", err)
 	}
 	defer file.Close()
 
@@ -203,7 +203,7 @@ func (s *Server) transfer(addr net.Addr, req *rrq) error {
 		}
 
 		if err := s.send(conn, b.Bytes(), 0); err != nil {
-			return fmt.Errorf("sending OACK: %s", err)
+			return fmt.Errorf("sending OACK: %w", err)
 		}
 		b.Reset()
 	}
@@ -219,17 +219,17 @@ func (s *Server) transfer(addr net.Addr, req *rrq) error {
 	for {
 		b.Truncate(2)
 		if err = binary.Write(&b, binary.BigEndian, seq); err != nil {
-			conn.Write(tftpError("internal server error"))
-			return fmt.Errorf("writing seqnum: %s", err)
+			_, _ = conn.Write(tftpError("internal server error"))
+			return fmt.Errorf("writing seqnum: %w", err)
 		}
 		n, err := io.CopyN(&b, file, req.BlockSize)
-		if err != nil && err != io.EOF {
-			conn.Write(tftpError("internal server error"))
-			return fmt.Errorf("reading bytes for block %d: %s", seq, err)
+		if err != nil && !errors.Is(err, io.EOF) {
+			_, _ = conn.Write(tftpError("internal server error"))
+			return fmt.Errorf("reading bytes for block %d: %w", seq, err)
 		}
 		if err = s.send(conn, b.Bytes(), seq); err != nil {
-			conn.Write(tftpError("timeout"))
-			return fmt.Errorf("sending data packet %d: %s", seq, err)
+			_, _ = conn.Write(tftpError("timeout"))
+			return fmt.Errorf("sending data packet %d: %w", seq, err)
 		}
 		seq++
 		if n < req.BlockSize {
@@ -255,14 +255,20 @@ Attempt:
 			return err
 		}
 
-		conn.SetReadDeadline(time.Now().Add(timeout))
+		err := conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil {
+			return err
+		}
 
 		var recv [256]byte
 		for {
 			n, err := conn.Read(recv[:])
 			if err != nil {
-				if t, ok := err.(net.Error); ok && t.Timeout() {
-					continue Attempt
+				var t net.Error
+				if errors.As(err, &t) {
+					if t.Timeout() {
+						continue Attempt
+					}
 				}
 				return err
 			}
@@ -300,12 +306,12 @@ func parseRRQ(bs []byte) (*rrq, error) {
 
 	fname, bs, err := tftpStr(bs[2:])
 	if err != nil {
-		return nil, fmt.Errorf("reading filename: %s", err)
+		return nil, fmt.Errorf("reading filename: %w", err)
 	}
 
 	mode, bs, err := tftpStr(bs)
 	if err != nil {
-		return nil, fmt.Errorf("reading mode: %s", err)
+		return nil, fmt.Errorf("reading mode: %w", err)
 	}
 	if mode != "octet" {
 		// Only support octet mode, because in practice that's the
@@ -320,12 +326,12 @@ func parseRRQ(bs []byte) (*rrq, error) {
 	for len(bs) > 0 {
 		opt, rest, err := tftpStr(bs)
 		if err != nil {
-			return nil, fmt.Errorf("reading option name: %s", err)
+			return nil, fmt.Errorf("reading option name: %w", err)
 		}
 		bs = rest
 		val, rest, err := tftpStr(bs)
 		if err != nil {
-			return nil, fmt.Errorf("reading option %q value: %s", opt, err)
+			return nil, fmt.Errorf("reading option %q value: %w", opt, err)
 		}
 		bs = rest
 		if opt != "blksize" {

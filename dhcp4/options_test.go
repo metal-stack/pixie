@@ -33,7 +33,7 @@ func TestOptionByte(t *testing.T) {
 		t.Fatalf("wanted value 3, got %d", b)
 	}
 
-	b, err = o.Byte(2)
+	_, err = o.Byte(2)
 	if err == nil {
 		t.Fatalf("option shouldn't be a valid byte")
 	}
@@ -53,7 +53,7 @@ func TestOptionUint16(t *testing.T) {
 		t.Fatalf("wanted value 258, got %d", u)
 	}
 
-	u, err = o.Uint16(2)
+	_, err = o.Uint16(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid uint16")
 	}
@@ -73,7 +73,7 @@ func TestOptionUint32(t *testing.T) {
 		t.Fatalf("wanted value 16909060, got %d", u)
 	}
 
-	u, err = o.Uint32(2)
+	_, err = o.Uint32(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid uint32")
 	}
@@ -93,7 +93,7 @@ func TestOptionInt32(t *testing.T) {
 		t.Fatalf("wanted value -1, got %d", u)
 	}
 
-	u, err = o.Int32(2)
+	_, err = o.Int32(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid int32")
 	}
@@ -120,12 +120,12 @@ func TestOptionIPs(t *testing.T) {
 		t.Fatalf("wrong second IP, got %s", ips[0])
 	}
 
-	ips, err = o.IPs(2)
+	_, err = o.IPs(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
 
-	ips, err = o.IPs(3)
+	_, err = o.IPs(3)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
@@ -151,7 +151,7 @@ func TestOptionIP(t *testing.T) {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
 
-	ip, err = o.IP(3)
+	_, err = o.IP(3)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
@@ -172,12 +172,12 @@ func TestOptionIPMask(t *testing.T) {
 		t.Fatalf("wrong first IP, got %s", ipmask)
 	}
 
-	ipmask, err = o.IPMask(2)
+	_, err = o.IPMask(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
 
-	ipmask, err = o.IPMask(3)
+	_, err = o.IPMask(3)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}
