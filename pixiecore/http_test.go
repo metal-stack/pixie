@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -155,7 +154,7 @@ type readBootFile string
 func (b readBootFile) BootSpec(m Machine) (*Spec, error) { return nil, nil }
 func (b readBootFile) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 	d := fmt.Sprintf("%s %s", id, b)
-	return ioutil.NopCloser(bytes.NewBuffer([]byte(d))), int64(len(d)), nil
+	return io.NopCloser(bytes.NewBuffer([]byte(d))), int64(len(d)), nil
 }
 func (b readBootFile) WriteBootFile(id ID, r io.Reader) error { return errors.New("no") }
 

@@ -4,7 +4,7 @@ Pixiecore is an tool to manage network booting of machines. It can be used
 for simple single shot network boots, or as a building block of machine
 management infrastructure.
 
-[![license](https://img.shields.io/github/license/google/netboot.svg)](https://github.com/google/netboot/blob/master/LICENSE) ![api](https://img.shields.io/badge/api-unstable-red.svg) ![cli](https://img.shields.io/badge/cli-stable-green.svg) [![cli](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/go.universe.tf/netboot/pixiecore)
+[![license](https://img.shields.io/github/license/google/netboot.svg)](https://github.com/google/netboot/blob/master/LICENSE) ![api](https://img.shields.io/badge/api-unstable-red.svg) ![cli](https://img.shields.io/badge/cli-stable-green.svg) [![cli](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/metal-stack/pixiecore)
 
 ## TL;DR
 
@@ -38,7 +38,7 @@ build.
 Build the latest Pixiecore via `go get`:
 
 ```shell
-go get go.universe.tf/netboot/cmd/pixiecore
+go get github.com/metal-stack/cmd/pixiecore
 ```
 
 ### Debian/Ubuntu

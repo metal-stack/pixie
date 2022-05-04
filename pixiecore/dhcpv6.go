@@ -2,7 +2,8 @@ package pixiecore
 
 import (
 	"fmt"
-	"go.universe.tf/netboot/dhcp6"
+
+	"github.com/metal-stack/pixiecore/dhcp6"
 )
 
 func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {

@@ -1,13 +1,28 @@
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date -Iseconds)
+VERSION := $(or ${VERSION},devel)
+
 GOCMD:=go
 GOMODULECMD:=GO111MODULE=on go
+LINKMODE := -extldflags '-static -s -w'
 
 # Local customizations to the above.
 ifneq ($(wildcard Makefile.defaults),)
 include Makefile.defaults
 endif
 
-all:
-	$(error Please request a specific thing, there is no default target)
+all: pixiecore
+
+.PHONY: pixiecore
+pixiecore:
+	go build -tags netgo,osusergo,urfave_cli_no_docs \
+		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
+	   -o bin/pixiecore github.com/metal-stack/pixiecore/cmd/pixiecore
+	strip bin/pixiecore
 
 .PHONY: ci-prepare
 ci-prepare:

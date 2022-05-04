@@ -2,13 +2,14 @@ package pool
 
 import (
 	"fmt"
-	"go.universe.tf/netboot/dhcp6"
 	"hash/fnv"
 	"math/big"
 	"math/rand"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/metal-stack/pixiecore/dhcp6"
 )
 
 type associationExpiration struct {
@@ -16,18 +17,18 @@ type associationExpiration struct {
 	ia        *dhcp6.IdentityAssociation
 }
 
-type fifo struct{ q []interface{} }
+type fifo struct{ q []any }
 
 func newFifo() fifo {
-	return fifo{q: make([]interface{}, 0, 1000)}
+	return fifo{q: make([]any, 0, 1000)}
 }
 
-func (f *fifo) Push(v interface{}) {
+func (f *fifo) Push(v any) {
 	f.q = append(f.q, v)
 }
 
-func (f *fifo) Shift() interface{} {
-	var ret interface{}
+func (f *fifo) Shift() any {
+	var ret any
 	ret, f.q = f.q[0], f.q[1:]
 	return ret
 }
@@ -36,7 +37,7 @@ func (f *fifo) Size() int {
 	return len(f.q)
 }
 
-func (f *fifo) Peek() interface{} {
+func (f *fifo) Peek() any {
 	if len(f.q) == 0 {
 		return nil
 	}

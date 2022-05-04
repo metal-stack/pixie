@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/metal-stack/pixiecore/dhcp6"
+	"github.com/metal-stack/pixiecore/dhcp6/pool"
+	"github.com/metal-stack/pixiecore/pixiecore"
 	"github.com/spf13/cobra"
-	"go.universe.tf/netboot/dhcp6"
-	"go.universe.tf/netboot/dhcp6/pool"
-	"go.universe.tf/netboot/pixiecore"
 )
 
 // pixiecore ipv6api --listen-addr=2001:db8:f00f:cafe::4  --api-request-url=http://[2001:db8:f00f:cafe::4]:8888

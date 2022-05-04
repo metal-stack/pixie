@@ -16,7 +16,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,7 +35,7 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			for fwtype, bs := range Ipxe {
 				path := fmt.Sprintf("builtin-ipxe-%d", fwtype)
-				if err := ioutil.WriteFile(path, bs, 0644); err != nil {
+				if err := os.WriteFile(path, bs, 0644); err != nil {
 					fmt.Printf("Error writing %s: %s\n", path, err)
 				} else {
 					fmt.Println("Wrote", path)

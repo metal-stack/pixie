@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package tftp implements a read-only TFTP server.
-package tftp // import "go.universe.tf/netboot/tftp"
+package tftp // import "github.com/metal-stack/pixiecore/tftp"
 
 import (
 	"bytes"
@@ -134,7 +134,7 @@ func (s *Server) Serve(l net.PacketConn) error {
 
 }
 
-func (s *Server) infoLog(msg string, args ...interface{}) {
+func (s *Server) infoLog(msg string, args ...any) {
 	if s.InfoLog != nil {
 		s.InfoLog(fmt.Sprintf(msg, args...))
 	}

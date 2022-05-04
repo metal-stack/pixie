@@ -175,11 +175,11 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	r := struct {
-		Kernel     string      `json:"kernel"`
-		Initrd     []string    `json:"initrd"`
-		Cmdline    interface{} `json:"cmdline"`
-		Message    string      `json:"message"`
-		IpxeScript string      `json:"ipxe-script"`
+		Kernel     string   `json:"kernel"`
+		Initrd     []string `json:"initrd"`
+		Cmdline    any      `json:"cmdline"`
+		Message    string   `json:"message"`
+		IpxeScript string   `json:"ipxe-script"`
 	}{}
 	if err = json.NewDecoder(body).Decode(&r); err != nil {
 		return nil, err
@@ -220,7 +220,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 		switch c := r.Cmdline.(type) {
 		case string:
 			ret.Cmdline = c
-		case map[string]interface{}:
+		case map[string]any:
 			ret.Cmdline, err = b.constructCmdline(c)
 			if err != nil {
 				return nil, err
@@ -327,7 +327,7 @@ func (b *apibooter) makeURLAbsolute(urlStr string) (string, error) {
 	return u.String(), nil
 }
 
-func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
+func (b *apibooter) constructCmdline(m map[string]any) (string, error) {
 	var c []string
 	for k := range m {
 		c = append(c, k)
@@ -341,7 +341,7 @@ func (b *apibooter) constructCmdline(m map[string]interface{}) (string, error) {
 			ret = append(ret, k)
 		case string:
 			ret = append(ret, fmt.Sprintf("%s=%q", k, v))
-		case map[string]interface{}:
+		case map[string]any:
 			urlStr, ok := v["url"].(string)
 			if !ok {
 				return "", fmt.Errorf("cmdline key %q has object value with no 'url' attribute", k)

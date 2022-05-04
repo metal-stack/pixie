@@ -13,16 +13,15 @@
 // limitations under the License.
 
 // Package cli implements the commandline interface for Pixiecore.
-package cli // import "go.universe.tf/netboot/pixiecore/cli"
+package cli // import "github.com/metal-stack/pixiecore/cli"
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
+	"github.com/metal-stack/pixiecore/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.universe.tf/netboot/pixiecore"
 )
 
 // Ipxe is the set of ipxe binaries for supported firmwares.
@@ -35,10 +34,6 @@ var Ipxe = map[pixiecore.Firmware][]byte{}
 //
 // This function always exits back to the OS when finished.
 func CLI() {
-	if v1compatCLI() {
-		return
-	}
-
 	cobra.OnInitialize(initConfig)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -59,7 +54,7 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 }
 
-func fatalf(msg string, args ...interface{}) {
+func fatalf(msg string, args ...any) {
 	fmt.Printf(msg+"\n", args...)
 	os.Exit(1)
 }
@@ -89,7 +84,7 @@ func serverConfigFlags(cmd *cobra.Command) {
 }
 
 func mustFile(path string) []byte {
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		fatalf("couldn't read file %q: %s", path, err)
 	}

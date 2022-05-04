@@ -19,12 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
 
-	"go.universe.tf/netboot/tftp"
+	"github.com/metal-stack/pixiecore/tftp"
 )
 
 func (s *Server) serveTFTP(l net.PacketConn) error {
@@ -84,5 +83,5 @@ func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, in
 		return nil, 0, fmt.Errorf("unknown firmware type %d", i)
 	}
 
-	return ioutil.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
+	return io.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
 }

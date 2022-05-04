@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -54,6 +53,6 @@ func FilesystemHandler(root string) (Handler, error) {
 // ConstantHandler returns a Handler that serves bs for all requested paths.
 func ConstantHandler(bs []byte) Handler {
 	return func(path string, addr net.Addr) (io.ReadCloser, int64, error) {
-		return ioutil.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
+		return io.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
 	}
 }

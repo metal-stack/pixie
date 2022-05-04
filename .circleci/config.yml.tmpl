@@ -4,7 +4,7 @@ version: 2
 jobs:
 {{- range .GoVersions }}
   test-{{.}}:
-    working_directory: /go/src/go.universe.tf/netboot
+    working_directory: /go/src/github.com/metal-stack
     docker:
       - image: circleci/golang:{{.}}
     steps:
@@ -15,7 +15,7 @@ jobs:
       - run: make lint
 {{- end }}
   deploy:
-    working_directory: /go/src/go.universe.tf/netboot
+    working_directory: /go/src/github.com/metal-stack
     docker:
       - image: circleci/golang:1.11
     steps:

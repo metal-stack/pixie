@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"go.universe.tf/netboot/dhcp6"
+	"github.com/metal-stack/pixiecore/dhcp6"
 )
 
 // ServerV6 boots machines using a Booter.
@@ -72,14 +72,14 @@ func (s *ServerV6) Shutdown() {
 	}
 }
 
-func (s *ServerV6) log(subsystem, format string, args ...interface{}) {
+func (s *ServerV6) log(subsystem, format string, args ...any) {
 	if s.Log == nil {
 		return
 	}
 	s.Log(subsystem, fmt.Sprintf(format, args...))
 }
 
-func (s *ServerV6) debug(subsystem, format string, args ...interface{}) {
+func (s *ServerV6) debug(subsystem, format string, args ...any) {
 	if s.Debug == nil {
 		return
 	}

@@ -17,7 +17,6 @@ package pixiecore
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -38,7 +37,7 @@ func mustMAC(s string) net.HardwareAddr {
 }
 
 func mustWrite(dir, path, contents string) {
-	if err := ioutil.WriteFile(filepath.Join(dir, path), []byte(contents), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, path), []byte(contents), 0644); err != nil {
 		panic(err)
 	}
 }
@@ -48,7 +47,7 @@ func mustRead(f io.ReadCloser, sz int64, err error) string {
 		panic(err)
 	}
 	defer f.Close()
-	bs, err := ioutil.ReadAll(f)
+	bs, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +58,7 @@ func mustRead(f io.ReadCloser, sz int64, err error) string {
 }
 
 func TestStaticBooter(t *testing.T) {
-	dir, err := ioutil.TempDir("", "pixiecore-static-booter-test")
+	dir, err := os.MkdirTemp("", "pixiecore-static-booter-test")
 	if err != nil {
 		log.Fatal(err)
 	}

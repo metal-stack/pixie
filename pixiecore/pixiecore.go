@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pixiecore // import "go.universe.tf/netboot/pixiecore"
+package pixiecore // import "github.com/metal-stack/pixiecore/pixiecore"
 
 import (
 	"bytes"
@@ -25,8 +25,8 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/metal-stack/pixiecore/dhcp4"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.universe.tf/netboot/dhcp4"
 )
 
 const (

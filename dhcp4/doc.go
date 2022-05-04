@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Package dhcp4 provides building blocks for DHCP clients and servers.
-package dhcp4 // import "go.universe.tf/netboot/dhcp4"
+package dhcp4 // import "github.com/metal-stack/pixiecore/dhcp4"

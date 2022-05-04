@@ -71,7 +71,7 @@ type machineEvent struct {
 	Message   string
 }
 
-func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format string, args ...interface{}) {
+func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format string, args ...any) {
 	evt := machineEvent{
 		Timestamp: time.Now(),
 		State:     state,
@@ -87,14 +87,14 @@ func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format s
 	}
 }
 
-func (s *Server) log(subsystem, format string, args ...interface{}) {
+func (s *Server) log(subsystem, format string, args ...any) {
 	if s.Log == nil {
 		return
 	}
 	s.Log(subsystem, fmt.Sprintf(format, args...))
 }
 
-func (s *Server) debug(subsystem, format string, args ...interface{}) {
+func (s *Server) debug(subsystem, format string, args ...any) {
 	if s.Debug == nil {
 		return
 	}

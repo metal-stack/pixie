@@ -5,10 +5,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/metal-stack/pixiecore/dhcp6"
+	"github.com/metal-stack/pixiecore/dhcp6/pool"
+	"github.com/metal-stack/pixiecore/pixiecore"
 	"github.com/spf13/cobra"
-	"go.universe.tf/netboot/dhcp6"
-	"go.universe.tf/netboot/dhcp6/pool"
-	"go.universe.tf/netboot/pixiecore"
 )
 
 // pixiecore bootipv6 --listen-addr=2001:db8:f00f:cafe::4/64 --httpboot-url=http://[2001:db8:f00f:cafe::4]/bootx64.efi --ipxe-url=http://[2001:db8:f00f:cafe::4]/script.ipxe

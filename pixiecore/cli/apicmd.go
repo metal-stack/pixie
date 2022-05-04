@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/metal-stack/pixiecore/pixiecore"
 	"github.com/spf13/cobra"
-	"go.universe.tf/netboot/pixiecore"
 )
 
 var apiCmd = &cobra.Command{
