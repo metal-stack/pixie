@@ -27,12 +27,12 @@ import (
 	"github.com/pin/tftp"
 )
 
-func (s *Server) serveTFTP(l net.PacketConn) error {
+func (s *Server) serveTFTP(addr string) error {
 
 	// use nil in place of handler to disable read or write operations
 	tftpServer := tftp.NewServer(s.readHandler, nil)
 	tftpServer.SetTimeout(time.Minute)      // optional
-	err := tftpServer.ListenAndServe(":69") // blocks until s.Shutdown() is called
+	err := tftpServer.ListenAndServe(addr) // blocks until s.Shutdown() is called
 
 	// ts := tftp.Server{
 	// 	Handler:     s.handleTFTP,

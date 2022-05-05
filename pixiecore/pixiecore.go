@@ -226,32 +226,26 @@ func (s *Server) Serve() error {
 	if err != nil {
 		return err
 	}
-	tftp, err := net.ListenPacket("udp", fmt.Sprintf("%s:%d", s.Address, s.TFTPPort))
-	if err != nil {
-		dhcp.Close()
-		return err
-	}
 	pxe, err := net.ListenPacket("udp4", fmt.Sprintf("%s:%d", s.Address, s.PXEPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		return err
 	}
 	http, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		pxe.Close()
 		return err
 	}
 	metrics, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.MetricsAddress, s.MetricsPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		pxe.Close()
 		http.Close()
 		return err
 	}
+
+	tftpAddr := fmt.Sprintf("%s:%d", s.Address, s.TFTPPort)
 
 	s.events = make(map[string][]machineEvent)
 	// 5 buffer slots, one for each goroutine, plus one for
@@ -265,14 +259,13 @@ func (s *Server) Serve() error {
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()
-	go func() { s.errs <- s.serveTFTP(tftp) }()
+	go func() { s.errs <- s.serveTFTP(tftpAddr) }()
 	go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
 	go func() { s.errs <- serveHTTP(metrics, s.serveMetrics) }()
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
 	dhcp.Close()
-	tftp.Close()
 	pxe.Close()
 	http.Close()
 	metrics.Close()
