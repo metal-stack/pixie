@@ -22,17 +22,17 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/metal-stack/pixie/tftp"
+	"github.com/pin/tftp"
 )
 
-func (s *Server) serveTFTP(l net.PacketConn) error {
-	ts := tftp.Server{
-		Handler:     s.handleTFTP,
-		InfoLog:     func(msg string) { s.Log.Debugf("TFTP", msg) },
-		TransferLog: s.logTFTPTransfer,
-	}
-	err := ts.Serve(l)
+func (s *Server) serveTFTP(addr string) error {
+
+	// use nil in place of handler to disable read or write operations
+	tftpServer := tftp.NewServer(s.readHandler, nil)
+	tftpServer.SetTimeout(time.Minute)     // optional
+	err := tftpServer.ListenAndServe(addr) // blocks until s.Shutdown() is called
 	if err != nil {
 		return fmt.Errorf("TFTP server shut down: %w", err)
 	}
@@ -58,20 +58,6 @@ func extractInfo(path string) (net.HardwareAddr, int, error) {
 	return mac, i, nil
 }
 
-func (s *Server) logTFTPTransfer(clientAddr net.Addr, path string, err error) {
-	mac, _, pathErr := extractInfo(path)
-	if pathErr != nil {
-		s.Log.Infof("unable to extract mac from request:%v", pathErr)
-		return
-	}
-	if err != nil {
-		s.Log.Infof("Send of %q to %s failed: %s", path, clientAddr, err)
-	} else {
-		s.Log.Infof("Sent %q to %s", path, clientAddr)
-		s.machineEvent(mac, machineStateTFTP, "Sent iPXE to %s", clientAddr)
-	}
-}
-
 func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, int64, error) {
 	_, i, err := extractInfo(path)
 	if err != nil {
@@ -84,4 +70,25 @@ func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, in
 	}
 
 	return io.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
+}
+
+// readHandler is called when client starts file download from server
+func (s *Server) readHandler(path string, rf io.ReaderFrom) error {
+	_, i, err := extractInfo(path)
+	if err != nil {
+		return fmt.Errorf("unknown path %q", path)
+	}
+
+	bs, ok := s.Ipxe[Firmware(i)]
+	if !ok {
+		return fmt.Errorf("unknown firmware type %d", i)
+	}
+
+	n, err := rf.ReadFrom(bytes.NewReader(bs))
+	if err != nil {
+		s.Log.Errorf("TFTP", "unable to send payload %s", err)
+		return err
+	}
+	s.Log.Infof("TFTP", "sent %d", n)
+	return nil
 }
