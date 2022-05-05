@@ -3,7 +3,7 @@ package pixiecore
 import (
 	"fmt"
 
-	"github.com/metal-stack/pixiecore/dhcp6"
+	"github.com/metal-stack/pixie/dhcp6"
 )
 
 func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {

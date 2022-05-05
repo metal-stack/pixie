@@ -12,17 +12,17 @@ ifneq ($(wildcard Makefile.defaults),)
 include Makefile.defaults
 endif
 
-all: pixiecore
+all: pixie
 
-.PHONY: pixiecore
-pixiecore: test
+.PHONY: pixie
+pixie: test
 	go build -tags netgo,osusergo \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
 								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
 								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
-	   -o bin/pixiecore github.com/metal-stack/pixiecore/cmd/pixiecore
-	strip bin/pixiecore
+	   -o bin/pixie github.com/metal-stack/pixie/cmd
+	strip bin/pixie
 
 .PHONY: test
 test:

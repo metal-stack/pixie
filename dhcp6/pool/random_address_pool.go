@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/metal-stack/pixiecore/dhcp6"
+	"github.com/metal-stack/pixie/dhcp6"
 )
 
 type associationExpiration struct {

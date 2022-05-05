@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pixiecore // import "github.com/metal-stack/pixiecore/pixiecore"
+package pixiecore // import "github.com/metal-stack/pixie/pixiecore"
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/metal-stack/pixiecore/dhcp4"
+	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 // Package cli implements the commandline interface for Pixiecore.
-package cli // import "github.com/metal-stack/pixiecore/cli"
+package cli // import "github.com/metal-stack/pixie/cli"
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/metal-stack/pixiecore/pixiecore"
+	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

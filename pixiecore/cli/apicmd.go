@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/metal-stack/pixiecore/pixiecore"
+	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 )
 

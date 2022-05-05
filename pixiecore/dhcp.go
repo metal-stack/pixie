@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/metal-stack/pixiecore/dhcp4"
+	"github.com/metal-stack/pixie/dhcp4"
 )
 
 func (s *Server) serveDHCP(conn *dhcp4.Conn) error {

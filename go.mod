@@ -1,4 +1,4 @@
-module github.com/metal-stack/pixiecore
+module github.com/metal-stack/pixie
 
 go 1.18
 

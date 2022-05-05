@@ -1,4 +1,4 @@
-# Pixiecore, with embedded iPXE
+# Pixie, with embedded iPXE
 
 This is a version of the Pixiecore tool that embeds iPXE binaries for
 all of Pixiecore's supported architectures/firmwares, so you don't

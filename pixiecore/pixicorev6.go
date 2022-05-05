@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/metal-stack/pixiecore/dhcp6"
+	"github.com/metal-stack/pixie/dhcp6"
 	"go.uber.org/zap"
 )
 

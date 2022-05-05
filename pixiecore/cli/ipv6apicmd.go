@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metal-stack/pixiecore/dhcp6"
-	"github.com/metal-stack/pixiecore/dhcp6/pool"
-	"github.com/metal-stack/pixiecore/pixiecore"
+	"github.com/metal-stack/pixie/dhcp6"
+	"github.com/metal-stack/pixie/dhcp6/pool"
+	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 )
 

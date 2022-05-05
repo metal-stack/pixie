@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/metal-stack/pixiecore/tftp"
+	"github.com/metal-stack/pixie/tftp"
 )
 
 func (s *Server) serveTFTP(l net.PacketConn) error {

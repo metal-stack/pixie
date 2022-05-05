@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package tftp implements a read-only TFTP server.
-package tftp // import "github.com/metal-stack/pixiecore/tftp"
+package tftp // import "github.com/metal-stack/pixie/tftp"
 
 import (
 	"bytes"
