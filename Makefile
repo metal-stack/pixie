@@ -24,14 +24,6 @@ pixiecore: test
 	   -o bin/pixiecore github.com/metal-stack/pixiecore/cmd/pixiecore
 	strip bin/pixiecore
 
-.PHONY: ci-prepare
-ci-prepare:
-	$(GOCMD) get -u github.com/estesp/manifest-tool
-
-.PHONY: build
-build:
-	$(GOMODULECMD) install -v ./cmd/pixiecore
-
 .PHONY: test
 test:
 	$(GOMODULECMD) test ./...
@@ -40,21 +32,6 @@ test:
 .PHONY: lint
 lint:
 	$(GOMODULECMD) tool vet .
-
-REGISTRY=pixiecore
-TAG=dev
-.PHONY: ci-push-images
-ci-push-images:
-	make -f Makefile.inc push GOARCH=amd64   TAG=$(TAG)-amd64   BINARY=pixiecore REGISTRY=$(REGISTRY)
-	make -f Makefile.inc push GOARCH=arm     TAG=$(TAG)-arm     BINARY=pixiecore REGISTRY=$(REGISTRY)
-	make -f Makefile.inc push GOARCH=arm64   TAG=$(TAG)-arm64   BINARY=pixiecore REGISTRY=$(REGISTRY)
-	make -f Makefile.inc push GOARCH=ppc64le TAG=$(TAG)-ppc64le BINARY=pixiecore REGISTRY=$(REGISTRY)
-	make -f Makefile.inc push GOARCH=s390x   TAG=$(TAG)-s390x   BINARY=pixiecore REGISTRY=$(REGISTRY)
-	manifest-tool push from-args --platforms linux/amd64,linux/arm,linux/arm64,linux/ppc64le,linux/s390x --template $(REGISTRY)/pixiecore:$(TAG)-ARCH --target $(REGISTRY)/pixiecore:$(TAG)
-
-.PHONY: ci-config
-ci-config:
-	(cd .circleci && go run gen-config.go >config.yml)
 
 .PHONY: update-ipxe
 update-ipxe:
