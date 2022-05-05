@@ -31,15 +31,8 @@ func (s *Server) serveTFTP(addr string) error {
 
 	// use nil in place of handler to disable read or write operations
 	tftpServer := tftp.NewServer(s.readHandler, nil)
-	tftpServer.SetTimeout(time.Minute)      // optional
+	tftpServer.SetTimeout(time.Minute)     // optional
 	err := tftpServer.ListenAndServe(addr) // blocks until s.Shutdown() is called
-
-	// ts := tftp.Server{
-	// 	Handler:     s.handleTFTP,
-	// 	InfoLog:     func(msg string) { s.Log.Debugf("TFTP", msg) },
-	// 	TransferLog: s.logTFTPTransfer,
-	// }
-	// err := ts.Serve(l)
 	if err != nil {
 		return fmt.Errorf("TFTP server shut down: %w", err)
 	}
@@ -64,20 +57,6 @@ func extractInfo(path string) (net.HardwareAddr, int, error) {
 
 	return mac, i, nil
 }
-
-// func (s *Server) logTFTPTransfer(clientAddr net.Addr, path string, err error) {
-// 	mac, _, pathErr := extractInfo(path)
-// 	if pathErr != nil {
-// 		s.Log.Infof("unable to extract mac from request:%v", pathErr)
-// 		return
-// 	}
-// 	if err != nil {
-// 		s.Log.Infof("Send of %q to %s failed: %s", path, clientAddr, err)
-// 	} else {
-// 		s.Log.Infof("Sent %q to %s", path, clientAddr)
-// 		s.machineEvent(mac, machineStateTFTP, "Sent iPXE to %s", clientAddr)
-// 	}
-// }
 
 func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, int64, error) {
 	_, i, err := extractInfo(path)
