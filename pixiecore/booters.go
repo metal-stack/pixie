@@ -54,10 +54,9 @@ type apibooter struct {
 
 func (b *apibooter) getAPIResponse(m Machine) (io.ReadCloser, error) {
 	var reqURL string
+	reqURL = fmt.Sprintf("%s/boot/%s", b.urlPrefix, m.MAC)
 	if m.GUID != "" {
 		reqURL = fmt.Sprintf("%s/dhcp/%s", b.urlPrefix, m.GUID)
-	} else {
-		reqURL = fmt.Sprintf("%s/boot/%s", b.urlPrefix, m.MAC)
 	}
 	resp, err := b.client.Get(reqURL)
 	if err != nil {
