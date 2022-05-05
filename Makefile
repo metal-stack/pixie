@@ -16,7 +16,7 @@ all: pixiecore
 
 .PHONY: pixiecore
 pixiecore: test
-	go build -tags netgo,osusergo,urfave_cli_no_docs \
+	go build -tags netgo,osusergo \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
 								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
