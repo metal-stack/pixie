@@ -46,11 +46,9 @@ func TestIpxe(t *testing.T) {
 			Message: "Hello from the test!",
 		}, nil
 	}
-	log := func(subsystem, msg string) { t.Logf("[%s] %s", subsystem, msg) }
 	s := &Server{
 		Booter: booterFunc(booter),
-		Log:    zaptest.NewLogger().Sugar(),
-		Debug:  log,
+		Log:    zaptest.NewLogger(t).Sugar(),
 		events: make(map[string][]machineEvent),
 	}
 
@@ -161,11 +159,9 @@ func (b readBootFile) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 func (b readBootFile) WriteBootFile(id ID, r io.Reader) error { return errors.New("no") }
 
 func TestFile(t *testing.T) {
-	log := func(subsystem, msg string) { t.Logf("[%s] %s", subsystem, msg) }
 	s := &Server{
 		Booter: readBootFile("stuff"),
-		Log:    log,
-		Debug:  log,
+		Log:    zaptest.NewLogger(t).Sugar(),
 	}
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/_/file?name=test", nil)
