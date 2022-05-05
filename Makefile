@@ -21,8 +21,8 @@ pixie: test
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
 								   -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
 								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
-	   -o bin/pixie github.com/metal-stack/pixie/cmd
-	strip bin/pixie
+	   -o build/pixie github.com/metal-stack/pixie/cmd
+	strip build/pixie
 
 .PHONY: test
 test:

@@ -29,6 +29,7 @@ FILE_LICENCE ( GPL2_OR_LATER_OR_UBDL );
 #include <ipxe/uaccess.h>
 #include <ipxe/init.h>
 #include <ipxe/memblock.h>
+#include <ipxe/cpio.h>
 
 /** @file
  *
@@ -175,18 +176,18 @@ static int initrd_swap_any ( userptr_t free, size_t free_len ) {
 		/* Search for adjacent image */
 		for_each_image ( high ) {
 
-			/* If we have found the adjacent image, swap and exit */
-			if ( high->data == adjacent ) {
-				initrd_swap ( low, high, free, free_len );
-				return 1;
-			}
-
 			/* Stop search if all remaining potential
 			 * adjacent images are already in the correct
 			 * order.
 			 */
 			if ( high == low )
 				break;
+
+			/* If we have found the adjacent image, swap and exit */
+			if ( high->data == adjacent ) {
+				initrd_swap ( low, high, free, free_len );
+				return 1;
+			}
 		}
 	}
 
@@ -300,5 +301,6 @@ static void initrd_startup ( void ) {
 
 /** initrd startup function */
 struct startup_fn startup_initrd __startup_fn ( STARTUP_LATE ) = {
+	.name = "initrd",
 	.startup = initrd_startup,
 };

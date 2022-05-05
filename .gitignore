@@ -5,4 +5,3 @@ pcap/pcap.test
 pixiecore/pixiecore.test
 vendor/
 build/
-bin
