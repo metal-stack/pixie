@@ -77,6 +77,7 @@ var (
 func (o Options) Unmarshal(bs []byte) error {
 	for len(bs) > 0 {
 		opt := Option(bs[0])
+		// nolint:exhaustive
 		switch opt {
 		case 0:
 			// Padding byte
@@ -165,15 +166,21 @@ func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, 
 			continue
 		}
 
-		w.Write([]byte{byte(n), byte(len(opt))})
-		w.Write(opt)
+		w.Write([]byte{byte(n), byte(len(opt))}) // nolint:errcheck
+		w.Write(opt)                             // nolint:errcheck
 		nBytes -= len(opt) + 2
 	}
 
-	w.Write([]byte{255})
+	_, err := w.Write([]byte{255})
+	if err != nil {
+		return nil, err
+	}
 	nBytes--
 	if nBytes > 0 {
-		w.Write(make([]byte, nBytes))
+		_, err := w.Write(make([]byte, nBytes))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return ret, nil

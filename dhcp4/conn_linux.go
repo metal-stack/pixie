@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//+build linux
+//go:build linux
+// +build linux
 
 package dhcp4
 
@@ -72,11 +73,11 @@ func newLinuxConn(port int) (conn, error) {
 	}
 	if err = r.SetControlMessage(ipv4.FlagInterface, true); err != nil {
 		c.Close()
-		return nil, fmt.Errorf("setting packet filter: %s", err)
+		return nil, fmt.Errorf("setting packet filter: %w", err)
 	}
 	if err = r.SetBPF(filter); err != nil {
 		c.Close()
-		return nil, fmt.Errorf("setting packet filter: %s", err)
+		return nil, fmt.Errorf("setting packet filter: %w", err)
 	}
 
 	ret := &linuxConn{

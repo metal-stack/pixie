@@ -19,43 +19,43 @@ import (
 	"fmt"
 	"net"
 
-	"go.universe.tf/netboot/dhcp4"
+	"github.com/metal-stack/pixie/dhcp4"
 )
 
 func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
-			return fmt.Errorf("Receiving DHCP packet: %s", err)
+			return fmt.Errorf("Receiving DHCP packet: %w", err)
 		}
 		if intf == nil {
 			return fmt.Errorf("Received DHCP packet with no interface information (this is a violation of dhcp4.Conn's contract, please file a bug)")
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {
-			s.debug("DHCP", "Ignoring packet from %s: %s", pkt.HardwareAddr, err)
+			s.Log.Debugf("Ignoring packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 		mach, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
-			s.log("DHCP", "Unusable packet from %s: %s", pkt.HardwareAddr, err)
+			s.Log.Infof("Unusable packet from %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
-		s.debug("DHCP", "Got valid request to boot %s (%s, %s)", mach.MAC, mach.GUID, mach.Arch)
+		s.Log.Debugf("Got valid request to boot %s (%s, %s)", mach.MAC, mach.GUID, mach.Arch)
 
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {
-			s.log("DHCP", "Couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Infof("Couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 		if spec == nil {
-			s.debug("DHCP", "No boot spec for %s, ignoring boot request", pkt.HardwareAddr)
+			s.Log.Debugf("No boot spec for %s, ignoring boot request", pkt.HardwareAddr)
 			s.machineEvent(pkt.HardwareAddr, machineStateIgnored, "Machine should not netboot")
 			continue
 		}
 
-		s.log("DHCP", "Offering to boot %s", pkt.HardwareAddr)
+		s.Log.Infof("Offering to boot %s", pkt.HardwareAddr)
 		if fwtype == FirmwarePixiecoreIpxe {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
 		} else {
@@ -65,18 +65,18 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		// Machine should be booted.
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.log("DHCP", "Want to boot %s on %s, but couldn't get a source address: %s", pkt.HardwareAddr, intf.Name, err)
+			s.Log.Infof("Want to boot %s on %s, but couldn't get a source address: %s", pkt.HardwareAddr, intf.Name, err)
 			continue
 		}
 
 		resp, err := s.offerDHCP(pkt, mach, serverIP, fwtype)
 		if err != nil {
-			s.log("DHCP", "Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Infof("Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 
 		if err = conn.SendDHCP(resp, intf); err != nil {
-			s.log("DHCP", "Failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Infof("Failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
 			continue
 		}
 	}
@@ -97,7 +97,7 @@ func (s *Server) isBootDHCP(pkt *dhcp4.Packet) error {
 func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return mach, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return mach, 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %w", err)
 	}
 
 	// Basic architecture and firmware identification, based purely on
@@ -160,7 +160,7 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	mach.MAC = pkt.HardwareAddr
 	mach.GUID, err = pkt.Options.GUID(97)
 	if err != nil {
-		return mach, 0, fmt.Errorf("error decoding client GUID (option 97): %s", err)
+		return mach, 0, fmt.Errorf("error decoding client GUID (option 97): %w", err)
 	}
 	return mach, fwtype, nil
 }
@@ -195,7 +195,7 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 		}
 		bs, err := pxe.Marshal()
 		if err != nil {
-			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
+			return nil, fmt.Errorf("failed to serialize PXE vendor options: %w", err)
 		}
 		resp.Options[43] = bs
 		resp.BootServerName = serverIP.String()
@@ -209,7 +209,7 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 		}
 		bs, err := pxe.Marshal()
 		if err != nil {
-			return nil, fmt.Errorf("failed to serialize PXE vendor options: %s", err)
+			return nil, fmt.Errorf("failed to serialize PXE vendor options: %w", err)
 		}
 		resp.Options[43] = bs
 		resp.BootFilename = fmt.Sprintf("tftp://%s/%s/%d", serverIP, mach.MAC, fwtype)

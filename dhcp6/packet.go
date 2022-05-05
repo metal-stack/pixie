@@ -36,7 +36,7 @@ type Packet struct {
 func Unmarshal(bs []byte, packetLength int) (*Packet, error) {
 	options, err := UnmarshalOptions(bs[4:packetLength])
 	if err != nil {
-		return nil, fmt.Errorf("packet has malformed options section: %s", err)
+		return nil, fmt.Errorf("packet has malformed options section: %w", err)
 	}
 	ret := &Packet{Type: MessageType(bs[0]), Options: options}
 	copy(ret.TransactionID[:], bs[1:4])
@@ -47,7 +47,7 @@ func Unmarshal(bs []byte, packetLength int) (*Packet, error) {
 func (p *Packet) Marshal() ([]byte, error) {
 	marshalledOptions, err := p.Options.Marshal()
 	if err != nil {
-		return nil, fmt.Errorf("packet has malformed options section: %s", err)
+		return nil, fmt.Errorf("packet has malformed options section: %w", err)
 	}
 
 	ret := make([]byte, len(marshalledOptions)+4, len(marshalledOptions)+4)
@@ -60,6 +60,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 
 // ShouldDiscard returns true if the Packet fails validation
 func (p *Packet) ShouldDiscard(serverDuid []byte) error {
+	// nolint:exhaustive
 	switch p.Type {
 	case MsgSolicit:
 		return shouldDiscardSolicit(p)

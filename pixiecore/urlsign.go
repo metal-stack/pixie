@@ -28,7 +28,7 @@ import (
 func signURL(u string, key *[32]byte) (ID, error) {
 	var nonce [24]byte
 	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
-		return "", fmt.Errorf("could not read randomness for signing nonce: %s", err)
+		return "", fmt.Errorf("could not read randomness for signing nonce: %w", err)
 	}
 
 	out := nonce[:]

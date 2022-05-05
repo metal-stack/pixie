@@ -2,7 +2,8 @@ package pixiecore
 
 import (
 	"fmt"
-	"go.universe.tf/netboot/dhcp6"
+
+	"github.com/metal-stack/pixie/dhcp6"
 )
 
 func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {
@@ -10,7 +11,7 @@ func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {
 	for {
 		pkt, src, err := conn.RecvDHCP()
 		if err != nil {
-			return fmt.Errorf("Error receiving DHCP packet: %s", err)
+			return fmt.Errorf("Error receiving DHCP packet: %w", err)
 		}
 		if err := pkt.ShouldDiscard(s.Duid); err != nil {
 			s.debug("dhcpv6", fmt.Sprintf("Discarding (%d) packet (%d): %s\n", pkt.Type, pkt.TransactionID, err))

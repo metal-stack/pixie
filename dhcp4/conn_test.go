@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func testConn(t *testing.T, impl conn, addr string) {
@@ -52,7 +54,8 @@ func testConn(t *testing.T, impl conn, addr string) {
 	}
 
 	go func() {
-		s.Write(bs)
+		_, err := s.Write(bs)
+		assert.NoError(t, err)
 	}()
 	if err = c.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
 		t.Fatal(err)
@@ -82,7 +85,8 @@ func testConn(t *testing.T, impl conn, addr string) {
 
 	ch := make(chan *Packet, 1)
 	go func() {
-		s.SetReadDeadline(time.Now().Add(time.Second))
+		err := s.SetReadDeadline(time.Now().Add(time.Second))
+		assert.NoError(t, err)
 		var buf [1500]byte
 		n, err := s.Read(buf[:])
 		if err != nil {

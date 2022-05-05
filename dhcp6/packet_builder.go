@@ -19,6 +19,7 @@ func MakePacketBuilder(preferredLifetime, validLifetime uint32) *PacketBuilder {
 
 // BuildResponse generates a response packet for a packet received from a client
 func (b *PacketBuilder) BuildResponse(in *Packet, serverDUID []byte, configuration BootConfiguration, addresses AddressPool) (*Packet, error) {
+	// nolint:exhaustive
 	switch in.Type {
 	case MsgSolicit:
 		bootFileURL, err := configuration.GetBootURL(b.extractLLAddressOrID(in.Options.ClientID()), in.Options.ClientArchType())

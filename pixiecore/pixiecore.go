@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pixiecore // import "go.universe.tf/netboot/pixiecore"
+package pixiecore // import "github.com/metal-stack/pixie/pixiecore"
 
 import (
 	"bytes"
@@ -25,8 +25,10 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/metal-stack/pixie/dhcp4"
+	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.universe.tf/netboot/dhcp4"
+	"go.uber.org/zap"
 )
 
 const (
@@ -102,11 +104,11 @@ type Spec struct {
 func expandCmdline(tpl string, funcs template.FuncMap) (string, error) {
 	tmpl, err := template.New("cmdline").Option("missingkey=error").Funcs(funcs).Parse(tpl)
 	if err != nil {
-		return "", fmt.Errorf("parsing cmdline %q: %s", tpl, err)
+		return "", fmt.Errorf("parsing cmdline %q: %w", tpl, err)
 	}
 	var out bytes.Buffer
 	if err = tmpl.Execute(&out, nil); err != nil {
-		return "", fmt.Errorf("expanding cmdline template %q: %s", tpl, err)
+		return "", fmt.Errorf("expanding cmdline template %q: %w", tpl, err)
 	}
 	cmdline := strings.TrimSpace(out.String())
 	if strings.Contains(cmdline, "\n") {
@@ -178,10 +180,7 @@ type Server struct {
 
 	// Log receives logs on Pixiecore's operation. If nil, logging
 	// is suppressed.
-	Log func(subsystem, msg string)
-	// Debug receives extensive logging on Pixiecore's internals. Very
-	// useful for debugging, but very verbose.
-	Debug func(subsystem, msg string)
+	Log *zap.SugaredLogger
 
 	// These ports can technically be set for testing, but the
 	// protocols burned in firmware on the client side hardcode these,
@@ -195,10 +194,6 @@ type Server struct {
 	//
 	// Currently only supported on Linux.
 	DHCPNoBind bool
-
-	// Read UI assets from this path, rather than use the builtin UI
-	// assets. Used for development of Pixiecore.
-	UIAssetsDir string
 
 	errs chan error
 
@@ -231,32 +226,26 @@ func (s *Server) Serve() error {
 	if err != nil {
 		return err
 	}
-	tftp, err := net.ListenPacket("udp", fmt.Sprintf("%s:%d", s.Address, s.TFTPPort))
-	if err != nil {
-		dhcp.Close()
-		return err
-	}
 	pxe, err := net.ListenPacket("udp4", fmt.Sprintf("%s:%d", s.Address, s.PXEPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		return err
 	}
 	http, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		pxe.Close()
 		return err
 	}
 	metrics, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.MetricsAddress, s.MetricsPort))
 	if err != nil {
 		dhcp.Close()
-		tftp.Close()
 		pxe.Close()
 		http.Close()
 		return err
 	}
+
+	tftpAddr := fmt.Sprintf("%s:%d", s.Address, s.TFTPPort)
 
 	s.events = make(map[string][]machineEvent)
 	// 5 buffer slots, one for each goroutine, plus one for
@@ -266,18 +255,17 @@ func (s *Server) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.debug("Init", "Starting Pixiecore goroutines")
+	s.Log.Debugf("Starting Pixiecore goroutines version:%q", v.V)
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()
-	go func() { s.errs <- s.serveTFTP(tftp) }()
+	go func() { s.errs <- s.serveTFTP(tftpAddr) }()
 	go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
 	go func() { s.errs <- serveHTTP(metrics, s.serveMetrics) }()
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
 	dhcp.Close()
-	tftp.Close()
 	pxe.Close()
 	http.Close()
 	metrics.Close()

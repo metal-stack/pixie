@@ -15,7 +15,6 @@
 package pixiecore
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net"
 	"time"
@@ -71,7 +70,7 @@ type machineEvent struct {
 	Message   string
 }
 
-func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format string, args ...interface{}) {
+func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format string, args ...any) {
 	evt := machineEvent{
 		Timestamp: time.Now(),
 		State:     state,
@@ -85,25 +84,4 @@ func (s *Server) machineEvent(mac net.HardwareAddr, state machineState, format s
 	if len(s.events[k]) > savedEventsPerMachine {
 		s.events[k] = s.events[k][len(s.events[k])-savedEventsPerMachine:]
 	}
-}
-
-func (s *Server) log(subsystem, format string, args ...interface{}) {
-	if s.Log == nil {
-		return
-	}
-	s.Log(subsystem, fmt.Sprintf(format, args...))
-}
-
-func (s *Server) debug(subsystem, format string, args ...interface{}) {
-	if s.Debug == nil {
-		return
-	}
-	s.Debug(subsystem, fmt.Sprintf(format, args...))
-}
-
-func (s *Server) debugPacket(subsystem string, layer int, packet []byte) {
-	if s.Debug == nil {
-		return
-	}
-	s.Debug(subsystem, fmt.Sprintf("PKT %d %s END", layer, base64.StdEncoding.EncodeToString(packet)))
 }

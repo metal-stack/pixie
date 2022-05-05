@@ -2,8 +2,9 @@ package dhcp6
 
 import (
 	"fmt"
-	"golang.org/x/net/ipv6"
 	"net"
+
+	"golang.org/x/net/ipv6"
 )
 
 // Conn is dhcpv6-specific socket
@@ -56,12 +57,12 @@ func (c *Conn) Close() error {
 func InterfaceByAddress(ifAddr string) (*net.Interface, error) {
 	allIfis, err := net.Interfaces()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting network interface information: %s", err)
+		return nil, fmt.Errorf("Error getting network interface information: %w", err)
 	}
 	for _, ifi := range allIfis {
 		addrs, err := ifi.Addrs()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting network interface address information: %s", err)
+			return nil, fmt.Errorf("Error getting network interface address information: %w", err)
 		}
 		for _, addr := range addrs {
 			if addrToIP(addr).String() == ifAddr {
@@ -115,7 +116,7 @@ func (c *Conn) SendDHCP(dst net.IP, p []byte) error {
 	}
 	_, err := c.conn.WriteTo(p, nil, dstAddr)
 	if err != nil {
-		return fmt.Errorf("Error sending a reply to %s: %s", dst.String(), err)
+		return fmt.Errorf("Error sending a reply to %s: %w", dst.String(), err)
 	}
 	return nil
 }

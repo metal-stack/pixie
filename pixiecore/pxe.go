@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"go.universe.tf/netboot/dhcp4"
+	"github.com/metal-stack/pixie/dhcp4"
 	"golang.org/x/net/ipv4"
 )
 
@@ -33,39 +33,39 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		return fmt.Errorf("Couldn't get interface metadata on PXE port: %s", err)
+		return fmt.Errorf("Couldn't get interface metadata on PXE port: %w", err)
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			return fmt.Errorf("Receiving packet: %s", err)
+			return fmt.Errorf("Receiving packet: %w", err)
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
 		if err != nil {
-			s.debug("PXE", "Packet from %s is not a DHCP packet: %s", addr, err)
+			s.Log.Debugf("Packet from %s is not a DHCP packet: %s", addr, err)
 			continue
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {
-			s.debug("PXE", "Ignoring packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Debugf("Ignoring packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
 		}
 		fwtype, err := s.validatePXE(pkt)
 		if err != nil {
-			s.log("PXE", "Unusable packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Infof("Unusable packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
 			continue
 		}
 
 		intf, err := net.InterfaceByIndex(msg.IfIndex)
 		if err != nil {
-			s.log("PXE", "Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
+			s.Log.Infof("Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
 			continue
 		}
 
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.log("PXE", "Want to boot %s (%s) on %s, but couldn't get a source address: %s", pkt.HardwareAddr, addr, intf.Name, err)
+			s.Log.Infof("Want to boot %s (%s) on %s, but couldn't get a source address: %s", pkt.HardwareAddr, addr, intf.Name, err)
 			continue
 		}
 
@@ -73,20 +73,20 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 
 		resp, err := s.offerPXE(pkt, serverIP, fwtype)
 		if err != nil {
-			s.log("PXE", "Failed to construct PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Infof("Failed to construct PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
 			continue
 		}
 
 		bs, err := resp.Marshal()
 		if err != nil {
-			s.log("PXE", "Failed to marshal PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Infof("Failed to marshal PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
 			continue
 		}
 
 		if _, err := l.WriteTo(bs, &ipv4.ControlMessage{
 			IfIndex: msg.IfIndex,
 		}, addr); err != nil {
-			s.log("PXE", "Failed to send PXE response to %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Infof("Failed to send PXE response to %s (%s): %s", pkt.HardwareAddr, addr, err)
 		}
 	}
 }
@@ -94,7 +94,7 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	fwt, err := pkt.Options.Uint16(93)
 	if err != nil {
-		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %s", err)
+		return 0, fmt.Errorf("malformed DHCP option 93 (required for PXE): %w", err)
 	}
 	// see: https://ipxe.org/cfg/platform for reference
 	switch fwt {

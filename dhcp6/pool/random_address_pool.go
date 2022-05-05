@@ -2,13 +2,14 @@ package pool
 
 import (
 	"fmt"
-	"go.universe.tf/netboot/dhcp6"
 	"hash/fnv"
 	"math/big"
 	"math/rand"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/metal-stack/pixie/dhcp6"
 )
 
 type associationExpiration struct {
@@ -16,18 +17,18 @@ type associationExpiration struct {
 	ia        *dhcp6.IdentityAssociation
 }
 
-type fifo struct{ q []interface{} }
+type fifo struct{ q []any }
 
 func newFifo() fifo {
-	return fifo{q: make([]interface{}, 0, 1000)}
+	return fifo{q: make([]any, 0, 1000)}
 }
 
-func (f *fifo) Push(v interface{}) {
+func (f *fifo) Push(v any) {
 	f.q = append(f.q, v)
 }
 
-func (f *fifo) Shift() interface{} {
-	var ret interface{}
+func (f *fifo) Shift() any {
+	var ret any
 	ret, f.q = f.q[0], f.q[1:]
 	return ret
 }
@@ -36,7 +37,7 @@ func (f *fifo) Size() int {
 	return len(f.q)
 }
 
-func (f *fifo) Peek() interface{} {
+func (f *fifo) Peek() any {
 	if len(f.q) == 0 {
 		return nil
 	}
@@ -78,7 +79,7 @@ func (p *RandomAddressPool) ReserveAddresses(clientID []byte, interfaceIDs [][]b
 	p.expireIdentityAssociations()
 
 	ret := make([]*dhcp6.IdentityAssociation, 0, len(interfaceIDs))
-	rng := rand.New(rand.NewSource(p.timeNow().UnixNano()))
+	rng := rand.New(rand.NewSource(p.timeNow().UnixNano())) // nolint:gosec
 
 	for _, interfaceID := range interfaceIDs {
 		clientIDHash := p.calculateIAIDHash(clientID, interfaceID)

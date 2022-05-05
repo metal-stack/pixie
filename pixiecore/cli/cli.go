@@ -13,16 +13,17 @@
 // limitations under the License.
 
 // Package cli implements the commandline interface for Pixiecore.
-package cli // import "go.universe.tf/netboot/pixiecore/cli"
+package cli // import "github.com/metal-stack/pixie/cli"
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
+	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.universe.tf/netboot/pixiecore"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Ipxe is the set of ipxe binaries for supported firmwares.
@@ -35,10 +36,6 @@ var Ipxe = map[pixiecore.Firmware][]byte{}
 //
 // This function always exits back to the OS when finished.
 func CLI() {
-	if v1compatCLI() {
-		return
-	}
-
 	cobra.OnInitialize(initConfig)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -59,19 +56,13 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 }
 
-func fatalf(msg string, args ...interface{}) {
+func fatalf(msg string, args ...any) {
 	fmt.Printf(msg+"\n", args...)
 	os.Exit(1)
 }
 
-func staticConfigFlags(cmd *cobra.Command) {
-	cmd.Flags().String("cmdline", "", "Kernel commandline arguments")
-	cmd.Flags().String("bootmsg", "", "Message to print on machines before booting")
-}
-
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
-	cmd.Flags().BoolP("log-timestamps", "t", false, "Add a timestamp to each log line")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().String("metrics-listen-addr", "0.0.0.0", "IPv4 address of the metrics server to listen on")
@@ -82,14 +73,10 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().String("ipxe-ipxe", "", "Path to an iPXE binary for chainloading from another iPXE")
 	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
 	cmd.Flags().String("ipxe-efi64", "", "Path to an iPXE binary for 64-bit UEFI")
-
-	// Development flags, hidden from normal use.
-	cmd.Flags().String("ui-assets-dir", "", "UI assets directory (used for development)")
-	cmd.Flags().MarkHidden("ui-assets-dir")
 }
 
 func mustFile(path string) []byte {
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		fatalf("couldn't read file %q: %s", path, err)
 	}
@@ -97,46 +84,8 @@ func mustFile(path string) []byte {
 	return bs
 }
 
-func staticFromFlags(cmd *cobra.Command, kernel string, initrds []string, extraCmdline string) *pixiecore.Server {
-	cmdline, err := cmd.Flags().GetString("cmdline")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-	bootmsg, err := cmd.Flags().GetString("bootmsg")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-
-	if extraCmdline != "" {
-		cmdline = fmt.Sprintf("%s %s", extraCmdline, cmdline)
-	}
-
-	spec := &pixiecore.Spec{
-		Kernel:  pixiecore.ID(kernel),
-		Cmdline: cmdline,
-		Message: bootmsg,
-	}
-	for _, initrd := range initrds {
-		spec.Initrd = append(spec.Initrd, pixiecore.ID(initrd))
-	}
-
-	booter, err := pixiecore.StaticBooter(spec)
-	if err != nil {
-		fatalf("Couldn't make static booter: %s", err)
-	}
-
-	s := serverFromFlags(cmd)
-	s.Booter = booter
-
-	return s
-}
-
 func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	debug, err := cmd.Flags().GetBool("debug")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
-	timestamps, err := cmd.Flags().GetBool("log-timestamps")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
@@ -180,24 +129,22 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
-	uiAssetsDir, err := cmd.Flags().GetString("ui-assets-dir")
-	if err != nil {
-		fatalf("Error reading flag: %s", err)
-	}
 
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
 	}
-
+	log, err := getLogger(debug)
+	if err != nil {
+		fatalf("Error creating logging: %s", err)
+	}
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
-		Log:            logWithStdFmt,
+		Log:            log,
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
 		MetricsPort:    metricsPort,
 		MetricsAddress: metricsAddr,
 		DHCPNoBind:     dhcpNoBind,
-		UIAssetsDir:    uiAssetsDir,
 	}
 	for fwtype, bs := range Ipxe {
 		ret.Ipxe[fwtype] = bs
@@ -215,16 +162,24 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		ret.Ipxe[pixiecore.FirmwareEFI64] = mustFile(ipxeEFI64)
 		ret.Ipxe[pixiecore.FirmwareEFIBC] = ret.Ipxe[pixiecore.FirmwareEFI64]
 	}
-
-	if timestamps {
-		ret.Log = logWithStdLog
-	}
-	if debug {
-		ret.Debug = ret.Log
-	}
 	if addr != "" {
 		ret.Address = addr
 	}
-
 	return ret
+}
+
+func getLogger(debug bool) (*zap.SugaredLogger, error) {
+	cfg := zap.NewProductionConfig()
+	level := zap.InfoLevel
+	if debug {
+		level = zap.DebugLevel
+	}
+	cfg.Level = zap.NewAtomicLevelAt(level)
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	zlog, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return zlog.Sugar(), nil
 }

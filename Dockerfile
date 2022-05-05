@@ -1,11 +1,9 @@
-FROM golang:1.15-buster as builder
+FROM golang:1.18-buster as builder
 COPY . /work/
 WORKDIR /work
-RUN cd cmd/pixiecore \
- && CGO_ENABLE=0 go build -trimpath -tags netgo \
- && strip /work/cmd/pixiecore/pixiecore
+RUN make
 
-FROM alpine:3.12
+FROM alpine:3.15
 RUN apk -U add ca-certificates
-COPY --from=builder /work/cmd/pixiecore/pixiecore /pixiecore
-ENTRYPOINT ["/pixiecore"]
+COPY --from=builder /work/bin/pixie /pixie
+ENTRYPOINT ["/pixie"]
