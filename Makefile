@@ -15,7 +15,7 @@ endif
 all: pixiecore
 
 .PHONY: pixiecore
-pixiecore:
+pixiecore: test
 	go build -tags netgo,osusergo,urfave_cli_no_docs \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \

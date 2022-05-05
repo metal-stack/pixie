@@ -33,6 +33,9 @@ var ipv6ApiCmd = &cobra.Command{
 
 		s := pixiecore.NewServerV6()
 		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
 		l, err := getLogger(debug)
 		if err != nil {
 			fatalf("Error creating logging: %s", err)
