@@ -44,7 +44,7 @@ goto loop
 :boot
 chain ${filename}
 
-# Failure at this point probably means Pixiecore changed its mind
+# Failure at this point probably means Pixie changed its mind
 # about whether this machine should be booted in the middle of the
 # boot cycle, so we had already handed off to iPXE, but now we're
 # no longer serving a boot script for it.
@@ -59,8 +59,8 @@ chain ${filename}
 :fail
 echo Failed to get a ProxyDHCP response after ${attempts} attempts
 echo
-echo If you are sure that Pixiecore is still trying to boot this machine,
-echo please file a bug at https://github.com/google/netboot .
+echo If you are sure that Pixie is still trying to boot this machine,
+echo please file a bug at https://github.com/metal-stack/pixie .
 echo
 echo Rebooting in 5 seconds...
 sleep 5

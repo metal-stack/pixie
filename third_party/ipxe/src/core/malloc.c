@@ -596,8 +596,8 @@ void * malloc ( size_t size ) {
  *
  * @v ptr		Memory allocated by malloc(), or NULL
  *
- * Memory allocated with malloc_dma() cannot be freed with free(); it
- * must be freed with free_dma() instead.
+ * Memory allocated with malloc_phys() cannot be freed with free(); it
+ * must be freed with free_phys() instead.
  *
  * If @c ptr is NULL, no action is taken.
  */
@@ -685,6 +685,7 @@ static void shutdown_cache ( int booting __unused ) {
 
 /** Memory allocator shutdown function */
 struct startup_fn heap_startup_fn __startup_fn ( STARTUP_EARLY ) = {
+	.name = "heap",
 	.shutdown = shutdown_cache,
 };
 

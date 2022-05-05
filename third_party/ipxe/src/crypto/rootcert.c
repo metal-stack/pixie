@@ -71,6 +71,7 @@ static struct setting trust_setting __setting ( SETTING_CRYPTO, trust ) = {
 
 /** Root certificates */
 struct x509_root root_certificates = {
+	.refcnt = REF_INIT ( ref_no_free ),
 	.digest = &sha256_algorithm,
 	.count = ( sizeof ( fingerprints ) / FINGERPRINT_LEN ),
 	.fingerprints = fingerprints,
@@ -123,5 +124,6 @@ static void rootcert_init ( void ) {
 
 /** Root certificate initialiser */
 struct startup_fn rootcert_startup_fn __startup_fn ( STARTUP_LATE ) = {
+	.name = "rootcert",
 	.startup = rootcert_init,
 };

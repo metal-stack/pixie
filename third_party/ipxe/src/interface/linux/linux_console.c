@@ -28,7 +28,7 @@ FILE_LICENCE(GPL2_OR_LATER);
 
 #include <ipxe/init.h>
 #include <ipxe/keys.h>
-#include <linux_api.h>
+#include <ipxe/linux_api.h>
 
 #include <linux/termios.h>
 #include <asm/errno.h>
@@ -150,6 +150,7 @@ static void linux_console_shutdown(int flags __unused)
 }
 
 struct startup_fn linux_console_startup_fn __startup_fn(STARTUP_EARLY) = {
+	.name = "linux_console",
 	.startup = linux_console_startup,
 	.shutdown = linux_console_shutdown,
 };
