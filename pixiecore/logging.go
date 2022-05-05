@@ -91,19 +91,13 @@ func (s *Server) log(subsystem, format string, args ...any) {
 	if s.Log == nil {
 		return
 	}
-	s.Log(subsystem, fmt.Sprintf(format, args...))
+	s.Log.Named(subsystem).Infof(format, args...)
 }
 
 func (s *Server) debug(subsystem, format string, args ...any) {
-	if s.Debug == nil {
-		return
-	}
-	s.Debug(subsystem, fmt.Sprintf(format, args...))
+	s.Log.Named(subsystem).Debugf(format, args...)
 }
 
 func (s *Server) debugPacket(subsystem string, layer int, packet []byte) {
-	if s.Debug == nil {
-		return
-	}
-	s.Debug(subsystem, fmt.Sprintf("PKT %d %s END", layer, base64.StdEncoding.EncodeToString(packet)))
+	s.Log.Named(subsystem).Debug(fmt.Sprintf("PKT %d %s END", layer, base64.StdEncoding.EncodeToString(packet)))
 }

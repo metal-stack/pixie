@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"go.uber.org/zap/zaptest"
 )
 
 type booterFunc func(Machine) (*Spec, error)
@@ -47,7 +49,7 @@ func TestIpxe(t *testing.T) {
 	log := func(subsystem, msg string) { t.Logf("[%s] %s", subsystem, msg) }
 	s := &Server{
 		Booter: booterFunc(booter),
-		Log:    log,
+		Log:    zaptest.NewLogger().Sugar(),
 		Debug:  log,
 		events: make(map[string][]machineEvent),
 	}

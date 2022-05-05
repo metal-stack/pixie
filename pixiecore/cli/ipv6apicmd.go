@@ -32,14 +32,12 @@ var ipv6ApiCmd = &cobra.Command{
 		}
 
 		s := pixiecore.NewServerV6()
-		s.Log = logWithStdLog
 		debug, err := cmd.Flags().GetBool("debug")
+		l, err := getLogger(debug)
 		if err != nil {
-			s.Debug = s.Log
+			fatalf("Error creating logging: %s", err)
 		}
-		if debug {
-			s.Debug = s.Log
-		}
+		s.Log = l
 
 		if addr == "" {
 			fatalf("Please specify address to bind to")

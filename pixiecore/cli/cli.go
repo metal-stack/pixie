@@ -22,6 +22,8 @@ import (
 	"github.com/metal-stack/pixiecore/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Ipxe is the set of ipxe binaries for supported firmwares.
@@ -131,10 +133,13 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
 	}
-
+	log, err := getLogger(debug)
+	if err != nil {
+		fatalf("Error creating logging: %s", err)
+	}
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
-		Log:            logWithStdLog,
+		Log:            log,
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
 		MetricsPort:    metricsPort,
@@ -157,12 +162,24 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		ret.Ipxe[pixiecore.FirmwareEFI64] = mustFile(ipxeEFI64)
 		ret.Ipxe[pixiecore.FirmwareEFIBC] = ret.Ipxe[pixiecore.FirmwareEFI64]
 	}
-
-	if debug {
-		ret.Debug = ret.Log
-	}
 	if addr != "" {
 		ret.Address = addr
 	}
 	return ret
+}
+
+func getLogger(debug bool) (*zap.SugaredLogger, error) {
+	cfg := zap.NewProductionConfig()
+	level := zap.InfoLevel
+	if debug {
+		level = zap.DebugLevel
+	}
+	cfg.Level = zap.NewAtomicLevelAt(level)
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	zlog, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return zlog.Sugar(), nil
 }

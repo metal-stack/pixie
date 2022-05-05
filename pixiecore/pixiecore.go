@@ -28,6 +28,7 @@ import (
 	"github.com/metal-stack/pixiecore/dhcp4"
 	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 )
 
 const (
@@ -179,10 +180,7 @@ type Server struct {
 
 	// Log receives logs on Pixiecore's operation. If nil, logging
 	// is suppressed.
-	Log func(subsystem, msg string)
-	// Debug receives extensive logging on Pixiecore's internals. Very
-	// useful for debugging, but very verbose.
-	Debug func(subsystem, msg string)
+	Log *zap.SugaredLogger
 
 	// These ports can technically be set for testing, but the
 	// protocols burned in firmware on the client side hardcode these,
