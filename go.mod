@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/metal-stack/v v1.0.3
-	github.com/pin/tftp v2.1.0+incompatible
+	github.com/pin/tftp v0.0.0-20210809155059-0161c5dd2e96
 	github.com/prometheus/client_golang v1.12.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
