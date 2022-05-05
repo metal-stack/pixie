@@ -261,7 +261,7 @@ func (s *Server) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.debug("Init", "Starting Pixiecore goroutines version:%q", v.V)
+	s.Log.Debugf("Starting Pixiecore goroutines version:%q", v.V)
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()
