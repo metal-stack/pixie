@@ -58,20 +58,6 @@ func extractInfo(path string) (net.HardwareAddr, int, error) {
 	return mac, i, nil
 }
 
-func (s *Server) handleTFTP(path string, clientAddr net.Addr) (io.ReadCloser, int64, error) {
-	_, i, err := extractInfo(path)
-	if err != nil {
-		return nil, 0, fmt.Errorf("unknown path %q", path)
-	}
-
-	bs, ok := s.Ipxe[Firmware(i)]
-	if !ok {
-		return nil, 0, fmt.Errorf("unknown firmware type %d", i)
-	}
-
-	return io.NopCloser(bytes.NewBuffer(bs)), int64(len(bs)), nil
-}
-
 // readHandler is called when client starts file download from server
 func (s *Server) readHandler(path string, rf io.ReaderFrom) error {
 	_, i, err := extractInfo(path)

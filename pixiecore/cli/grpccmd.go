@@ -72,7 +72,7 @@ func init() {
 func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %s", err)
+		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
 	caCert, err := os.ReadFile(grpcCACertFile)
 	if err != nil {
@@ -81,7 +81,7 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 
 	grpcClientCertFile, err := cmd.Flags().GetString("grpc-cert")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %s", err)
+		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
 	clientCert, err := os.ReadFile(grpcClientCertFile)
 	if err != nil {
@@ -90,7 +90,7 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 
 	grpcClientKeyFile, err := cmd.Flags().GetString("grpc-key")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %s", err)
+		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
 	clientKey, err := os.ReadFile(grpcClientKeyFile)
 	if err != nil {
@@ -98,7 +98,7 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	}
 	grpcAddress, err := cmd.Flags().GetString("grpc-address")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %s", err)
+		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
 
 	return &pixiecore.GrpcConfig{
