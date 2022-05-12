@@ -137,6 +137,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error creating logging: %s", err)
 	}
+
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
 		Log:            log,
@@ -165,6 +166,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if addr != "" {
 		ret.Address = addr
 	}
+
 	return ret
 }
 
