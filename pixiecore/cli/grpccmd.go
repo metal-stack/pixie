@@ -52,6 +52,7 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 			fatalf("unable to create grpc booter: %s", err)
 		}
 		s.Booter = booter
+		s.GrpcConfig = grpcConfig
 
 		fmt.Println(s.Serve())
 	}}
@@ -103,8 +104,8 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 
 	return &pixiecore.GrpcConfig{
 		Address: grpcAddress,
-		CACert:  caCert,
-		Cert:    clientCert,
-		Key:     clientKey,
+		CACert:  string(caCert),
+		Cert:    string(clientCert),
+		Key:     string(clientKey),
 	}, nil
 }

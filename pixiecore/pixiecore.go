@@ -199,6 +199,8 @@ type Server struct {
 
 	eventsMu sync.Mutex
 	events   map[string][]machineEvent
+
+	GrpcConfig *GrpcConfig
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to

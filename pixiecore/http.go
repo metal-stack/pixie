@@ -16,6 +16,7 @@ package pixiecore
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -42,6 +43,7 @@ func (s *Server) serveHTTP(mux *http.ServeMux) {
 	mux.HandleFunc("/_/ipxe", s.handleIpxe)
 	mux.HandleFunc("/_/file", s.handleFile)
 	mux.HandleFunc("/_/booting", s.handleBooting)
+	mux.HandleFunc("/certs", s.handleCerts)
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
@@ -218,4 +220,21 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	b.WriteByte('\n')
 
 	return b.Bytes(), nil
+}
+
+func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
+	js, err := json.MarshalIndent(s.GrpcConfig, "", "  ")
+	if err != nil {
+		s.Log.Errorw("handleCerts unable to marshal grpc config", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.Log.Debug("handleCerts return grpc config")
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(js)
+	if err != nil {
+		s.Log.Errorw("handleCerts unable to write grpc config to response", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
