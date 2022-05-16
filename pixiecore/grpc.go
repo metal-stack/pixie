@@ -24,6 +24,7 @@ type GrpcConfig struct {
 	CACert  string `json:"ca_cert,omitempty"`
 	Cert    string `json:"cert,omitempty"`
 	Key     string `json:"key,omitempty"`
+	HMAC    string `json:"hmac,omitempty"`
 }
 
 // NewGrpcClient fetches the address and certificates from metal-core needed to communicate with metal-api via grpc,

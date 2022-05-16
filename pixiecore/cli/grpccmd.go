@@ -67,9 +67,20 @@ func init() {
 	grpcCmd.Flags().String("grpc-cert", "", "Path to the grpc client cert file")
 	grpcCmd.Flags().String("grpc-key", "", "Path to the grpc client key file")
 	grpcCmd.Flags().String("grpc-address", "", "address of the grpc server")
+	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
+
+	must(grpcCmd.MarkFlagRequired("partitionID"))
+	must(grpcCmd.MarkFlagRequired("grpc-ca-cert"))
+	must(grpcCmd.MarkFlagRequired("grpc-cert"))
+	must(grpcCmd.MarkFlagRequired("grpc-key"))
+	must(grpcCmd.MarkFlagRequired("metal-api-view-hmac"))
 
 }
-
+func must(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
+}
 func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
 	if err != nil {
@@ -77,7 +88,7 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	}
 	caCert, err := os.ReadFile(grpcCACertFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read ca-cert %w", err)
 	}
 
 	grpcClientCertFile, err := cmd.Flags().GetString("grpc-cert")
@@ -86,12 +97,12 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	}
 	clientCert, err := os.ReadFile(grpcClientCertFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to read cert %w", err)
 	}
 
 	grpcClientKeyFile, err := cmd.Flags().GetString("grpc-key")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("unable to read key %w", err)
 	}
 	clientKey, err := os.ReadFile(grpcClientKeyFile)
 	if err != nil {
@@ -102,10 +113,16 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
 
+	hmac, err := cmd.Flags().GetString("metal-api-view-hmac")
+	if err != nil {
+		return nil, fmt.Errorf("Error reading flag: %w", err)
+	}
+
 	return &pixiecore.GrpcConfig{
 		Address: grpcAddress,
 		CACert:  string(caCert),
 		Cert:    string(clientCert),
 		Key:     string(clientKey),
+		HMAC:    hmac,
 	}, nil
 }
