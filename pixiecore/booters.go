@@ -105,11 +105,12 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			g.log.Errorw("boot", "error", err)
 			return nil, err
 		}
+		g.log.Infow("boot", "resp", resp)
+
 		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}
-		g.log.Infow("boot", "resp", resp)
 
 		r = rawSpec{
 			Kernel:  resp.Kernel,
