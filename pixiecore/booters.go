@@ -87,24 +87,29 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		req := &v1.BootServiceDhcpRequest{
 			Mac: string(m.GUID),
 		}
+		g.log.Infow("dhcp", "req", req)
 		_, err := g.grpc.BootService().Dhcp(ctx, req)
 		if err != nil {
+			g.log.Errorw("boot", "error", err)
 			return nil, err
 		}
 		return nil, nil
 	} else {
 		req := &v1.BootServiceBootRequest{
-			Mac:         string(m.MAC),
+			Mac:         m.MAC.String(),
 			PartitionId: g.partition,
 		}
+		g.log.Infow("boot", "req", req)
 		resp, err := g.grpc.BootService().Boot(ctx, req)
 		if err != nil {
+			g.log.Errorw("boot", "error", err)
 			return nil, err
 		}
 		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}
+		g.log.Infow("boot", "resp", resp)
 
 		r = rawSpec{
 			Kernel:  resp.Kernel,
