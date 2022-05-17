@@ -54,6 +54,7 @@ func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, me
 		grpc:      client,
 		partition: partition,
 		log:       log,
+		config:    metalAPIConfig,
 	}
 	if _, err := io.ReadFull(rand.Reader, ret.key[:]); err != nil {
 		return nil, fmt.Errorf("failed to get randomness for signing key: %w", err)
