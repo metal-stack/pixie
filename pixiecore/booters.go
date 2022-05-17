@@ -85,7 +85,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	var r rawSpec
 	if m.GUID != "" {
 		req := &v1.BootServiceDhcpRequest{
-			Mac: string(m.GUID),
+			Uuid: string(m.GUID),
 		}
 		g.log.Infow("dhcp", "req", req)
 		_, err := g.grpc.BootService().Dhcp(ctx, req)

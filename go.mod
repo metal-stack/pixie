@@ -3,7 +3,7 @@ module github.com/metal-stack/pixie
 go 1.18
 
 require (
-	github.com/metal-stack/metal-api v0.17.1-0.20220512083020-1730c3b7f102
+	github.com/metal-stack/metal-api v0.17.1-0.20220517124616-b3ae53c5b8ea
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp v0.0.0-20210809155059-0161c5dd2e96
 	github.com/prometheus/client_golang v1.12.2
