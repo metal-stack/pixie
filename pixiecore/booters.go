@@ -93,7 +93,9 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			g.log.Errorw("boot", "error", err)
 			return nil, err
 		}
-		return nil, nil
+		return &Spec{
+			Message: "initial dhcp request received",
+		}, nil
 	} else {
 		req := &v1.BootServiceBootRequest{
 			Mac:         m.MAC.String(),
