@@ -35,11 +35,11 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		s := serverFromFlags(cmd)
 
-		grpcConfig, err := getGRPCConfig(cmd)
+		metalAPIConfig, err := getMetalAPIConfig(cmd)
 		if err != nil {
-			fatalf("unable to create grpc config: %s", err)
+			fatalf("unable to create metal-api config: %s", err)
 		}
-		client, err := pixiecore.NewGrpcClient(s.Log, grpcConfig)
+		client, err := pixiecore.NewGrpcClient(s.Log, metalAPIConfig)
 		if err != nil {
 			fatalf("unable to create grpc client: %s", err)
 		}
@@ -47,12 +47,12 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
-		booter, err := pixiecore.GRPCBooter(s.Log, client, partition)
+		booter, err := pixiecore.GRPCBooter(s.Log, client, partition, metalAPIConfig)
 		if err != nil {
 			fatalf("unable to create grpc booter: %s", err)
 		}
 		s.Booter = booter
-		s.GrpcConfig = grpcConfig
+		s.MetalConfig = metalAPIConfig
 
 		fmt.Println(s.Serve())
 	}}
@@ -63,17 +63,24 @@ func init() {
 
 	grpcCmd.Flags().String("partitionID", "", "id of the partition this instance of pixie is running")
 
+	grpcCmd.Flags().String("pixie-api-url", "", "base url of pixie itself")
+
 	grpcCmd.Flags().String("grpc-ca-cert", "", "Path to the grpc ca cert file")
 	grpcCmd.Flags().String("grpc-cert", "", "Path to the grpc client cert file")
 	grpcCmd.Flags().String("grpc-key", "", "Path to the grpc client key file")
 	grpcCmd.Flags().String("grpc-address", "", "address of the grpc server")
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
+	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
+	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
+	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 
+	must(grpcCmd.MarkFlagRequired("pixie-url"))
 	must(grpcCmd.MarkFlagRequired("partitionID"))
 	must(grpcCmd.MarkFlagRequired("grpc-ca-cert"))
 	must(grpcCmd.MarkFlagRequired("grpc-cert"))
 	must(grpcCmd.MarkFlagRequired("grpc-key"))
 	must(grpcCmd.MarkFlagRequired("metal-api-view-hmac"))
+	must(grpcCmd.MarkFlagRequired("metal-api-url"))
 
 }
 func must(err error) {
@@ -81,7 +88,7 @@ func must(err error) {
 		panic(err.Error())
 	}
 }
-func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
+func getMetalAPIConfig(cmd *cobra.Command) (*pixiecore.MetalConfig, error) {
 	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
 	if err != nil {
 		return nil, fmt.Errorf("Error reading flag: %w", err)
@@ -117,12 +124,26 @@ func getGRPCConfig(cmd *cobra.Command) (*pixiecore.GrpcConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error reading flag: %w", err)
 	}
-
-	return &pixiecore.GrpcConfig{
-		Address: grpcAddress,
-		CACert:  string(caCert),
-		Cert:    string(clientCert),
-		Key:     string(clientKey),
-		HMAC:    hmac,
+	metalAPIUrl, err := cmd.Flags().GetString("metal-api-url")
+	if err != nil {
+		return nil, fmt.Errorf("Error reading flag: %w", err)
+	}
+	pixieAPIUrl, err := cmd.Flags().GetString("pixie-api-url")
+	if err != nil {
+		return nil, fmt.Errorf("Error reading flag: %w", err)
+	}
+	metalHammerDebug, err := cmd.Flags().GetBool("metal-hammer-debug")
+	if err != nil {
+		return nil, fmt.Errorf("Error reading flag: %w", err)
+	}
+	return &pixiecore.MetalConfig{
+		Debug:       metalHammerDebug,
+		GRPCAddress: grpcAddress,
+		MetalAPIUrl: metalAPIUrl,
+		PixieAPIURL: pixieAPIUrl,
+		CACert:      string(caCert),
+		Cert:        string(clientCert),
+		Key:         string(clientKey),
+		HMAC:        hmac,
 	}, nil
 }

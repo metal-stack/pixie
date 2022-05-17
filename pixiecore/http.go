@@ -223,7 +223,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 }
 
 func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
-	js, err := json.MarshalIndent(s.GrpcConfig, "", "  ")
+	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
 	if err != nil {
 		s.Log.Errorw("handleCerts unable to marshal grpc config", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

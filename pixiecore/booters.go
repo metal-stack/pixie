@@ -49,7 +49,7 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 
 	return ret, nil
 }
-func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string) (Booter, error) {
+func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, metalAPIConfig *MetalConfig) (Booter, error) {
 	ret := &grpcbooter{
 		grpc:      client,
 		partition: partition,
@@ -58,7 +58,7 @@ func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string) (B
 	if _, err := io.ReadFull(rand.Reader, ret.key[:]); err != nil {
 		return nil, fmt.Errorf("failed to get randomness for signing key: %w", err)
 	}
-
+	log.Infow("starting grpc booter", "partition", partition)
 	return ret, nil
 }
 
@@ -71,8 +71,9 @@ type apibooter struct {
 type grpcbooter struct {
 	apibooter
 	grpc      *GrpcClient
-	log       *zap.SugaredLogger
+	config    *MetalConfig
 	partition string
+	log       *zap.SugaredLogger
 }
 
 // BootSpec implements Booter
@@ -100,11 +101,15 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		if err != nil {
 			return nil, err
 		}
+		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		if g.config.Debug {
+			cmdline = append(cmdline, "DEBUG=1")
+		}
 
 		r = rawSpec{
 			Kernel:  resp.Kernel,
 			Initrd:  resp.InitRamDisks,
-			Cmdline: resp.Cmdline,
+			Cmdline: strings.Join(cmdline, " "),
 		}
 	}
 
