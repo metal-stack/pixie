@@ -43,7 +43,7 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("unable to create grpc client: %s", err)
 		}
-		partition, err := cmd.Flags().GetString("grpc-cert")
+		partition, err := cmd.Flags().GetString("partition")
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
@@ -61,7 +61,7 @@ func init() {
 	rootCmd.AddCommand(grpcCmd)
 	serverConfigFlags(grpcCmd)
 
-	grpcCmd.Flags().String("partitionID", "", "id of the partition this instance of pixie is running")
+	grpcCmd.Flags().String("partition", "", "id of the partition this instance of pixie is running")
 
 	grpcCmd.Flags().String("pixie-api-url", "", "base url of pixie itself")
 
@@ -73,6 +73,7 @@ func init() {
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 
+	// FIXME must only require if grpc command
 	// must(grpcCmd.MarkFlagRequired("pixie-url"))
 	// must(grpcCmd.MarkFlagRequired("partitionID"))
 	// must(grpcCmd.MarkFlagRequired("grpc-ca-cert"))
