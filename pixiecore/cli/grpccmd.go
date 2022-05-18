@@ -72,23 +72,8 @@ func init() {
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
-
-	// FIXME must only require if grpc command
-	// must(grpcCmd.MarkFlagRequired("pixie-url"))
-	// must(grpcCmd.MarkFlagRequired("partitionID"))
-	// must(grpcCmd.MarkFlagRequired("grpc-ca-cert"))
-	// must(grpcCmd.MarkFlagRequired("grpc-cert"))
-	// must(grpcCmd.MarkFlagRequired("grpc-key"))
-	// must(grpcCmd.MarkFlagRequired("metal-api-view-hmac"))
-	// must(grpcCmd.MarkFlagRequired("metal-api-url"))
-
 }
 
-// func must(err error) {
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// }
 func getMetalAPIConfig(cmd *cobra.Command) (*pixiecore.MetalConfig, error) {
 	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
 	if err != nil {
