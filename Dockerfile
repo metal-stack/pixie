@@ -3,7 +3,7 @@ COPY . /work/
 WORKDIR /work
 RUN make
 
-FROM alpine:3.15
+FROM alpine:3.16
 RUN apk -U add ca-certificates
 COPY --from=builder /work/build/pixie /pixie
 ENTRYPOINT ["/pixie"]
