@@ -146,7 +146,7 @@ func TestOptionIP(t *testing.T) {
 		t.Fatalf("wrong first IP, got %s", ip)
 	}
 
-	ip, err = o.IP(2)
+	_, err = o.IP(2)
 	if err == nil {
 		t.Fatal("option shouldn't be a valid IPs")
 	}

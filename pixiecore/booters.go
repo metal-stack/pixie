@@ -15,6 +15,7 @@
 package pixiecore
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
+	"go.uber.org/zap"
 )
 
 // APIBooter gets a BootSpec from a remote server over HTTP.
@@ -45,11 +49,82 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 
 	return ret, nil
 }
+func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, metalAPIConfig *MetalConfig) (Booter, error) {
+	ret := &grpcbooter{
+		grpc:      client,
+		partition: partition,
+		log:       log,
+		config:    metalAPIConfig,
+	}
+	if _, err := io.ReadFull(rand.Reader, ret.key[:]); err != nil {
+		return nil, fmt.Errorf("failed to get randomness for signing key: %w", err)
+	}
+	log.Infow("starting grpc booter", "partition", partition)
+	return ret, nil
+}
 
 type apibooter struct {
 	client    *http.Client
 	urlPrefix string
 	key       [32]byte
+}
+
+type grpcbooter struct {
+	apibooter
+	grpc      *GrpcClient
+	config    *MetalConfig
+	partition string
+	log       *zap.SugaredLogger
+}
+
+// BootSpec implements Booter
+func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
+	g.log.Infow("bootspec", "machine", m)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var r rawSpec
+	if m.GUID != "" {
+		// Very first dhcp call which contains Machine UUID, tell metal-api this uuid
+		req := &v1.BootServiceDhcpRequest{
+			Uuid: string(m.GUID),
+		}
+		g.log.Infow("dhcp", "req", req)
+		_, err := g.grpc.BootService().Dhcp(ctx, req)
+		if err != nil {
+			g.log.Errorw("boot", "error", err)
+			return nil, err
+		}
+		r = rawSpec{}
+	} else {
+		// machine asks for a dhcp answer, ask metal-api for a proper response in this partition
+		req := &v1.BootServiceBootRequest{
+			Mac:         m.MAC.String(),
+			PartitionId: g.partition,
+		}
+		g.log.Infow("boot", "req", req)
+		resp, err := g.grpc.BootService().Boot(ctx, req)
+		if err != nil {
+			g.log.Errorw("boot", "error", err)
+			return nil, err
+		}
+		g.log.Infow("boot", "resp", resp)
+
+		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		if g.config.Debug {
+			cmdline = append(cmdline, "DEBUG=1")
+		}
+
+		r = rawSpec{
+			Kernel:  resp.Kernel,
+			Initrd:  resp.InitRamDisks,
+			Cmdline: strings.Join(cmdline, " "),
+		}
+	}
+
+	spec, err := bootSpec(g.key, g.urlPrefix, r)
+	g.log.Infow("bootspec", "return spec", spec)
+	return spec, err
 }
 
 func (b *apibooter) getAPIResponse(m Machine) (io.ReadCloser, error) {
@@ -79,29 +154,36 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 		return nil, err
 	}
 
-	r := struct {
-		Kernel     string   `json:"kernel"`
-		Initrd     []string `json:"initrd"`
-		Cmdline    any      `json:"cmdline"`
-		Message    string   `json:"message"`
-		IpxeScript string   `json:"ipxe-script"`
-	}{}
+	var r rawSpec
 	if err = json.NewDecoder(body).Decode(&r); err != nil {
 		return nil, err
 	}
 
+	return bootSpec(b.key, b.urlPrefix, r)
+}
+
+type rawSpec struct {
+	Kernel     string   `json:"kernel"`
+	Initrd     []string `json:"initrd"`
+	Cmdline    any      `json:"cmdline"`
+	Message    string   `json:"message"`
+	IpxeScript string   `json:"ipxe-script"`
+}
+
+func bootSpec(key [32]byte, prefix string, r rawSpec) (*Spec, error) {
 	if r.IpxeScript != "" {
 		return &Spec{
 			IpxeScript: r.IpxeScript,
 		}, nil
 	}
 
-	r.Kernel, err = b.makeURLAbsolute(r.Kernel)
+	var err error
+	r.Kernel, err = makeURLAbsolute(prefix, r.Kernel)
 	if err != nil {
 		return nil, err
 	}
 	for i, img := range r.Initrd {
-		r.Initrd[i], err = b.makeURLAbsolute(img)
+		r.Initrd[i], err = makeURLAbsolute(prefix, img)
 		if err != nil {
 			return nil, err
 		}
@@ -110,11 +192,11 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	ret := Spec{
 		Message: r.Message,
 	}
-	if ret.Kernel, err = signURL(r.Kernel, &b.key); err != nil {
+	if ret.Kernel, err = signURL(r.Kernel, &key); err != nil {
 		return nil, err
 	}
 	for _, img := range r.Initrd {
-		initrd, err := signURL(img, &b.key)
+		initrd, err := signURL(img, &key)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +208,7 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 		case string:
 			ret.Cmdline = c
 		case map[string]any:
-			ret.Cmdline, err = b.constructCmdline(c)
+			ret.Cmdline, err = constructCmdline(c)
 			if err != nil {
 				return nil, err
 			}
@@ -136,11 +218,11 @@ func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	f := func(u string) (string, error) {
-		urlStr, err := b.makeURLAbsolute(u)
+		urlStr, err := makeURLAbsolute(prefix, u)
 		if err != nil {
 			return "", fmt.Errorf("invalid url %q for cmdline: %w", urlStr, err)
 		}
-		id, err := signURL(urlStr, &b.key)
+		id, err := signURL(urlStr, &key)
 		if err != nil {
 			return "", err
 		}
@@ -217,13 +299,13 @@ func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
 	return nil
 }
 
-func (b *apibooter) makeURLAbsolute(urlStr string) (string, error) {
+func makeURLAbsolute(prefix, urlStr string) (string, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return "", fmt.Errorf("%q is not an URL", urlStr)
 	}
 	if !u.IsAbs() {
-		base, err := url.Parse(b.urlPrefix)
+		base, err := url.Parse(prefix)
 		if err != nil {
 			return "", err
 		}
@@ -232,7 +314,7 @@ func (b *apibooter) makeURLAbsolute(urlStr string) (string, error) {
 	return u.String(), nil
 }
 
-func (b *apibooter) constructCmdline(m map[string]any) (string, error) {
+func constructCmdline(m map[string]any) (string, error) {
 	var c []string
 	for k := range m {
 		c = append(c, k)
