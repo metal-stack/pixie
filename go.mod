@@ -3,16 +3,16 @@ module github.com/metal-stack/pixie
 go 1.18
 
 require (
-	github.com/metal-stack/metal-api v0.17.1-0.20220530120519-fd84b28cbf13
+	github.com/metal-stack/metal-api v0.18.0
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp v0.0.0-20210809155059-0161c5dd2e96
 	github.com/prometheus/client_golang v1.12.2
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
 	google.golang.org/grpc v1.47.0
 )
 
