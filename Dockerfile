@@ -1,6 +1,6 @@
 FROM golang:1.18-buster as builder
-COPY . /work/
 WORKDIR /work
+COPY . .
 RUN make
 
 FROM alpine:3.16
