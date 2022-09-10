@@ -33,7 +33,7 @@ func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
 	for _, h := range handlers {
 		h(mux)
 	}
-	if err := http.Serve(l, mux); err != nil {
+	if err := http.Serve(l, mux); err != nil { // nolint:gosec
 		return fmt.Errorf("HTTP server shut down: %w", err)
 	}
 	return nil
