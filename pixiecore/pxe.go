@@ -33,13 +33,13 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		return fmt.Errorf("Couldn't get interface metadata on PXE port: %w", err)
+		return fmt.Errorf("couldn't get interface metadata on PXE port: %w", err)
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			return fmt.Errorf("Receiving packet: %w", err)
+			return fmt.Errorf("receiving packet: %w", err)
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
