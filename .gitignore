@@ -3,12 +3,7 @@ cmd/pixiecore/pixiecore
 dhcp4/dhcp4.test
 pcap/pcap.test
 pixiecore/pixiecore.test
-ipxe/ipxe/src
-ipxe/ipxe/contrib
-ipxe/ipxe/.github
-ipxe/ipxe/C*
-ipxe/ipxe/README
-ipxe/ipxe/bin/*pxe*
+ipxe/ipxe
 vendor/
 build/
 .vscode

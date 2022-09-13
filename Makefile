@@ -33,6 +33,9 @@ test:
 lint:
 	$(GOMODULECMD) tool vet .
 
+
+IPXE_COMMIT_SHA := $(shell cat ipxe/IPXE_COMMIT_SHA)
+
 # Note: requires liblzma-dev package installed
 .PHONY: ipxe
 ipxe:
@@ -40,12 +43,9 @@ ipxe:
 	(cd ipxe \
 		&& git clone https://github.com/ipxe/ipxe.git \
 		&& cd ipxe \
-		&& git checkout $(cat ../IPXE_COMMIT_ID) \
+		&& git checkout $(IPXE_COMMIT_SHA) \
 	)
-	
-	(cd ipxe/ipxe && git rev-parse HEAD >COMMIT-ID)
 	cp ipxe/branding.h ipxe/ipxe/src/config/local/branding.h
-	rm -rf ipxe/ipxe/.git
 	(cd ipxe/ipxe/src &&\
 		make bin/ipxe.pxe bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-i386-efi/ipxe.efi EMBED=../../../pixiecore/boot.ipxe)
 	(rm -rf ipxe/ipxe/bin && mkdir ipxe/ipxe/bin)
