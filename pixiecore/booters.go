@@ -274,14 +274,7 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 		// urlStr will get reparsed by http.Get, which is mildly
 		// wasteful, but the code looks nicer than constructing a
 		// Request.
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
-		if err != nil {
-			return nil, -1, err
-		}
-
-		resp, err := b.client.Do(req) // nolint:gosec,bodyclose
+		resp, err := http.Get(urlStr) // nolint:gosec,bodyclose,noctx
 		if err != nil {
 			return nil, -1, err
 		}
