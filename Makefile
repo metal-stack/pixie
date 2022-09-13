@@ -12,7 +12,7 @@ ifneq ($(wildcard Makefile.defaults),)
 include Makefile.defaults
 endif
 
-all: pixie
+all: ipxe pixie
 
 .PHONY: pixie
 pixie: test
@@ -38,12 +38,13 @@ lint:
 ipxe:
 	rm -rf ipxe/ipxe
 	(cd ipxe \
-		&& git clone git://git.ipxe.org/ipxe.git \
+		&& git clone https://github.com/ipxe/ipxe.git \
 		&& cd ipxe \
 		&& git checkout $(cat ../IPXE_COMMIT_ID) \
 	)
 	
 	(cd ipxe/ipxe && git rev-parse HEAD >COMMIT-ID)
+	cp ipxe/branding.h ipxe/ipxe/src/config/local/branding.h
 	rm -rf ipxe/ipxe/.git
 	(cd ipxe/ipxe/src &&\
 		make bin/ipxe.pxe bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-i386-efi/ipxe.efi EMBED=../../../pixiecore/boot.ipxe)
