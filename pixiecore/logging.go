@@ -47,10 +47,6 @@ func (m machineState) String() string {
 	}
 }
 
-func (m machineState) Progress() string {
-	return fmt.Sprintf("%.0f%%", float32(m)/float32(machineStateBooted)*100)
-}
-
 const (
 	machineStateProxyDHCP = iota
 	machineStatePXE

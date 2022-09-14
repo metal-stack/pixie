@@ -133,7 +133,15 @@ func (b *apibooter) getAPIResponse(m Machine) (io.ReadCloser, error) {
 	if m.GUID != "" {
 		reqURL = fmt.Sprintf("%s/dhcp/%s", b.urlPrefix, m.GUID)
 	}
-	resp, err := b.client.Get(reqURL)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +274,7 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 		// urlStr will get reparsed by http.Get, which is mildly
 		// wasteful, but the code looks nicer than constructing a
 		// Request.
-		resp, err := http.Get(urlStr) // nolint:gosec
+		resp, err := http.Get(urlStr) // nolint:gosec,bodyclose,noctx
 		if err != nil {
 			return nil, -1, err
 		}
@@ -288,7 +296,7 @@ func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
 		return err
 	}
 
-	resp, err := http.Post(u, "application/octet-stream", body) // nolint:gosec
+	resp, err := http.Post(u, "application/octet-stream", body) // nolint:gosec,noctx
 	if err != nil {
 		return err
 	}

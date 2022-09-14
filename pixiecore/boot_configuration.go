@@ -2,6 +2,7 @@ package pixiecore
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -84,7 +85,15 @@ func MakeAPIBootConfiguration(url string, timeout time.Duration, preference uint
 // GetBootURL returns Boot File URL, see RFC 5970
 func (bc *APIBootConfiguration) GetBootURL(id []byte, clientArchType uint16) ([]byte, error) {
 	reqURL := fmt.Sprintf("%s/boot/%x/%d", bc.URLPrefix, id, clientArchType)
-	resp, err := bc.Client.Get(reqURL)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := bc.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}

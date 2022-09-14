@@ -71,15 +71,15 @@ func (s *ServerV6) Shutdown() {
 	}
 }
 
-func (s *ServerV6) log(subsystem, format string, args ...any) {
+func (s *ServerV6) log(subsystem, format string) {
 	if s.Log == nil {
 		return
 	}
-	s.Log.Named(subsystem).Infof(format, args...)
+	s.Log.Named(subsystem).Infof(format)
 }
 
-func (s *ServerV6) debug(subsystem, format string, args ...any) {
-	s.Log.Named(subsystem).Debugf(format, args...)
+func (s *ServerV6) debug(subsystem, format string) {
+	s.Log.Named(subsystem).Debugf(format)
 }
 
 func (s *ServerV6) setDUID(addr net.HardwareAddr) {

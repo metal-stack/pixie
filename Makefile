@@ -12,7 +12,7 @@ ifneq ($(wildcard Makefile.defaults),)
 include Makefile.defaults
 endif
 
-all: pixie
+all: ipxe pixie
 
 .PHONY: pixie
 pixie: test
@@ -33,20 +33,24 @@ test:
 lint:
 	$(GOMODULECMD) tool vet .
 
-.PHONY: update-ipxe
-update-ipxe:
-	# rm -rf third_party/ipxe
-	# (cd third_party && git clone git://git.ipxe.org/ipxe.git)
-	# (cd third_party/ipxe && git rev-parse HEAD >COMMIT-ID)
-	# rm -rf third_party/ipxe/.git
-	(cd third_party/ipxe/src &&\
+
+IPXE_COMMIT_SHA := $(shell cat ipxe/IPXE_COMMIT_SHA)
+
+# Note: requires liblzma-dev package installed
+.PHONY: ipxe
+ipxe:
+	rm -rf ipxe/ipxe
+	(cd ipxe \
+		&& git clone https://github.com/ipxe/ipxe.git \
+		&& cd ipxe \
+		&& git checkout $(IPXE_COMMIT_SHA) \
+	)
+	cp ipxe/branding.h ipxe/ipxe/src/config/local/branding.h
+	(cd ipxe/ipxe/src &&\
 		make bin/ipxe.pxe bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-i386-efi/ipxe.efi EMBED=../../../pixiecore/boot.ipxe)
-	(rm -rf third_party/ipxe/bin && mkdir third_party/ipxe/bin)
-	mv -f third_party/ipxe/src/bin/ipxe.pxe third_party/ipxe/bin/ipxe.pxe
-	mv -f third_party/ipxe/src/bin/undionly.kpxe third_party/ipxe/bin/undionly.kpxe
-	mv -f third_party/ipxe/src/bin-x86_64-efi/ipxe.efi third_party/ipxe/bin/ipxe-x86_64.efi
-	mv -f third_party/ipxe/src/bin-i386-efi/ipxe.efi third_party/ipxe/bin/ipxe-i386.efi
-	go-bindata -o third_party/ipxe/ipxe-bin.go -pkg ipxe -nometadata -nomemcopy -prefix third_party/ipxe/bin/ third_party/ipxe/bin
-	gofmt -s -w third_party/ipxe/ipxe-bin.go
-	rm -rf third_party/ipxe/bin
-	(cd third_party/ipxe/src && make veryclean)
+	(rm -rf ipxe/ipxe/bin && mkdir ipxe/ipxe/bin)
+	mv -f ipxe/ipxe/src/bin/ipxe.pxe ipxe/ipxe/bin/ipxe.pxe
+	mv -f ipxe/ipxe/src/bin/undionly.kpxe ipxe/ipxe/bin/undionly.kpxe
+	mv -f ipxe/ipxe/src/bin-x86_64-efi/ipxe.efi ipxe/ipxe/bin/ipxe-x86_64.efi
+	mv -f ipxe/ipxe/src/bin-i386-efi/ipxe.efi ipxe/ipxe/bin/ipxe-i386.efi
+	(cd ipxe/ipxe/src && make veryclean)

@@ -15,9 +15,9 @@
 package main
 
 import (
+	"github.com/metal-stack/pixie/ipxe"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/metal-stack/pixie/pixiecore/cli"
-	"github.com/metal-stack/pixie/third_party/ipxe"
 )
 
 func main() {

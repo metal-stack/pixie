@@ -1,7 +1,10 @@
-FROM golang:1.18-buster as builder
-COPY . /work/
+FROM golang:1.19-bullseye as builder
 WORKDIR /work
-RUN make
+COPY . .
+RUN apt update \
+ && apt install --yes --no-install-recommends \
+    liblzma-dev \
+ && make ipxe pixie
 
 FROM alpine:3.16
 RUN apk -U add ca-certificates

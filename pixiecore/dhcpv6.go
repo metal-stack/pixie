@@ -11,10 +11,10 @@ func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {
 	for {
 		pkt, src, err := conn.RecvDHCP()
 		if err != nil {
-			return fmt.Errorf("Error receiving DHCP packet: %w", err)
+			return fmt.Errorf("error receiving DHCP packet: %w", err)
 		}
 		if err := pkt.ShouldDiscard(s.Duid); err != nil {
-			s.debug("dhcpv6", fmt.Sprintf("Discarding (%d) packet (%d): %s\n", pkt.Type, pkt.TransactionID, err))
+			s.debug("dhcpv6", fmt.Sprintf("discarding (%d) packet (%d): %s\n", pkt.Type, pkt.TransactionID, err))
 			continue
 		}
 
@@ -24,10 +24,10 @@ func (s *ServerV6) serveDHCP(conn *dhcp6.Conn) error {
 		if err != nil {
 			s.log("dhcpv6", fmt.Sprintf("Error creating response for transaction: %d: %s", pkt.TransactionID, err))
 			if response == nil {
-				s.log("dhcpv6", fmt.Sprintf("Dropping the packet"))
+				s.log("dhcpv6", fmt.Sprintf("dropping the packet"))
 				continue
 			} else {
-				s.log("dhcpv6", fmt.Sprintf("Will notify the client"))
+				s.log("dhcpv6", fmt.Sprintf("will notify the client"))
 			}
 		}
 		if response == nil {

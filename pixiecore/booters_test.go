@@ -67,7 +67,7 @@ func TestAPIBooter(t *testing.T) {
 	http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`bar file`)) })   // nolint:errcheck
 	http.HandleFunc("/baz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`baz file`)) })   // nolint:errcheck
 	http.HandleFunc("/quux", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`quux file`)) }) // nolint:errcheck
-	go http.Serve(l, nil)                                                                                   // nolint:errcheck
+	go http.Serve(l, nil)                                                                                   // nolint:errcheck,gosec
 
 	// Finally, build an APIBooter and test it.
 	b, err := APIBooter(fmt.Sprintf("http://%s/", l.Addr()), 100*time.Millisecond)

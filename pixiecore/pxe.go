@@ -33,13 +33,13 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		return fmt.Errorf("Couldn't get interface metadata on PXE port: %w", err)
+		return fmt.Errorf("couldn't get interface metadata on PXE port: %w", err)
 	}
 
 	for {
 		n, msg, addr, err := l.ReadFrom(buf)
 		if err != nil {
-			return fmt.Errorf("Receiving packet: %w", err)
+			return fmt.Errorf("receiving packet: %w", err)
 		}
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
@@ -71,11 +71,7 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 
 		s.machineEvent(pkt.HardwareAddr, machineStatePXE, "Sent PXE configuration")
 
-		resp, err := s.offerPXE(pkt, serverIP, fwtype)
-		if err != nil {
-			s.Log.Infof("Failed to construct PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
-			continue
-		}
+		resp := s.offerPXE(pkt, serverIP, fwtype)
 
 		bs, err := resp.Marshal()
 		if err != nil {
@@ -129,7 +125,7 @@ func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 	return fwtype, nil
 }
 
-func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (resp *dhcp4.Packet, err error) {
+func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (resp *dhcp4.Packet) {
 	resp = &dhcp4.Packet{
 		Type:           dhcp4.MsgAck,
 		TransactionID:  pkt.TransactionID,
@@ -148,5 +144,5 @@ func (s *Server) offerPXE(pkt *dhcp4.Packet, serverIP net.IP, fwtype Firmware) (
 		resp.Options[97] = pkt.Options[97]
 	}
 
-	return resp, nil
+	return resp
 }

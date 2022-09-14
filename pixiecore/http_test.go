@@ -16,6 +16,7 @@ package pixiecore
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -54,7 +55,7 @@ func TestIpxe(t *testing.T) {
 
 	// Successful boot
 	rr := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/_/ipxe?mac=01:02:03:04:05:06&arch=0", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/_/ipxe?mac=01:02:03:04:05:06&arch=0", nil)
 	if err != nil {
 		t.Fatalf("Constructing ipxe request: %s", err)
 	}
@@ -79,7 +80,7 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 
 	// Another successful boot
 	rr = httptest.NewRecorder()
-	req, err = http.NewRequest("GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
+	req, err = http.NewRequestWithContext(context.Background(), "GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
 	if err != nil {
 		t.Fatalf("Constructing ipxe request: %s", err)
 	}
@@ -109,7 +110,7 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 		"/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=42",
 	} {
 		rr = httptest.NewRecorder()
-		req, err = http.NewRequest("GET", url, nil)
+		req, err = http.NewRequestWithContext(context.Background(), "GET", url, nil)
 		if err != nil {
 			t.Fatalf("Constructing ipxe request: %s", err)
 		}
@@ -124,7 +125,7 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 	booter = func(m Machine) (*Spec, error) { return nil, nil }
 	s.Booter = booterFunc(booter)
 	rr = httptest.NewRecorder()
-	req, err = http.NewRequest("GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
+	req, err = http.NewRequestWithContext(context.Background(), "GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
 	if err != nil {
 		t.Fatalf("Constructing ipxe request: %s", err)
 	}
@@ -138,7 +139,7 @@ boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?nam
 	booter = func(m Machine) (*Spec, error) { return nil, errors.New("boom") }
 	s.Booter = booterFunc(booter)
 	rr = httptest.NewRecorder()
-	req, err = http.NewRequest("GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
+	req, err = http.NewRequestWithContext(context.Background(), "GET", "/_/ipxe?mac=fe:fe:fe:fe:fe:fe&arch=1", nil)
 	if err != nil {
 		t.Fatalf("Constructing ipxe request: %s", err)
 	}
@@ -164,7 +165,7 @@ func TestFile(t *testing.T) {
 		Log:    zaptest.NewLogger(t).Sugar(),
 	}
 	rr := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/_/file?name=test", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/_/file?name=test", nil)
 	if err != nil {
 		t.Fatalf("Constructing file request: %s", err)
 	}
@@ -180,7 +181,7 @@ func TestFile(t *testing.T) {
 	}
 
 	rr = httptest.NewRecorder()
-	req, err = http.NewRequest("GET", "/_/file?name=quux", nil)
+	req, err = http.NewRequestWithContext(context.Background(), "GET", "/_/file?name=quux", nil)
 	if err != nil {
 		t.Fatalf("Constructing file request: %s", err)
 	}
