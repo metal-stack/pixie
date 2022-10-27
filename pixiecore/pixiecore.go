@@ -25,6 +25,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -200,7 +201,7 @@ type Server struct {
 	eventsMu sync.Mutex
 	events   map[string][]machineEvent
 
-	MetalConfig *MetalConfig
+	MetalConfig *api.MetalConfig
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
+	"github.com/metal-stack/pixie/api"
 	"go.uber.org/zap"
 )
 
@@ -49,7 +50,7 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 
 	return ret, nil
 }
-func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, metalAPIConfig *MetalConfig) (Booter, error) {
+func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, metalAPIConfig *api.MetalConfig) (Booter, error) {
 	ret := &grpcbooter{
 		grpc:      client,
 		partition: partition,
@@ -72,7 +73,7 @@ type apibooter struct {
 type grpcbooter struct {
 	apibooter
 	grpc      *GrpcClient
-	config    *MetalConfig
+	config    *api.MetalConfig
 	partition string
 	log       *zap.SugaredLogger
 }
