@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 )
@@ -74,10 +75,10 @@ func init() {
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 }
 
-func getMetalAPIConfig(cmd *cobra.Command) (*pixiecore.MetalConfig, error) {
+func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 	caCert, err := os.ReadFile(grpcCACertFile)
 	if err != nil {
@@ -86,7 +87,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*pixiecore.MetalConfig, error) {
 
 	grpcClientCertFile, err := cmd.Flags().GetString("grpc-cert")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 	clientCert, err := os.ReadFile(grpcClientCertFile)
 	if err != nil {
@@ -103,26 +104,26 @@ func getMetalAPIConfig(cmd *cobra.Command) (*pixiecore.MetalConfig, error) {
 	}
 	grpcAddress, err := cmd.Flags().GetString("grpc-address")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 
 	hmac, err := cmd.Flags().GetString("metal-api-view-hmac")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 	metalAPIUrl, err := cmd.Flags().GetString("metal-api-url")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 	pixieAPIUrl, err := cmd.Flags().GetString("pixie-api-url")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 	metalHammerDebug, err := cmd.Flags().GetBool("metal-hammer-debug")
 	if err != nil {
-		return nil, fmt.Errorf("Error reading flag: %w", err)
+		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
-	return &pixiecore.MetalConfig{
+	return &api.MetalConfig{
 		Debug:       metalHammerDebug,
 		GRPCAddress: grpcAddress,
 		MetalAPIUrl: metalAPIUrl,
