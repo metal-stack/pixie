@@ -1,5 +1,6 @@
 package api
 
+// MetalConfig is consumed by metal-hammer to get all options to open a grpc connection to the metal-api
 type MetalConfig struct {
 	Debug       bool
 	GRPCAddress string `json:"address,omitempty"`
