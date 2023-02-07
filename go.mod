@@ -1,9 +1,9 @@
 module github.com/metal-stack/pixie
 
-go 1.19
+go 1.20
 
 require (
-	github.com/metal-stack/metal-api v0.21.5
+	github.com/metal-stack/metal-api v0.22.0
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.0.0
 	github.com/prometheus/client_golang v1.14.0
@@ -13,7 +13,7 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.5.0
 	golang.org/x/net v0.5.0
-	google.golang.org/grpc v1.52.0
+	google.golang.org/grpc v1.52.3
 )
 
 require (
@@ -40,9 +40,9 @@ require (
 	github.com/subosito/gotenv v1.4.2 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20230123190316-2c411cf9d197 // indirect
+	google.golang.org/genproto v0.0.0-20230202175211-008b39050e57 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

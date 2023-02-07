@@ -19,6 +19,8 @@ set x:int32 0
 
 set user-class pixiecore
 
+echo metal-stack pixie
+
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
 :loop
