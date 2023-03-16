@@ -16,6 +16,7 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/metal-stack/pixie/api"
@@ -115,9 +116,17 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
+	_, err = url.Parse(metalAPIUrl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse metal-api-url: %w", err)
+	}
 	pixieAPIUrl, err := cmd.Flags().GetString("pixie-api-url")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	_, err = url.Parse(pixieAPIUrl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse pixie-api-url: %w", err)
 	}
 	metalHammerDebug, err := cmd.Flags().GetBool("metal-hammer-debug")
 	if err != nil {
