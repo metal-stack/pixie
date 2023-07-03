@@ -1,4 +1,4 @@
-FROM golang:1.19-bullseye as builder
+FROM golang:1.20-bullseye as builder
 WORKDIR /work
 COPY . .
 RUN apt update \
@@ -6,7 +6,7 @@ RUN apt update \
     liblzma-dev \
  && make ipxe pixie
 
-FROM alpine:3.16
+FROM alpine:3.18
 RUN apk -U add ca-certificates
 COPY --from=builder /work/build/pixie /pixie
 ENTRYPOINT ["/pixie"]
