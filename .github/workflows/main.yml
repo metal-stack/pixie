@@ -19,27 +19,28 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
     steps:
-    - name: Set up Go 1.21
-      uses: actions/setup-go@v4
-      with:
-        go-version: "1.21"
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
-
-    - name: Lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        args: -p bugs -p unused --timeout=3m
-
     - name: Log in to the Container registry
       uses: docker/login-action@v2
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v3
+
+    - name: Set up Go 1.21
+      uses: actions/setup-go@v4
+      with:
+        go-version: "1.21"
+        cache: false
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        args: -p bugs -p unused --timeout=3m
 
     - name: Make tag
       run: |
