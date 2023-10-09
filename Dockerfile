@@ -1,4 +1,5 @@
-FROM golang:1.21-bookworm as builder
+# be aware that bookworm has a newer gcc which can not compile the older ipxe
+FROM golang:1.21-bullseye as builder
 WORKDIR /work
 COPY . .
 RUN apt update \
