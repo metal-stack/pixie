@@ -29,7 +29,7 @@ import (
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
+	"github.com/sagikazarmark/slog-shim"
 )
 
 const (
@@ -181,7 +181,7 @@ type Server struct {
 
 	// Log receives logs on Pixiecore's operation. If nil, logging
 	// is suppressed.
-	Log *zap.SugaredLogger
+	Log *slog.Logger
 
 	// These ports can technically be set for testing, but the
 	// protocols burned in firmware on the client side hardcode these,
@@ -258,7 +258,7 @@ func (s *Server) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.Log.Debugf("Starting Pixiecore goroutines version:%q", v.V)
+	s.Log.Debug("Starting Pixiecore goroutines", "version", v.V)
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()

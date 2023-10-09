@@ -20,11 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"go.uber.org/zap/zaptest"
 )
 
 type booterFunc func(Machine) (*Spec, error)
@@ -49,7 +48,7 @@ func TestIpxe(t *testing.T) {
 	}
 	s := &Server{
 		Booter: booterFunc(booter),
-		Log:    zaptest.NewLogger(t).Sugar(),
+		Log:    slog.Default(),
 		events: make(map[string][]machineEvent),
 	}
 
@@ -162,7 +161,7 @@ func (b readBootFile) WriteBootFile(id ID, r io.Reader) error { return errors.Ne
 func TestFile(t *testing.T) {
 	s := &Server{
 		Booter: readBootFile("stuff"),
-		Log:    zaptest.NewLogger(t).Sugar(),
+		Log:    slog.Default(),
 	}
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequestWithContext(context.Background(), "GET", "/_/file?name=test", nil)

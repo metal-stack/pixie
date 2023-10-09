@@ -5,24 +5,24 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"log/slog"
 	"time"
 
 	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
 	"github.com/metal-stack/pixie/api"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
 type GrpcClient struct {
-	log  *zap.SugaredLogger
+	log  *slog.Logger
 	conn grpc.ClientConnInterface
 }
 
 // NewGrpcClient fetches the address and certificates from metal-core needed to communicate with metal-api via grpc,
 // and returns a new grpc client that can be used to invoke all provided grpc endpoints.
-func NewGrpcClient(log *zap.SugaredLogger, config *api.MetalConfig) (*GrpcClient, error) {
+func NewGrpcClient(log *slog.Logger, config *api.MetalConfig) (*GrpcClient, error) {
 	clientCert, err := tls.X509KeyPair([]byte(config.Cert), []byte(config.Key))
 	if err != nil {
 		return nil, err

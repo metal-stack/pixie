@@ -33,29 +33,29 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {
-			s.Log.Debugf("Ignoring packet from %s: %s", pkt.HardwareAddr, err)
+			s.Log.Debug("Ignoring packet", "mac", pkt.HardwareAddr, "error", err)
 			continue
 		}
 		mach, fwtype, err := s.validateDHCP(pkt)
 		if err != nil {
-			s.Log.Infof("Unusable packet from %s: %s", pkt.HardwareAddr, err)
+			s.Log.Info("Unusable packet", "mac", pkt.HardwareAddr, "error", err)
 			continue
 		}
 
-		s.Log.Debugf("Got valid request to boot %s (%s, %s)", mach.MAC, mach.GUID, mach.Arch)
+		s.Log.Debug("Got valid request to boot", "mac", mach.MAC, "guid", mach.GUID, "arch", mach.Arch)
 
 		spec, err := s.Booter.BootSpec(mach)
 		if err != nil {
-			s.Log.Infof("Couldn't get bootspec for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Info("Couldn't get bootspec", "mac", pkt.HardwareAddr, "error", err)
 			continue
 		}
 		if spec == nil {
-			s.Log.Debugf("No boot spec for %s, ignoring boot request", pkt.HardwareAddr)
+			s.Log.Debug("No boot spec, ignoring boot request", "mac", pkt.HardwareAddr)
 			s.machineEvent(pkt.HardwareAddr, machineStateIgnored, "Machine should not netboot")
 			continue
 		}
 
-		s.Log.Infof("Offering to boot %s", pkt.HardwareAddr)
+		s.Log.Info("Offering to boot", "mac", pkt.HardwareAddr)
 		if fwtype == FirmwarePixiecoreIpxe {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
 		} else {
@@ -65,18 +65,18 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		// Machine should be booted.
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.Log.Infof("Want to boot %s on %s, but couldn't get a source address: %s", pkt.HardwareAddr, intf.Name, err)
+			s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "interface", intf.Name, "error", err)
 			continue
 		}
 
 		resp, err := s.offerDHCP(pkt, mach, serverIP, fwtype)
 		if err != nil {
-			s.Log.Infof("Failed to construct ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Info("Failed to construct ProxyDHCP offer", "mac", pkt.HardwareAddr, "error", err)
 			continue
 		}
 
 		if err = conn.SendDHCP(resp, intf); err != nil {
-			s.Log.Infof("Failed to send ProxyDHCP offer for %s: %s", pkt.HardwareAddr, err)
+			s.Log.Info("Failed to send ProxyDHCP offer", "mac", pkt.HardwareAddr, "error", err)
 			continue
 		}
 	}

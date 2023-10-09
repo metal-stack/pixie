@@ -2,11 +2,11 @@ package pixiecore
 
 import (
 	"encoding/binary"
+	"log/slog"
 	"net"
 	"time"
 
 	"github.com/metal-stack/pixie/dhcp6"
-	"go.uber.org/zap"
 )
 
 // ServerV6 boots machines using a Booter.
@@ -21,7 +21,7 @@ type ServerV6 struct {
 
 	errs chan error
 
-	Log *zap.SugaredLogger
+	Log *slog.Logger
 }
 
 // NewServerV6 returns a new ServerV6.
@@ -75,11 +75,11 @@ func (s *ServerV6) log(subsystem, format string) {
 	if s.Log == nil {
 		return
 	}
-	s.Log.Named(subsystem).Infof(format)
+	s.Log.With("subsystem", subsystem).Info(format)
 }
 
 func (s *ServerV6) debug(subsystem, format string) {
-	s.Log.Named(subsystem).Debugf(format)
+	s.Log.With("subsystem", subsystem).Debug(format)
 }
 
 func (s *ServerV6) setDUID(addr net.HardwareAddr) {

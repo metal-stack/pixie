@@ -72,9 +72,9 @@ func (s *Server) readHandler(path string, rf io.ReaderFrom) error {
 
 	n, err := rf.ReadFrom(bytes.NewReader(bs))
 	if err != nil {
-		s.Log.Errorf("unable to send payload %s", err)
+		s.Log.Error("unable to send payload", "error", err)
 		return err
 	}
-	s.Log.Infof("sent %d bytes", n)
+	s.Log.Info("sent", "bytes", n)
 	return nil
 }
