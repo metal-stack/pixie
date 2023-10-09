@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	httppprof "net/http/pprof"
@@ -29,7 +30,6 @@ import (
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sagikazarmark/slog-shim"
 )
 
 const (
