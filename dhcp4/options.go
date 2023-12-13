@@ -55,6 +55,7 @@ const (
 	OptVendorIdentifier   Option = 60 // string
 	OptClientIdentifier   Option = 61 // string
 	OptFQDN               Option = 81 // string
+	OptAgentInformation   Option = 82 // struct
 
 	// You shouldn't need to use the following directly. Instead,
 	// refer to the fields in the Packet struct, and Marshal/Unmarshal
