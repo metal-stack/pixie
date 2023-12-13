@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -49,7 +50,7 @@ func udpFromPcap(fname string) ([][]byte, error) {
 
 	_, err = r.Discard(pcapHdrLen)
 	if err != nil {
-		return nil, fmt.Errorf("failed to discard header: %s", err)
+		return nil, fmt.Errorf("failed to discard header: %w", err)
 	}
 
 	var ret [][]byte
@@ -67,7 +68,7 @@ func udpFromPcap(fname string) ([][]byte, error) {
 		hdrLen += udpHdrLen
 		ret = append(ret, bs[hdrLen:])
 	}
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
 	}
 
@@ -98,7 +99,7 @@ func TestParse(t *testing.T) {
 
 	if pkts.String() != string(expected) {
 		if os.Getenv("UPDATE_TESTDATA") != "" {
-			_ = os.WriteFile(expectedFile, pkts.Bytes(), 0644)
+			_ = os.WriteFile(expectedFile, pkts.Bytes(), 0600)
 			t.Errorf("dhcp.pcap didn't decode to dhcp.parsed (updated dhcp.parsed)")
 		} else {
 			t.Fatalf("dhcp.pcap didn't decode to dhcp.parsed (rerun with UPDATE_TESTDATA=1 to get diff)")
