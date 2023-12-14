@@ -29,6 +29,8 @@ import (
 	"text/template"
 	"time"
 
+	"go.uber.org/zap"
+
 	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
 	"github.com/metal-stack/pixie/api"
 )
@@ -111,14 +113,14 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		}
 		g.log.Info("boot", "resp", resp)
 
-		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		cmdline := []string{resp.GetCmdline(), fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}
 
 		r = rawSpec{
-			Kernel:  resp.Kernel,
-			Initrd:  resp.InitRamDisks,
+			Kernel:  resp.GetKernel(),
+			Initrd:  resp.GetInitRamDisks(),
 			Cmdline: strings.Join(cmdline, " "),
 		}
 	}
