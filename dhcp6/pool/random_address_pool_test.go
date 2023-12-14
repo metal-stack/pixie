@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReserveAddress(t *testing.T) {
@@ -60,7 +60,7 @@ func TestReserveAddressUpdatesAddressPool(t *testing.T) {
 	pool := NewRandomAddressPool(net.ParseIP("2001:db8:f00f:cafe::1"), 1, expectedMaxLifetime)
 	pool.timeNow = func() time.Time { return expectedTime }
 	_, err := pool.ReserveAddresses(expectedClientID, [][]byte{expectedIAID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	expectedIdx := pool.calculateIAIDHash(expectedClientID, expectedIAID)
 
@@ -83,7 +83,7 @@ func TestReserveAddressKeepsTrackOfUsedAddresses(t *testing.T) {
 	pool := NewRandomAddressPool(net.ParseIP("2001:db8:f00f:cafe::1"), 1, expectedMaxLifetime)
 	pool.timeNow = func() time.Time { return expectedTime }
 	_, err := pool.ReserveAddresses(expectedClientID, [][]byte{expectedIAID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, exists := pool.usedIps[0x01]
 	if !exists {
 		t.Fatal("'2001:db8:f00f:cafe::1' should be marked as in use")
@@ -99,8 +99,8 @@ func TestReserveAddressKeepsTrackOfAssociationExpiration(t *testing.T) {
 	pool := NewRandomAddressPool(net.ParseIP("2001:db8:f00f:cafe::1"), 1, expectedMaxLifetime)
 	pool.timeNow = func() time.Time { return expectedTime }
 	_, err := pool.ReserveAddresses(expectedClientID, [][]byte{expectedIAID})
-	assert.NoError(t, err)
-	
+	require.NoError(t, err)
+
 	expiration := pool.identityAssociationExpirations.Peek().(*associationExpiration)
 	if expiration == nil {
 		t.Fatal("Expected an identity association expiration, but got nil")
