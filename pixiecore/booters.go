@@ -29,8 +29,6 @@ import (
 	"text/template"
 	"time"
 
-	"go.uber.org/zap"
-
 	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
 	"github.com/metal-stack/pixie/api"
 )
