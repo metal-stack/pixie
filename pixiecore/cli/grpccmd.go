@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
@@ -74,6 +75,12 @@ func init() {
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
+
+	// metal-hammer remote logging configuration
+	grpcCmd.Flags().String("metal-hammer-logging-endpoint", "", "set metal-hammer to send logs to this endpoint")
+	grpcCmd.Flags().String("metal-hammer-logging-user", "", "set metal-hammer to send logs to a remote endpoint and authenticate with this user")
+	grpcCmd.Flags().String("metal-hammer-logging-password", "", "set metal-hammer to send logs to a remote endpoint and authenticate with this password")
+	grpcCmd.Flags().String("metal-hammer-logging-type", "loki", "set metal-hammer to send logs to a remote endpoint with this logging type")
 }
 
 func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
@@ -132,6 +139,42 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
+
+	metalHammerLoggingEndpoint, err := cmd.Flags().GetString("metal-hammer-logging-endpoint")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	metalHammerLoggingUser, err := cmd.Flags().GetString("metal-hammer-logging-user")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	metalHammerLoggingPassword, err := cmd.Flags().GetString("metal-hammer-logging-password")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	metalHammerLoggingType, err := cmd.Flags().GetString("metal-hammer-logging-type")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	var logging *api.Logging
+	if metalHammerLoggingEndpoint != "" {
+		logging = &api.Logging{
+			Endpoint: metalHammerLoggingEndpoint,
+		}
+		if metalHammerLoggingUser != "" {
+			logging.User = metalHammerLoggingUser
+		}
+		if metalHammerLoggingPassword != "" {
+			logging.User = metalHammerLoggingPassword
+		}
+		switch strings.ToLower(metalHammerLoggingType) {
+		case "loki":
+			logging.Type = api.LogTypeLoki
+		default:
+			return nil, fmt.Errorf("only loki currently support for metal-hammer remote logging %q was given", metalHammerLoggingType)
+		}
+	}
+
 	return &api.MetalConfig{
 		Debug:       metalHammerDebug,
 		GRPCAddress: grpcAddress,
@@ -141,5 +184,6 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		Cert:        string(clientCert),
 		Key:         string(clientKey),
 		HMAC:        hmac,
+		Logging:     logging,
 	}, nil
 }

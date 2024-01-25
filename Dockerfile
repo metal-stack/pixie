@@ -7,7 +7,7 @@ RUN apt update \
     liblzma-dev \
  && make ipxe pixie
 
-FROM alpine:3.18
+FROM alpine:3.19
 RUN apk -U add ca-certificates
 COPY --from=builder /work/build/pixie /pixie
 ENTRYPOINT ["/pixie"]
