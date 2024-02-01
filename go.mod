@@ -3,7 +3,7 @@ module github.com/metal-stack/pixie
 go 1.21
 
 require (
-	github.com/metal-stack/metal-api v0.26.2
+	github.com/metal-stack/metal-api v0.26.3
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.1.0
 	github.com/prometheus/client_golang v1.18.0
@@ -42,7 +42,7 @@ require (
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

@@ -16,13 +16,23 @@ type MetalConfig struct {
 
 type Logging struct {
 	// Endpoint is the url where the logs must be shipped to
-	Endpoint string `json:"endpoint,omitempty"`
+	Endpoint        string           `json:"endpoint,omitempty"`
+	BasicAuth       *BasicAuth       `json:"basic_auth,omitempty"`
+	CertificateAuth *CertificateAuth `json:"certificate_auth,omitempty"`
+	// Type of logging
+	Type LogType `json:"log_type,omitempty"`
+}
+
+type BasicAuth struct {
 	// User to authenticate against the logging endpoint
 	User string `json:"user,omitempty"`
 	// Password to authenticate against the logging endpoint
 	Password string `json:"password,omitempty"`
-	// Type of logging
-	Type LogType `json:"log_type,omitempty"`
+}
+type CertificateAuth struct {
+	Cert               string `json:"cert,omitempty"`
+	Key                string `json:"key,omitempty"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
 }
 
 type LogType string
