@@ -16,27 +16,37 @@ type MetalConfig struct {
 
 type Logging struct {
 	// Endpoint is the url where the logs must be shipped to
-	Endpoint        string           `json:"endpoint,omitempty"`
-	BasicAuth       *BasicAuth       `json:"basic_auth,omitempty"`
+	Endpoint string `json:"endpoint,omitempty"`
+	// BasicAuth must be set if loki requires username and password
+	BasicAuth *BasicAuth `json:"basic_auth,omitempty"`
+	// CertificateAuth must be set if mTLS authentication is required for loki
 	CertificateAuth *CertificateAuth `json:"certificate_auth,omitempty"`
 	// Type of logging
 	Type LogType `json:"log_type,omitempty"`
 }
 
+// BasicAuth configuration
 type BasicAuth struct {
 	// User to authenticate against the logging endpoint
 	User string `json:"user,omitempty"`
 	// Password to authenticate against the logging endpoint
 	Password string `json:"password,omitempty"`
 }
+
+// CertificateAuth is used for mTLS authentication
 type CertificateAuth struct {
-	Cert               string `json:"cert,omitempty"`
-	Key                string `json:"key,omitempty"`
-	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
+	// Cert the certificate
+	Cert string `json:"cert,omitempty"`
+	// Key is the key
+	Key string `json:"key,omitempty"`
+	// InsecureSkipVerify if no certificate validation should be made
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
 }
 
+// LogType defines which logging backend should be used
 type LogType string
 
 const (
+	// LogTypeLoki loki is the logging backend
 	LogTypeLoki = LogType("loki")
 )
