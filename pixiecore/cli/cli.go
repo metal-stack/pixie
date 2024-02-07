@@ -25,10 +25,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Ipxe is the set of ipxe binaries for supported firmwares.
+// Ipxe is the set of ipxe binaries for supported firmware.
 //
 // Can be set externally before calling CLI(), and set/extended by
-// commandline processing in CLI().
+// command line processing in CLI().
 var Ipxe = map[pixiecore.Firmware][]byte{}
 
 // CLI runs the Pixiecore commandline.
@@ -168,7 +168,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 func getLogger(debug bool) *slog.Logger {
 	opts := &slog.HandlerOptions{
 		Level:     slog.LevelInfo,
-		AddSource: true,
+		AddSource: debug,
 	}
 	if debug {
 		opts.Level = slog.LevelDebug
