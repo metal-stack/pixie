@@ -35,14 +35,14 @@ func NewServerV6() *ServerV6 {
 // Serve listens for machines attempting to boot, and responds to
 // their DHCPv6 requests.
 func (s *ServerV6) Serve() error {
-	s.Log.Info("dhcp", "starting...")
+	s.Log.Info("starting...")
 
 	dhcp, err := dhcp6.NewConn(s.Address, s.Port)
 	if err != nil {
 		return err
 	}
 
-	s.Log.Debug("dhcp", "new connection...")
+	s.Log.Debug("new connection...")
 
 	// 5 buffer slots, one for each goroutine, plus one for
 	// Shutdown(). We only ever pull the first error out, but shutdown
@@ -59,7 +59,7 @@ func (s *ServerV6) Serve() error {
 	err = <-s.errs
 	dhcp.Close()
 
-	s.Log.Info("dhcp", "stopped...")
+	s.Log.Info("stopped...")
 	return err
 }
 

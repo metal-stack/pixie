@@ -135,7 +135,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
-		Log:            getLogger(debug),
+		Log:            getLogger(debug).WithGroup("dhcp"),
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
 		MetricsPort:    metricsPort,

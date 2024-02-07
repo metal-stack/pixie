@@ -36,7 +36,7 @@ var ipv6ApiCmd = &cobra.Command{
 		if err != nil {
 			fatalf("Error reading flag: %s", err)
 		}
-		s.Log = getLogger(debug)
+		s.Log = getLogger(debug).WithGroup("dhcpv6")
 
 		if addr == "" {
 			fatalf("Please specify address to bind to")
