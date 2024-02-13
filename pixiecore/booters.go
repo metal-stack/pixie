@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,8 +28,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-
-	"go.uber.org/zap"
 
 	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
 	"github.com/metal-stack/pixie/api"
@@ -51,7 +50,7 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 
 	return ret, nil
 }
-func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, metalAPIConfig *api.MetalConfig) (Booter, error) {
+func GRPCBooter(log *slog.Logger, client *GrpcClient, partition string, metalAPIConfig *api.MetalConfig) (Booter, error) {
 	ret := &grpcbooter{
 		grpc:      client,
 		partition: partition,
@@ -61,7 +60,7 @@ func GRPCBooter(log *zap.SugaredLogger, client *GrpcClient, partition string, me
 	if _, err := io.ReadFull(rand.Reader, ret.key[:]); err != nil {
 		return nil, fmt.Errorf("failed to get randomness for signing key: %w", err)
 	}
-	log.Infow("starting grpc booter", "partition", partition)
+	log.Info("starting grpc booter", "partition", partition)
 	return ret, nil
 }
 
@@ -76,12 +75,12 @@ type grpcbooter struct {
 	grpc      *GrpcClient
 	config    *api.MetalConfig
 	partition string
-	log       *zap.SugaredLogger
+	log       *slog.Logger
 }
 
 // BootSpec implements Booter
 func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
-	g.log.Infow("bootspec", "machine", m)
+	g.log.Info("bootspec", "machine", m)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -91,10 +90,10 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		req := &v1.BootServiceDhcpRequest{
 			Uuid: string(m.GUID),
 		}
-		g.log.Infow("dhcp", "req", req)
+		g.log.Info("dhcp", "req", req)
 		_, err := g.grpc.BootService().Dhcp(ctx, req)
 		if err != nil {
-			g.log.Errorw("boot", "error", err)
+			g.log.Error("boot", "error", err)
 			return nil, err
 		}
 		r = rawSpec{}
@@ -104,13 +103,13 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			Mac:         m.MAC.String(),
 			PartitionId: g.partition,
 		}
-		g.log.Infow("boot", "req", req)
+		g.log.Info("boot", "req", req)
 		resp, err := g.grpc.BootService().Boot(ctx, req)
 		if err != nil {
-			g.log.Errorw("boot", "error", err)
+			g.log.Error("boot", "error", err)
 			return nil, err
 		}
-		g.log.Infow("boot", "resp", resp)
+		g.log.Info("boot", "resp", resp)
 
 		cmdline := []string{resp.GetCmdline(), fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
 		if g.config.Debug {
@@ -125,7 +124,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	spec, err := bootSpec(g.key, g.urlPrefix, r)
-	g.log.Infow("bootspec", "return spec", spec)
+	g.log.Info("bootspec", "return spec", spec)
 	return spec, err
 }
 

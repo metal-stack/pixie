@@ -50,27 +50,27 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	overallStart := time.Now()
 	macStr := r.URL.Query().Get("mac")
 	if macStr == "" {
-		s.Log.Debugf("Bad request %q from %s, missing MAC address", r.URL, r.RemoteAddr)
+		s.Log.Debug("Bad request, missing MAC address", "url", r.URL, "remoteaddr", r.RemoteAddr)
 		http.Error(w, "missing MAC address parameter", http.StatusBadRequest)
 		return
 	}
 	archStr := r.URL.Query().Get("arch")
 	if archStr == "" {
-		s.Log.Debugf("Bad request %q from %s, missing architecture", r.URL, r.RemoteAddr)
+		s.Log.Debug("Bad request, missing architecture", "url", r.URL, "remoteaddr", r.RemoteAddr)
 		http.Error(w, "missing architecture parameter", http.StatusBadRequest)
 		return
 	}
 
 	mac, err := net.ParseMAC(macStr)
 	if err != nil {
-		s.Log.Debugf("Bad request %q from %s, invalid MAC address %q (%s)", r.URL, r.RemoteAddr, macStr, err)
+		s.Log.Debug("Bad request, invalid MAC address", "url", r.URL, "remoteaddr", r.RemoteAddr, "mac", macStr, "error", err)
 		http.Error(w, "invalid MAC address", http.StatusBadRequest)
 		return
 	}
 
 	i, err := strconv.Atoi(archStr)
 	if err != nil {
-		s.Log.Debugf("Bad request %q from %s, invalid architecture %q (%s)", r.URL, r.RemoteAddr, archStr, err)
+		s.Log.Debug("Bad request, invalid architecture", "url", r.URL, "remoteaddr", r.RemoteAddr, "arch", archStr, "error", err)
 		http.Error(w, "invalid architecture", http.StatusBadRequest)
 		return
 	}
@@ -78,7 +78,7 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	switch arch {
 	case ArchIA32, ArchX64:
 	default:
-		s.Log.Debugf("Bad request %q from %s, unknown architecture %q", r.URL, r.RemoteAddr, arch)
+		s.Log.Debug("Bad request, unknown architecture", "url", r.URL, "remoteaddr", r.RemoteAddr, "arch", arch)
 		http.Error(w, "unknown architecture", http.StatusBadRequest)
 		return
 	}
@@ -89,47 +89,47 @@ func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
 	}
 	start := time.Now()
 	spec, err := s.Booter.BootSpec(mach)
-	s.Log.Debugf("Get bootspec for %s took %s", mac, time.Since(start))
+	s.Log.Debug("Get bootspec for", "mac", mac, "duration", time.Since(start))
 	if err != nil {
-		s.Log.Infof("Couldn't get a bootspec for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
+		s.Log.Info("Couldn't get a bootspec for", "mac", mac, "url", r.URL, "remoteaddr", r.RemoteAddr, "error", err)
 		http.Error(w, "couldn't get a bootspec", http.StatusInternalServerError)
 		return
 	}
 	if spec == nil {
 		// TODO: make ipxe abort netbooting so it can fall through to
 		// other boot options - unsure if that's possible.
-		s.Log.Debugf("No boot spec for %s (query %q from %s), ignoring boot request", mac, r.URL, r.RemoteAddr)
+		s.Log.Debug("No boot spec for, ignoring boot request", "mac", mac, "url", r.URL, "remoteaddr", r.RemoteAddr)
 		http.Error(w, "you don't netboot", http.StatusNotFound)
 		return
 	}
 	start = time.Now()
 	script, err := ipxeScript(mach, spec, r.Host)
-	s.Log.Debugf("Construct ipxe script for %s took %s", mac, time.Since(start))
+	s.Log.Debug("Construct ipxe script for", "mac", mac, "duration", time.Since(start))
 	if err != nil {
-		s.Log.Infof("Failed to assemble ipxe script for %s (query %q from %s): %s", mac, r.URL, r.RemoteAddr, err)
+		s.Log.Info("Failed to assemble ipxe script for", "mac", mac, "url", r.URL, "remoteaddr", r.RemoteAddr, "error", err)
 		http.Error(w, "couldn't get a boot script", http.StatusInternalServerError)
 		return
 	}
 
-	s.Log.Infof("Sending ipxe boot script to %s", r.RemoteAddr)
+	s.Log.Info("Sending ipxe boot script", "remoteaddr", r.RemoteAddr)
 	start = time.Now()
 	s.machineEvent(mac, machineStateIpxeScript, "Sent iPXE boot script")
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write(script)
-	s.Log.Debugf("Writing ipxe script to %s took %s", mac, time.Since(start))
-	s.Log.Debugf("handleIpxe for %s took %s", mac, time.Since(overallStart))
+	s.Log.Debug("Writing ipxe script to", "mac", mac, "duration", time.Since(start))
+	s.Log.Debug("handleIpxe for", "mac", mac, "duration", time.Since(overallStart))
 }
 
 func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
-		s.Log.Debugf("Bad request %q from %s, missing filename", r.URL, r.RemoteAddr)
+		s.Log.Debug("Bad request, missing filename", "url", r.URL, "remoteaddr", r.RemoteAddr)
 		http.Error(w, "missing filename", http.StatusBadRequest)
 	}
 
 	f, sz, err := s.Booter.ReadBootFile(ID(name))
 	if err != nil {
-		s.Log.Infof("Error getting file %q (query %q from %s): %s", name, r.URL, r.RemoteAddr, err)
+		s.Log.Info("Error getting file", "name", name, "url", r.URL, "remoteaddr", r.RemoteAddr, "error", err)
 		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
@@ -137,26 +137,26 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 	if sz >= 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(sz, 10))
 	} else {
-		s.Log.Infof("Unknown file size for %q, boot will be VERY slow (can your Booter provide file sizes?)", name)
+		s.Log.Info("Unknown file size, boot will be VERY slow (can your Booter provide file sizes?)", "name", name)
 	}
 	if _, err = io.Copy(w, f); err != nil {
-		s.Log.Infof("Copy of %q to %s (query %q) failed: %s", name, r.RemoteAddr, r.URL, err)
+		s.Log.Info("Copy failed", "name", name, "remoteaddr", r.RemoteAddr, "url", r.URL, "error", err)
 		return
 	}
-	s.Log.Infof("Sent file %q to %s", name, r.RemoteAddr)
+	s.Log.Info("Sent file", "name", name, "remoteaddr", r.RemoteAddr)
 
 	switch r.URL.Query().Get("type") {
 	case "kernel":
 		mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
 		if err != nil {
-			s.Log.Infof("File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
+			s.Log.Info("File fetch provided invalid MAC address", "mac", r.URL.Query().Get("mac"))
 			return
 		}
 		s.machineEvent(mac, machineStateKernel, "Sent kernel %q", name)
 	case "initrd":
 		mac, err := net.ParseMAC(r.URL.Query().Get("mac"))
 		if err != nil {
-			s.Log.Infof("File fetch provided invalid MAC address %q", r.URL.Query().Get("mac"))
+			s.Log.Info("File fetch provided invalid MAC address", "mac", r.URL.Query().Get("mac"))
 			return
 		}
 		s.machineEvent(mac, machineStateInitrd, "Sent initrd %q", name)
@@ -171,12 +171,12 @@ func (s *Server) handleBooting(w http.ResponseWriter, r *http.Request) {
 
 	macStr := r.URL.Query().Get("mac")
 	if macStr == "" {
-		s.Log.Debugf("Bad request %q from %s, missing MAC address", r.URL, r.RemoteAddr)
+		s.Log.Debug("Bad request, missing MAC address", "url", r.URL, "remoteaddr", r.RemoteAddr)
 		return
 	}
 	mac, err := net.ParseMAC(macStr)
 	if err != nil {
-		s.Log.Debugf("Bad request %q from %s, invalid MAC address %q (%s)", r.URL, r.RemoteAddr, macStr, err)
+		s.Log.Debug("Bad request, invalid MAC address", "url", r.URL, "remoteaddr", r.RemoteAddr, "mac", macStr, "error", err)
 		return
 	}
 	s.machineEvent(mac, machineStateBooted, "Booting into OS")
@@ -225,7 +225,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
 	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
 	if err != nil {
-		s.Log.Errorw("handleCerts unable to marshal grpc config", "error", err)
+		s.Log.Error("handleCerts unable to marshal grpc config", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -233,7 +233,7 @@ func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
 	if err != nil {
-		s.Log.Errorw("handleCerts unable to write grpc config to response", "error", err)
+		s.Log.Error("handleCerts unable to write grpc config to response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

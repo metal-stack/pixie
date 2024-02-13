@@ -2,11 +2,11 @@ package pixiecore
 
 import (
 	"encoding/binary"
+	"log/slog"
 	"net"
 	"time"
 
 	"github.com/metal-stack/pixie/dhcp6"
-	"go.uber.org/zap"
 )
 
 // ServerV6 boots machines using a Booter.
@@ -21,7 +21,7 @@ type ServerV6 struct {
 
 	errs chan error
 
-	Log *zap.SugaredLogger
+	Log *slog.Logger
 }
 
 // NewServerV6 returns a new ServerV6.
@@ -35,14 +35,14 @@ func NewServerV6() *ServerV6 {
 // Serve listens for machines attempting to boot, and responds to
 // their DHCPv6 requests.
 func (s *ServerV6) Serve() error {
-	s.log("dhcp", "starting...")
+	s.Log.Info("starting...")
 
 	dhcp, err := dhcp6.NewConn(s.Address, s.Port)
 	if err != nil {
 		return err
 	}
 
-	s.debug("dhcp", "new connection...")
+	s.Log.Debug("new connection...")
 
 	// 5 buffer slots, one for each goroutine, plus one for
 	// Shutdown(). We only ever pull the first error out, but shutdown
@@ -59,7 +59,7 @@ func (s *ServerV6) Serve() error {
 	err = <-s.errs
 	dhcp.Close()
 
-	s.log("dhcp", "stopped...")
+	s.Log.Info("stopped...")
 	return err
 }
 
@@ -69,17 +69,6 @@ func (s *ServerV6) Shutdown() {
 	case s.errs <- nil:
 	default:
 	}
-}
-
-func (s *ServerV6) log(subsystem, format string) {
-	if s.Log == nil {
-		return
-	}
-	s.Log.Named(subsystem).Infof(format)
-}
-
-func (s *ServerV6) debug(subsystem, format string) {
-	s.Log.Named(subsystem).Debugf(format)
 }
 
 func (s *ServerV6) setDUID(addr net.HardwareAddr) {

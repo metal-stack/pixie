@@ -17,19 +17,18 @@ package cli // import "github.com/metal-stack/pixie/cli"
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
-// Ipxe is the set of ipxe binaries for supported firmwares.
+// Ipxe is the set of ipxe binaries for supported firmware.
 //
 // Can be set externally before calling CLI(), and set/extended by
-// commandline processing in CLI().
+// command line processing in CLI().
 var Ipxe = map[pixiecore.Firmware][]byte{}
 
 // CLI runs the Pixiecore commandline.
@@ -133,14 +132,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if httpPort <= 0 {
 		fatalf("HTTP port must be >0")
 	}
-	log, err := getLogger(debug)
-	if err != nil {
-		fatalf("Error creating logging: %s", err)
-	}
 
 	ret := &pixiecore.Server{
 		Ipxe:           map[pixiecore.Firmware][]byte{},
-		Log:            log,
+		Log:            getLogger(debug).WithGroup("dhcp"),
 		HTTPPort:       httpPort,
 		HTTPStatusPort: httpStatusPort,
 		MetricsPort:    metricsPort,
@@ -170,18 +165,14 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	return ret
 }
 
-func getLogger(debug bool) (*zap.SugaredLogger, error) {
-	cfg := zap.NewProductionConfig()
-	level := zap.InfoLevel
-	if debug {
-		level = zap.DebugLevel
+func getLogger(debug bool) *slog.Logger {
+	opts := &slog.HandlerOptions{
+		Level:     slog.LevelInfo,
+		AddSource: debug,
 	}
-	cfg.Level = zap.NewAtomicLevelAt(level)
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	zlog, err := cfg.Build()
-	if err != nil {
-		return nil, err
+	if debug {
+		opts.Level = slog.LevelDebug
 	}
 
-	return zlog.Sugar(), nil
+	return slog.New(slog.NewJSONHandler(os.Stdout, opts))
 }

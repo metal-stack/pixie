@@ -44,28 +44,28 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 
 		pkt, err := dhcp4.Unmarshal(buf[:n])
 		if err != nil {
-			s.Log.Debugf("Packet from %s is not a DHCP packet: %s", addr, err)
+			s.Log.Debug("Packet is not a DHCP packet", "addr", addr, "error", err)
 			continue
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {
-			s.Log.Debugf("Ignoring packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Debug("Ignoring packet", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
 		}
 		fwtype, err := s.validatePXE(pkt)
 		if err != nil {
-			s.Log.Infof("Unusable packet from %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Info("Unusable packet", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
 			continue
 		}
 
 		intf, err := net.InterfaceByIndex(msg.IfIndex)
 		if err != nil {
-			s.Log.Infof("Couldn't get information about local network interface %d: %s", msg.IfIndex, err)
+			s.Log.Info("Couldn't get information about local network interface", "ifindex", msg.IfIndex, "error", err)
 			continue
 		}
 
 		serverIP, err := interfaceIP(intf)
 		if err != nil {
-			s.Log.Infof("Want to boot %s (%s) on %s, but couldn't get a source address: %s", pkt.HardwareAddr, addr, intf.Name, err)
+			s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "addr", addr, "interface", intf.Name, "error", err)
 			continue
 		}
 
@@ -75,14 +75,14 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 
 		bs, err := resp.Marshal()
 		if err != nil {
-			s.Log.Infof("Failed to marshal PXE offer for %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Info("Failed to marshal PXE offer", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
 			continue
 		}
 
 		if _, err := l.WriteTo(bs, &ipv4.ControlMessage{
 			IfIndex: msg.IfIndex,
 		}, addr); err != nil {
-			s.Log.Infof("Failed to send PXE response to %s (%s): %s", pkt.HardwareAddr, addr, err)
+			s.Log.Info("Failed to send PXE response", "mac", pkt.HardwareAddr, "to", addr, "error", err)
 		}
 	}
 }
