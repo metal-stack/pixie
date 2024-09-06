@@ -12,6 +12,7 @@ type MetalConfig struct {
 	HMAC        string `json:"hmac,omitempty"`
 	// Logging contains logging configurations passed to metal-hammer
 	Logging *Logging `json:"logging,omitempty"`
+	NTPConfig NTPConfig
 }
 
 type Logging struct {
