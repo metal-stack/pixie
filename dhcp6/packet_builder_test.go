@@ -2,7 +2,7 @@ package dhcp6
 
 import (
 	"encoding/binary"
-	"fmt"
+	"errors"
 	"net"
 	"testing"
 )
@@ -144,7 +144,7 @@ func TestMakeNoAddrsAvailable(t *testing.T) {
 
 	builder := MakePacketBuilder(90, 100)
 
-	msg := builder.makeMsgAdvertiseWithNoAddrsAvailable(transactionID, expectedServerID, expectedClientID, fmt.Errorf(expectedMessage))
+	msg := builder.makeMsgAdvertiseWithNoAddrsAvailable(transactionID, expectedServerID, expectedClientID, errors.New(expectedMessage))
 
 	if msg.Type != MsgAdvertise {
 		t.Fatalf("Expected message type %d, got %d", MsgAdvertise, msg.Type)
@@ -306,7 +306,7 @@ func TestMakeMsgReplyWithNoAddrsAvailable(t *testing.T) {
 
 	msg := builder.makeMsgReply(transactionID, expectedServerID, expectedClientID, 0x10,
 		[]*IdentityAssociation{identityAssociation}, [][]byte{[]byte("id-2")}, expectedBootFileURL, []net.IP{},
-		fmt.Errorf(expectedErrorMessage))
+		errors.New(expectedErrorMessage))
 
 	iaNaOption := msg.Options[OptIaNa]
 	if iaNaOption == nil {
