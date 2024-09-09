@@ -124,7 +124,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	}
 
 	spec, err := bootSpec(g.key, g.urlPrefix, r)
-	g.log.Info("bootspec", "return spec", spec)
+	g.log.Info("bootspec", "raw spec", r, "return spec", spec)
 	return spec, err
 }
 
