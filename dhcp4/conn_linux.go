@@ -52,7 +52,7 @@ func newLinuxConn(port int) (conn, error) {
 		// Get UDP dport
 		bpf.LoadIndirect{Off: 2, Size: 2},
 		// Correct dport?
-		bpf.JumpIf{Cond: bpf.JumpEqual, Val: uint32(port), SkipFalse: 1},
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: uint32(port), SkipFalse: 1}, // nolint:gosec
 		// Accept
 		bpf.RetConstant{Val: 1500},
 		// Ignore
@@ -81,7 +81,7 @@ func newLinuxConn(port int) (conn, error) {
 	}
 
 	ret := &linuxConn{
-		port: uint16(port),
+		port: uint16(port), // nolint:gosec
 		conn: r,
 	}
 	return ret, nil
@@ -108,9 +108,9 @@ func (c *linuxConn) Send(b []byte, addr *net.UDPAddr, ifidx int) error {
 	// src port
 	binary.BigEndian.PutUint16(raw[:2], c.port)
 	// dst port
-	binary.BigEndian.PutUint16(raw[2:4], uint16(addr.Port))
+	binary.BigEndian.PutUint16(raw[2:4], uint16(addr.Port)) // nolint:gosec
 	// length
-	binary.BigEndian.PutUint16(raw[4:6], uint16(8+len(b)))
+	binary.BigEndian.PutUint16(raw[4:6], uint16(8+len(b))) // nolint:gosec
 	copy(raw[8:], b)
 
 	hdr := ipv4.Header{

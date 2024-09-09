@@ -8,7 +8,7 @@ import (
 
 func TestMarshalOption(t *testing.T) {
 	expectedURL := []byte("http://blah")
-	expectedLength := uint16(len(expectedURL))
+	expectedLength := uint16(len(expectedURL)) // nolint:gosec
 	opt := &Option{ID: OptBootfileURL, Length: expectedLength, Value: expectedURL}
 
 	marshalled, err := opt.Marshal()
@@ -85,7 +85,7 @@ func TestMakeStatusOption(t *testing.T) {
 	if noAddrOption.ID != OptStatusCode {
 		t.Fatalf("Expected option id %d, got %d", OptStatusCode, noAddrOption.ID)
 	}
-	if noAddrOption.Length != uint16(2+len(expectedMessage)) {
+	if noAddrOption.Length != uint16(2+len(expectedMessage)) { // nolint:gosec
 		t.Fatalf("Expected option length of %d, got %d", 2+len(expectedMessage), noAddrOption.Length)
 	}
 	if binary.BigEndian.Uint16(noAddrOption.Value[0:2]) != expectedStatusCode {

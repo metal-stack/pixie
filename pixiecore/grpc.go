@@ -1,7 +1,6 @@
 package pixiecore
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -49,13 +48,9 @@ func NewGrpcClient(log *slog.Logger, config *api.MetalConfig) (*GrpcClient, erro
 	grpcOpts := []grpc.DialOption{
 		grpc.WithKeepaliveParams(kacp),
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithBlock(),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, config.GRPCAddress, grpcOpts...)
+	conn, err := grpc.NewClient(config.GRPCAddress, grpcOpts...)
 	if err != nil {
 		return nil, err
 	}

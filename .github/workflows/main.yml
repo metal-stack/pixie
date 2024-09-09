@@ -31,14 +31,18 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
 
-    - name: Set up Go 1.22
-      uses: actions/setup-go@v4
+    - name: Set up Go 1.23
+      uses: actions/setup-go@v5
       with:
-        go-version: "1.22"
+        go-version: "1.23"
         cache: false
 
+    - name: make ipxe
+      run: |
+        make ipxe
+
     - name: Lint
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v6
       with:
         args: -p bugs -p unused --timeout=3m
 
@@ -49,7 +53,7 @@ jobs:
         [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "tag=latest" >> $GITHUB_ENV || true
 
     - name: Build and push image
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         context: .
         push: true

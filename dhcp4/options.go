@@ -146,7 +146,7 @@ func (o Options) Copy() Options {
 func (o Options) marshalLimited(w io.Writer, nBytes int, skip52 bool) (Options, error) {
 	ks := make([]int, 0, len(o))
 	for n := range o {
-		if n <= 0 || n >= 255 {
+		if n <= 0 || n >= 255 { // nolint:staticcheck
 			return nil, fmt.Errorf("invalid DHCP option number %d", n)
 		}
 		ks = append(ks, int(n))
@@ -250,7 +250,7 @@ func (o Options) Int32(n Option) (int32, error) {
 	if len(bs) != 4 {
 		return 0, errOptionWrongSize
 	}
-	return int32(binary.BigEndian.Uint32(bs)), nil
+	return int32(binary.BigEndian.Uint32(bs)), nil // nolint:gosec
 }
 
 // IPs returns the value of option n as a list of IPv4 addresses.
