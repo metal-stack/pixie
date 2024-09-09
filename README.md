@@ -22,4 +22,5 @@ docker run -it --rm -name pixiecore \
         --metal-api-url https://api.metal-stack.io/metal \
         --metal-api-view-hmac a-view-hmac \
         --partition partition-1
+        --ntp-config ['0.custom.ntp', '1.custom.ntp']
 ```
