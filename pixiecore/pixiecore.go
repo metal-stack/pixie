@@ -77,6 +77,10 @@ type Machine struct {
 	GUID string
 }
 
+func (m Machine) String() string {
+	return fmt.Sprintf("mac:%s arch:%s guid:%s", m.MAC.String(), m.Arch.String(), m.GUID)
+}
+
 // A Spec describes a kernel and associated configuration.
 type Spec struct {
 	// The kernel to boot
@@ -258,7 +262,7 @@ func (s *Server) Serve() error {
 	// blocking.
 	s.errs = make(chan error, 6)
 
-	s.Log.Debug("Starting Pixiecore goroutines", "version", v.V)
+	s.Log.Debug("Starting Pixiecore goroutines", "version", v.V.String())
 
 	go func() { s.errs <- s.serveDHCP(dhcp) }()
 	go func() { s.errs <- s.servePXE(pxe) }()

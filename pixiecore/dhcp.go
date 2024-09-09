@@ -55,7 +55,7 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 			continue
 		}
 
-		s.Log.Info("Offering to boot", "mac", pkt.HardwareAddr)
+		s.Log.Info("Offering to boot", "mac", pkt.HardwareAddr.String())
 		if fwtype == FirmwarePixiecoreIpxe {
 			s.machineEvent(pkt.HardwareAddr, machineStateProxyDHCPIpxe, "Offering to boot iPXE")
 		} else {

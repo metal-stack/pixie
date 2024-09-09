@@ -66,7 +66,7 @@ type Option struct {
 
 // MakeOption creates an Option with given ID and value
 func MakeOption(id uint16, value []byte) *Option {
-	return &Option{ID: id, Length: uint16(len(value)), Value: value}
+	return &Option{ID: id, Length: uint16(len(value)), Value: value} // nolint:gosec
 }
 
 // Options contains all options of a DHCPv6 packet

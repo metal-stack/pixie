@@ -8,7 +8,7 @@ import (
 func TestShouldDiscardSolicitWithoutBootfileUrlOption(t *testing.T) {
 	clientID := []byte("clientid")
 	options := make(Options)
-	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID})
+	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID}) // nolint:gosec
 	solicit := &Packet{Type: MsgSolicit, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardSolicit(solicit); err == nil {
@@ -31,8 +31,8 @@ func TestShouldDiscardSolicitWithServerIdOption(t *testing.T) {
 	clientID := []byte("clientid")
 	options := make(Options)
 	options.Add(MakeOptionRequestOptions([]uint16{OptBootfileURL}))
-	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID})
-	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID})
+	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID}) // nolint:gosec
+	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID}) // nolint:gosec
 	solicit := &Packet{Type: MsgSolicit, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardSolicit(solicit); err == nil {
@@ -44,8 +44,8 @@ func TestShouldDiscardRequestWithoutBootfileUrlOption(t *testing.T) {
 	serverID := []byte("serverid")
 	clientID := []byte("clientid")
 	options := make(Options)
-	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID})
-	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID})
+	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID}) // nolint:gosec
+	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID}) // nolint:gosec
 	request := &Packet{Type: MsgRequest, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardRequest(request, serverID); err == nil {
@@ -57,7 +57,7 @@ func TestShouldDiscardRequestWithoutClientIdOption(t *testing.T) {
 	serverID := []byte("serverid")
 	options := make(Options)
 	options.Add(MakeOptionRequestOptions([]uint16{OptBootfileURL}))
-	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID})
+	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID}) // nolint:gosec
 	request := &Packet{Type: MsgRequest, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardRequest(request, serverID); err == nil {
@@ -69,7 +69,7 @@ func TestShouldDiscardRequestWithoutServerIdOption(t *testing.T) {
 	clientID := []byte("clientid")
 	options := make(Options)
 	options.Add(MakeOptionRequestOptions([]uint16{OptBootfileURL}))
-	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID})
+	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID}) // nolint:gosec
 	request := &Packet{Type: MsgRequest, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardRequest(request, []byte("serverid")); err == nil {
@@ -82,8 +82,8 @@ func TestShouldDiscardRequestWithWrongServerId(t *testing.T) {
 	serverID := []byte("serverid")
 	options := make(Options)
 	options.Add(MakeOptionRequestOptions([]uint16{OptBootfileURL}))
-	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID})
-	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID})
+	options.Add(&Option{ID: OptClientID, Length: uint16(len(clientID)), Value: clientID}) // nolint:gosec
+	options.Add(&Option{ID: OptServerID, Length: uint16(len(serverID)), Value: serverID}) // nolint:gosec
 	request := &Packet{Type: MsgRequest, TransactionID: [3]byte{'1', '2', '3'}, Options: options}
 
 	if err := shouldDiscardRequest(request, []byte("wrongid")); err == nil {
@@ -97,5 +97,5 @@ func MakeOptionRequestOptions(options []uint16) *Option {
 		binary.BigEndian.PutUint16(value[i*2:], option)
 	}
 
-	return &Option{ID: OptOro, Length: uint16(len(options) * 2), Value: value}
+	return &Option{ID: OptOro, Length: uint16(len(options) * 2), Value: value} // nolint:gosec
 }
