@@ -80,7 +80,7 @@ type grpcbooter struct {
 
 // BootSpec implements Booter
 func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
-	g.log.Info("bootspec", "machine", m)
+	g.log.Info("bootspec", "machine", m.String())
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

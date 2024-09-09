@@ -77,6 +77,10 @@ type Machine struct {
 	GUID string
 }
 
+func (m Machine) String() string {
+	return fmt.Sprintf("mac:%s arch:%s guid:%s", m.MAC.String(), m.Arch.String(), m.GUID)
+}
+
 // A Spec describes a kernel and associated configuration.
 type Spec struct {
 	// The kernel to boot
