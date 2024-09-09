@@ -10,7 +10,7 @@ type MetalConfig struct {
 	Cert        string   `json:"cert,omitempty"`
 	Key         string   `json:"key,omitempty"`
 	HMAC        string   `json:"hmac,omitempty"`
-	NTPConfig   []string `json:"ntp_config,omitempty"`
+	NTPServers  []string `json:"ntp_servers,omitempty"`
 	// Logging contains logging configurations passed to metal-hammer
 	Logging *Logging `json:"logging,omitempty"`
 }

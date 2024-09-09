@@ -74,7 +74,7 @@ func init() {
 	grpcCmd.Flags().String("grpc-address", "", "address of the grpc server")
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
-	grpcCmd.Flags().String("ntp-config", "", "ntp configuration")
+	grpcCmd.Flags().String("ntp-servers", "", "custom ntp servers")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 
 	// metal-hammer remote logging configuration
@@ -139,7 +139,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse pixie-api-url: %w", err)
 	}
-	ntpConfig, err := cmd.Flags().GetStringSlice("ntp-config")
+	ntpServers, err := cmd.Flags().GetStringSlice("ntp-servers")
 	if err != nil {
 		return nil, fmt.Errorf("unable reading flag: %w", err)
 	}
@@ -224,7 +224,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		Cert:        string(clientCert),
 		Key:         string(clientKey),
 		HMAC:        hmac,
-		NTPConfig:   ntpConfig,
+		NTPServers:  ntpServers,
 		Logging:     logging,
 	}, nil
 }
