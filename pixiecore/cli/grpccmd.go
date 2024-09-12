@@ -74,7 +74,7 @@ func init() {
 	grpcCmd.Flags().String("grpc-address", "", "address of the grpc server")
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
-	grpcCmd.Flags().String("ntp-servers", "", "custom ntp servers")
+	grpcCmd.Flags().StringSlice("ntp-servers", nil, "custom ntp servers")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 
 	// metal-hammer remote logging configuration
