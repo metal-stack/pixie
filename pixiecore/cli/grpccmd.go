@@ -141,7 +141,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	}
 	ntpServers, err := cmd.Flags().GetStringSlice("ntp-servers")
 	if err != nil {
-		return nil, fmt.Errorf("unable reading flag: %w", err)
+		return nil, fmt.Errorf("unable reading ntp-servers flag: %w", err)
 	}
 	metalHammerDebug, err := cmd.Flags().GetBool("metal-hammer-debug")
 	if err != nil {
