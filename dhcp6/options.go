@@ -274,7 +274,7 @@ func (o Options) HasServerID() bool {
 	return present
 }
 
-// HasIaNa returns true oif Options contains Identity Association for Non-Temporary Addresses Option
+// HasIaNa returns true if Options contains Identity Association for Non-Temporary Addresses Option
 func (o Options) HasIaNa() bool {
 	_, present := o[OptIaNa]
 	return present
