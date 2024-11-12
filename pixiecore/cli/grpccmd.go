@@ -147,6 +147,10 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
+	partition, err := cmd.Flags().GetString("partition")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
 
 	// Log forwarding for the metal-hammer
 	metalHammerLoggingEndpoint, err := cmd.Flags().GetString("metal-hammer-logging-endpoint")
@@ -226,5 +230,6 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		HMAC:        hmac,
 		NTPServers:  ntpServers,
 		Logging:     logging,
+		Partition:   partition,
 	}, nil
 }

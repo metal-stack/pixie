@@ -39,7 +39,7 @@ func (b *PacketBuilder) BuildResponse(in *Packet, serverDUID []byte, configurati
 		}
 		associations, err := addresses.ReserveAddresses(in.Options.ClientID(), in.Options.IaNaIDs())
 		return b.makeMsgReply(in.TransactionID, serverDUID, in.Options.ClientID(),
-			in.Options.ClientArchType(), associations, iasWithoutAddesses(associations, in.Options.IaNaIDs()), bootFileURL,
+			in.Options.ClientArchType(), associations, iasWithoutAddresses(associations, in.Options.IaNaIDs()), bootFileURL,
 			configuration.GetRecursiveDNS(), err), err
 	case MsgInformationRequest:
 		bootFileURL, err := configuration.GetBootURL(b.extractLLAddressOrID(in.Options.ClientID()), in.Options.ClientArchType())
@@ -159,7 +159,7 @@ func (b *PacketBuilder) extractLLAddressOrID(optClientID []byte) []byte {
 	}
 }
 
-func iasWithoutAddesses(availableAssociations []*IdentityAssociation, allIAs [][]byte) [][]byte {
+func iasWithoutAddresses(availableAssociations []*IdentityAssociation, allIAs [][]byte) [][]byte {
 	ret := make([][]byte, 0)
 	iasWithAddresses := make(map[uint64]bool)
 

@@ -283,10 +283,8 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 			return nil, -1, fmt.Errorf("GET %q failed: %s", urlStr, resp.Status)
 		}
 
-		ret, sz, err = resp.Body, resp.ContentLength, nil
-		if err != nil {
-			return nil, -1, err
-		}
+		ret = resp.Body
+		sz = resp.ContentLength
 	}
 	return ret, sz, nil
 }

@@ -11,6 +11,7 @@ type MetalConfig struct {
 	Key         string   `json:"key,omitempty"`
 	HMAC        string   `json:"hmac,omitempty"`
 	NTPServers  []string `json:"ntp_servers,omitempty"`
+	Partition   string   `json:"partition"`
 	// Logging contains logging configurations passed to metal-hammer
 	Logging *Logging `json:"logging,omitempty"`
 }
