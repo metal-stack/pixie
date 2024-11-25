@@ -188,6 +188,10 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 		resp.Options[dhcp4.OptAgentInformation] = pkt.Options[dhcp4.OptAgentInformation]
 	}
 
+	if pkt.Options[dhcp4.OptRouters] != nil {
+		resp.Options[dhcp4.OptRouters] = pkt.Options[dhcp4.OptRouters]
+	}
+
 	switch fwtype {
 	case FirmwareX86PC:
 		// This is completely standard PXE: we tell the PXE client to
