@@ -177,12 +177,6 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 	}
 	resp.Options[dhcp4.OptRouters] = pkt.RelayAddr
 	resp.Options[dhcp4.OptServerIdentifier] = serverIP
-	// says the server should identify itself as a PXEClient vendor
-	// type, even though it's a server. Strange.
-	resp.Options[dhcp4.OptVendorIdentifier] = []byte("PXEClient")
-	if pkt.Options[97] != nil {
-		resp.Options[97] = pkt.Options[97]
-	}
 
 	// https://www.rfc-editor.org/rfc/rfc3046.html#section-2.2
 	if pkt.Options[dhcp4.OptAgentInformation] != nil {
