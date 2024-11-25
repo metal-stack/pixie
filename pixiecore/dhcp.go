@@ -184,9 +184,9 @@ func (s *Server) offerDHCP(pkt *dhcp4.Packet, mach Machine, serverIP net.IP, fwt
 	}
 
 	// https://www.rfc-editor.org/rfc/rfc3046.html#section-2.2
-	if pkt.Options[dhcp4.OptAgentInformation] != nil {
-		resp.Options[dhcp4.OptAgentInformation] = pkt.Options[dhcp4.OptAgentInformation]
-	}
+	// if pkt.Options[dhcp4.OptAgentInformation] != nil {
+	// 	resp.Options[dhcp4.OptAgentInformation] = pkt.Options[dhcp4.OptAgentInformation]
+	// }
 
 	switch fwtype {
 	case FirmwareX86PC:
