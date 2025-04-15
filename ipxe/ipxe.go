@@ -7,8 +7,8 @@ import (
 )
 
 // Files to embed get created during make ipxe
-// nolint:typecheck
 //
+//nolint:typecheck
 //go:embed ipxe/bin
 var payload embed.FS
 
