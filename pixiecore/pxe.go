@@ -50,11 +50,11 @@ func (s *Server) servePXE(conn net.PacketConn, fixedServerIP *net.IP) error {
 		}
 
 		if err = s.isBootDHCP(pkt); err != nil {
-			s.Log.Debug("Ignoring packet", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
+			s.Log.Debug("Ignoring packet", "mac", pkt.HardwareAddr.String(), "addr", addr, "error", err)
 		}
 		fwtype, err := s.validatePXE(pkt)
 		if err != nil {
-			s.Log.Info("Unusable packet", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
+			s.Log.Info("Unusable packet", "mac", pkt.HardwareAddr.String(), "addr", addr, "error", err)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func (s *Server) servePXE(conn net.PacketConn, fixedServerIP *net.IP) error {
 		} else {
 			serverIP, err = interfaceIP(intf)
 			if err != nil {
-				s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "addr", addr, "interface", intf.Name, "error", err)
+				s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr.String(), "addr", addr, "interface", intf.Name, "error", err)
 				continue
 			}
 		}
@@ -81,7 +81,7 @@ func (s *Server) servePXE(conn net.PacketConn, fixedServerIP *net.IP) error {
 
 		bs, err := resp.Marshal()
 		if err != nil {
-			s.Log.Info("Failed to marshal PXE offer", "mac", pkt.HardwareAddr, "addr", addr, "error", err)
+			s.Log.Info("Failed to marshal PXE offer", "mac", pkt.HardwareAddr.String(), "addr", addr, "error", err)
 			continue
 		}
 
