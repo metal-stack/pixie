@@ -37,10 +37,6 @@ jobs:
         go-version: "1.23"
         cache: false
 
-    - name: make ipxe
-      run: |
-        make ipxe
-
     - name: Lint
       uses: golangci/golangci-lint-action@v6
       with:
