@@ -18,11 +18,13 @@ package cli // import "github.com/metal-stack/pixie/cli"
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 
-	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/metal-stack/pixie/pixiecore"
 )
 
 // Ipxe is the set of ipxe binaries for supported firmware.
@@ -63,6 +65,7 @@ func fatalf(msg string, args ...any) {
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
+	cmd.Flags().String("server-ip", "", "Source IP of the DHCP responses")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().String("metrics-listen-addr", "0.0.0.0", "IPv4 address of the metrics server to listen on")
 	cmd.Flags().Int("metrics-port", 2113, "Metrics server port")
@@ -89,6 +92,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		fatalf("Error reading flag: %s", err)
 	}
 	addr, err := cmd.Flags().GetString("listen-addr")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
+	serverIP, err := cmd.Flags().GetString("server-ip")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
@@ -141,6 +148,20 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		MetricsPort:    metricsPort,
 		MetricsAddress: metricsAddr,
 		DHCPNoBind:     dhcpNoBind,
+	}
+	if serverIP != "" {
+		ip := net.ParseIP(serverIP)
+		if ip == nil {
+			fatalf("Error: serverIP %q is not a valid IP address", serverIP)
+		}
+
+		// Check specifically for IPv4 address
+		ipv4 := ip.To4()
+		if ipv4 == nil {
+			fatalf("Error: serverIP %q is not a valid IPv4 address", serverIP)
+		}
+
+		ret.ServerIP = &ipv4
 	}
 	for fwtype, bs := range Ipxe {
 		ret.Ipxe[fwtype] = bs

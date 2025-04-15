@@ -37,9 +37,10 @@ jobs:
         go-version: "1.23"
         cache: false
 
-    - name: make ipxe
+    - name: fake ipxe/bin for linter
       run: |
-        make ipxe
+        mkdir -p ipxe/ipxe/bin
+        touch ipxe/ipxe/bin/empty
 
     - name: Lint
       uses: golangci/golangci-lint-action@v6

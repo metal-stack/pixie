@@ -26,10 +26,11 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -174,6 +175,9 @@ type Server struct {
 	// HTTPPort.
 	HTTPStatusPort int
 
+	// Source IP of DHCP responses.
+	ServerIP *net.IP
+
 	// MetricsPort is the port of the metrics server.
 	MetricsPort int
 	// MetricsAddress is the bind address that the metrics server listens on.
@@ -264,8 +268,8 @@ func (s *Server) Serve() error {
 
 	s.Log.Debug("Starting Pixiecore goroutines", "version", v.V.String())
 
-	go func() { s.errs <- s.serveDHCP(dhcp) }()
-	go func() { s.errs <- s.servePXE(pxe) }()
+	go func() { s.errs <- s.serveDHCP(dhcp, s.ServerIP) }()
+	go func() { s.errs <- s.servePXE(pxe, s.ServerIP) }()
 	go func() { s.errs <- s.serveTFTP(tftpAddr) }()
 	go func() { s.errs <- serveHTTP(http, s.serveHTTP) }()
 	go func() { s.errs <- serveHTTP(metrics, s.serveMetrics) }()
