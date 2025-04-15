@@ -22,7 +22,7 @@ import (
 	"github.com/metal-stack/pixie/dhcp4"
 )
 
-func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
+func (s *Server) serveDHCP(conn *dhcp4.Conn, fixedServerIP *net.IP) error {
 	for {
 		pkt, intf, err := conn.RecvDHCP()
 		if err != nil {
@@ -63,10 +63,15 @@ func (s *Server) serveDHCP(conn *dhcp4.Conn) error {
 		}
 
 		// Machine should be booted.
-		serverIP, err := interfaceIP(intf)
-		if err != nil {
-			s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "interface", intf.Name, "error", err)
-			continue
+		var serverIP net.IP
+		if fixedServerIP != nil {
+			serverIP = *fixedServerIP
+		} else {
+			serverIP, err = interfaceIP(intf)
+			if err != nil {
+				s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "interface", intf.Name, "error", err)
+				continue
+			}
 		}
 
 		resp, err := s.offerDHCP(pkt, mach, serverIP, fwtype)

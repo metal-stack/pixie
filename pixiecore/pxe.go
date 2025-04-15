@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/metal-stack/pixie/dhcp4"
 	"golang.org/x/net/ipv4"
+
+	"github.com/metal-stack/pixie/dhcp4"
 )
 
 // TODO: this may actually be the BINL protocol, a
@@ -29,7 +30,7 @@ import (
 // TianoCore EDK2 source code to figure out if what this is doing is
 // actually BINL, and if so rename everything.
 
-func (s *Server) servePXE(conn net.PacketConn) error {
+func (s *Server) servePXE(conn net.PacketConn, fixedServerIP *net.IP) error {
 	buf := make([]byte, 1024)
 	l := ipv4.NewPacketConn(conn)
 	if err := l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
@@ -63,10 +64,15 @@ func (s *Server) servePXE(conn net.PacketConn) error {
 			continue
 		}
 
-		serverIP, err := interfaceIP(intf)
-		if err != nil {
-			s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "addr", addr, "interface", intf.Name, "error", err)
-			continue
+		var serverIP net.IP
+		if fixedServerIP != nil {
+			serverIP = *fixedServerIP
+		} else {
+			serverIP, err = interfaceIP(intf)
+			if err != nil {
+				s.Log.Info("Want to boot, but couldn't get a source address", "mac", pkt.HardwareAddr, "addr", addr, "interface", intf.Name, "error", err)
+				continue
+			}
 		}
 
 		s.machineEvent(pkt.HardwareAddr, machineStatePXE, "Sent PXE configuration")
