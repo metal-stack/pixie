@@ -57,7 +57,7 @@ func (s *ServerV6) Serve() error {
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
-	dhcp.Close()
+	_ = dhcp.Close()
 
 	s.Log.Info("stopped...")
 	return err

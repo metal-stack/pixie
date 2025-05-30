@@ -210,10 +210,10 @@ func (o Options) Marshal() ([]byte, error) {
 		for _, o := range multipleOptions {
 			serialized, err := o.Marshal()
 			if err != nil {
-				return nil, fmt.Errorf("Error serializing option value: %w", err)
+				return nil, fmt.Errorf("error serializing option value: %w", err)
 			}
 			if err := binary.Write(buffer, binary.BigEndian, serialized); err != nil {
-				return nil, fmt.Errorf("Error serializing option value: %w", err)
+				return nil, fmt.Errorf("error serializing option value: %w", err)
 			}
 		}
 	}
@@ -226,15 +226,15 @@ func (o *Option) Marshal() ([]byte, error) {
 
 	err := binary.Write(buffer, binary.BigEndian, o.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Error serializing option id: %w", err)
+		return nil, fmt.Errorf("error serializing option id: %w", err)
 	}
 	err = binary.Write(buffer, binary.BigEndian, o.Length)
 	if err != nil {
-		return nil, fmt.Errorf("Error serializing option length: %w", err)
+		return nil, fmt.Errorf("error serializing option length: %w", err)
 	}
 	err = binary.Write(buffer, binary.BigEndian, o.Value)
 	if err != nil {
-		return nil, fmt.Errorf("Error serializing option value: %w", err)
+		return nil, fmt.Errorf("error serializing option value: %w", err)
 	}
 	return buffer.Bytes(), nil
 }
