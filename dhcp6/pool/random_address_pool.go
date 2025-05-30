@@ -134,7 +134,7 @@ func (p *RandomAddressPool) ReleaseAddresses(clientID []byte, interfaceIDs [][]b
 // expireIdentityAssociations releases IP addresses in identity associations that reached the end of valid lifetime
 // back into the address pool. Note it should be called from under the RandomAddressPool.lock.
 func (p *RandomAddressPool) expireIdentityAssociations() {
-	for p.identityAssociationExpirations.Size() < 1 {
+	for p.identityAssociationExpirations.Size() >= 1 {
 		expiration := p.identityAssociationExpirations.Peek().(*associationExpiration)
 		if p.timeNow().Before(expiration.expiresAt) {
 			break
