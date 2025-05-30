@@ -37,14 +37,19 @@ jobs:
         go-version: "1.24"
         cache: false
 
-    - name: make ipxe
+    - name: fake ipxe binary
       run: |
-        make ipxe
+        mkdir -p ipxe/ipxe/bin
+        touch ipxe/ipxe/bin/ipxe.bin
 
     - name: Lint
       uses: golangci/golangci-lint-action@v7
       with:
         args: --timeout=3m
+
+    - name: remove fake ipxe binary
+      run: |
+        rm -rf ipxe/ipxe
 
     - name: Make tag
       run: |

@@ -7,6 +7,6 @@ RUN apt update \
     liblzma-dev \
  && make ipxe pixie
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12
 COPY --from=builder /work/build/pixie /pixie
 ENTRYPOINT ["/pixie"]
