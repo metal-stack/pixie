@@ -229,7 +229,7 @@ func newPortableConn(port int) (conn, error) {
 	}
 	l := ipv4.NewPacketConn(c)
 	if err = l.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		l.Close()
+		_ = l.Close()
 		return nil, err
 	}
 	return &portableConn{l}, nil

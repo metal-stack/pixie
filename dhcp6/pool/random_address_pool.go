@@ -90,7 +90,7 @@ func (p *RandomAddressPool) ReserveAddresses(clientID []byte, interfaceIDs [][]b
 			continue
 		}
 		if uint64(len(p.usedIps)) == p.poolSize {
-			return ret, fmt.Errorf("No more free ip addresses are currently available in the pool")
+			return ret, fmt.Errorf("no more free ip addresses are currently available in the pool")
 		}
 
 		for {
@@ -134,10 +134,7 @@ func (p *RandomAddressPool) ReleaseAddresses(clientID []byte, interfaceIDs [][]b
 // expireIdentityAssociations releases IP addresses in identity associations that reached the end of valid lifetime
 // back into the address pool. Note it should be called from under the RandomAddressPool.lock.
 func (p *RandomAddressPool) expireIdentityAssociations() {
-	for {
-		if p.identityAssociationExpirations.Size() < 1 {
-			break
-		}
+	for p.identityAssociationExpirations.Size() >= 1 {
 		expiration := p.identityAssociationExpirations.Peek().(*associationExpiration)
 		if p.timeNow().Before(expiration.expiresAt) {
 			break

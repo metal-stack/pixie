@@ -36,7 +36,9 @@ func mustRead(f io.ReadCloser, sz int64, err error) string {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	bs, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)

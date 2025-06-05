@@ -235,20 +235,20 @@ func (s *Server) Serve() error {
 	}
 	pxe, err := net.ListenPacket("udp4", fmt.Sprintf("%s:%d", s.Address, s.PXEPort))
 	if err != nil {
-		dhcp.Close()
+		_ = dhcp.Close()
 		return err
 	}
 	http, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.Address, s.HTTPPort))
 	if err != nil {
-		dhcp.Close()
-		pxe.Close()
+		_ = dhcp.Close()
+		_ = pxe.Close()
 		return err
 	}
 	metrics, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.MetricsAddress, s.MetricsPort))
 	if err != nil {
-		dhcp.Close()
-		pxe.Close()
-		http.Close()
+		_ = dhcp.Close()
+		_ = pxe.Close()
+		_ = http.Close()
 		return err
 	}
 
@@ -272,10 +272,10 @@ func (s *Server) Serve() error {
 
 	// Wait for either a fatal error, or Shutdown().
 	err = <-s.errs
-	dhcp.Close()
-	pxe.Close()
-	http.Close()
-	metrics.Close()
+	_ = dhcp.Close()
+	_ = pxe.Close()
+	_ = http.Close()
+	_ = metrics.Close()
 	return err
 }
 

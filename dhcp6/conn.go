@@ -30,12 +30,12 @@ func NewConn(addr, port string) (*Conn, error) {
 	}
 	pc := ipv6.NewPacketConn(c)
 	if err := pc.JoinGroup(ifi, &net.UDPAddr{IP: group}); err != nil {
-		pc.Close()
+		_ = pc.Close()
 		return nil, err
 	}
 
 	if err := pc.SetControlMessage(ipv6.FlagSrc|ipv6.FlagDst, true); err != nil {
-		pc.Close()
+		_ = pc.Close()
 		return nil, err
 	}
 
@@ -57,12 +57,12 @@ func (c *Conn) Close() error {
 func InterfaceByAddress(ifAddr string) (*net.Interface, error) {
 	allIfis, err := net.Interfaces()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting network interface information: %w", err)
+		return nil, fmt.Errorf("error getting network interface information: %w", err)
 	}
 	for _, ifi := range allIfis {
 		addrs, err := ifi.Addrs()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting network interface address information: %w", err)
+			return nil, fmt.Errorf("error getting network interface address information: %w", err)
 		}
 		for _, addr := range addrs {
 			if addrToIP(addr).String() == ifAddr {
@@ -70,7 +70,7 @@ func InterfaceByAddress(ifAddr string) (*net.Interface, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("Couldn't find an interface with address %s", ifAddr)
+	return nil, fmt.Errorf("couldn't find an interface with address %s", ifAddr)
 }
 
 func addrToIP(a net.Addr) net.IP {
@@ -116,7 +116,7 @@ func (c *Conn) SendDHCP(dst net.IP, p []byte) error {
 	}
 	_, err := c.conn.WriteTo(p, nil, dstAddr)
 	if err != nil {
-		return fmt.Errorf("Error sending a reply to %s: %w", dst.String(), err)
+		return fmt.Errorf("error sending a reply to %s: %w", dst.String(), err)
 	}
 	return nil
 }

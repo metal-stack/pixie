@@ -1,5 +1,5 @@
 # be aware that bookworm has a newer gcc which can not compile the older ipxe
-FROM golang:1.23-bullseye as builder
+FROM golang:1.24-bullseye AS builder
 WORKDIR /work
 COPY . .
 RUN apt update \
@@ -7,7 +7,6 @@ RUN apt update \
     liblzma-dev \
  && make ipxe pixie
 
-FROM alpine:3.20
-RUN apk -U add ca-certificates
+FROM gcr.io/distroless/static-debian12
 COPY --from=builder /work/build/pixie /pixie
 ENTRYPOINT ["/pixie"]

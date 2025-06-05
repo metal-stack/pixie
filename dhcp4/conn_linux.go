@@ -68,15 +68,15 @@ func newLinuxConn(port int) (conn, error) {
 	}
 	r, err := ipv4.NewRawConn(c)
 	if err != nil {
-		c.Close()
+		_ = c.Close()
 		return nil, err
 	}
 	if err = r.SetControlMessage(ipv4.FlagInterface, true); err != nil {
-		c.Close()
+		_ = c.Close()
 		return nil, fmt.Errorf("setting packet filter: %w", err)
 	}
 	if err = r.SetBPF(filter); err != nil {
-		c.Close()
+		_ = c.Close()
 		return nil, fmt.Errorf("setting packet filter: %w", err)
 	}
 

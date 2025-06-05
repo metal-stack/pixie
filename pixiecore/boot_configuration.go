@@ -98,10 +98,12 @@ func (bc *APIBootConfiguration) GetBootURL(id []byte, clientArchType uint16) ([]
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("%s: %s", reqURL, http.StatusText(resp.StatusCode))
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp.Body)
