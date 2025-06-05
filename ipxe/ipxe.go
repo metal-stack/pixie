@@ -2,7 +2,6 @@ package ipxe
 
 import (
 	"embed"
-	_ "embed"
 	"path"
 )
 

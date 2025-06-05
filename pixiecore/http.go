@@ -133,7 +133,9 @@ func (s *Server) handleFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "couldn't get file", http.StatusInternalServerError)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	if sz >= 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(sz, 10))
 	} else {
@@ -167,7 +169,7 @@ func (s *Server) handleBooting(w http.ResponseWriter, r *http.Request) {
 	// Return a no-op boot script, to satisfy iPXE. It won't get used,
 	// the boot script deletes this image immediately after
 	// downloading.
-	fmt.Fprintf(w, "# Booting")
+	_, _ = fmt.Fprintf(w, "# Booting")
 
 	macStr := r.URL.Query().Get("mac")
 	if macStr == "" {

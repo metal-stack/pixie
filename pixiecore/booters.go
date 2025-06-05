@@ -147,7 +147,7 @@ func (b *apibooter) getAPIResponse(m Machine) (io.ReadCloser, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("%s: %s", reqURL, http.StatusText(resp.StatusCode))
 	}
 
@@ -157,7 +157,9 @@ func (b *apibooter) getAPIResponse(m Machine) (io.ReadCloser, error) {
 func (b *apibooter) BootSpec(m Machine) (*Spec, error) {
 	body, err := b.getAPIResponse(m)
 	if body != nil {
-		defer body.Close()
+		defer func() {
+			_ = body.Close()
+		}()
 	}
 	if err != nil {
 		return nil, err
@@ -267,7 +269,7 @@ func (b *apibooter) ReadBootFile(id ID) (io.ReadCloser, int64, error) {
 		}
 		fi, err := f.Stat()
 		if err != nil {
-			f.Close()
+			_ = f.Close()
 			return nil, -1, err
 		}
 		ret, sz = f, fi.Size()
@@ -302,7 +304,9 @@ func (b *apibooter) WriteBootFile(id ID, body io.Reader) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("POST %q failed: %s", u, resp.Status)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	return nil
 }
 

@@ -127,7 +127,7 @@ func TestPortableConn(t *testing.T) {
 	}
 	port := l.LocalAddr().(*net.UDPAddr).Port
 	addr := l.LocalAddr().String()
-	l.Close()
+	_ = l.Close()
 
 	c, err := newPortableConn(port)
 	if err != nil {
