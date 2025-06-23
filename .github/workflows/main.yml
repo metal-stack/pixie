@@ -43,7 +43,7 @@ jobs:
         touch ipxe/ipxe/bin/ipxe.bin
 
     - name: Lint
-      uses: golangci/golangci-lint-action@v7
+      uses: golangci/golangci-lint-action@v8
       with:
         args: --timeout=3m
 
