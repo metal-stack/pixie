@@ -44,10 +44,13 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("unable to create metal-api config: %s", err)
 		}
-		apiclient := client.New(client.DialConfig{
+		apiclient, err := client.New(&client.DialConfig{
 			BaseURL: metalAPIConfig.MetalAPIServerUrl,
 			Token:   metalAPIConfig.MetalAPIServerToken,
 		})
+		if err != nil {
+			fatalf("Error reading flag: %s", err)
+		}
 
 		partition, err := cmd.Flags().GetString("partition")
 		if err != nil {
