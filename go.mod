@@ -1,10 +1,10 @@
 module github.com/metal-stack/pixie
 
-go 1.25
+go 1.24.0
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/metal-stack/api v0.0.19-0.20250903124535-eeb8f8f82166
+	github.com/metal-stack/api v0.0.19-0.20250903125959-f9b69b1d5a71
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.1.0
 	github.com/prometheus/client_golang v1.23.0
