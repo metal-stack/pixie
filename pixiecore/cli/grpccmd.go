@@ -49,12 +49,12 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 			Token:   metalAPIConfig.MetalAPIServerToken,
 		})
 		if err != nil {
-			fatalf("Error reading flag: %s", err)
+			fatalf("error creating metal-apiserver client: %s", err)
 		}
 
 		partition, err := cmd.Flags().GetString("partition")
 		if err != nil {
-			fatalf("Error reading flag: %s", err)
+			fatalf("error reading flag: %s", err)
 		}
 		booter, err := pixiecore.GRPCBooter(s.Log, apiclient, partition, metalAPIConfig)
 		if err != nil {
