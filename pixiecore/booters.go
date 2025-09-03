@@ -92,6 +92,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		// Very first dhcp call which contains Machine UUID, tell metal-api this uuid
 		req := &infrav2.BootServiceDhcpRequest{
 			Uuid: string(m.GUID),
+			PartitionId: g.partition,
 		}
 		g.log.Info("dhcp", "req", req)
 		_, err := g.apiclient.Infrav2().Boot().Dhcp(ctx, connect.NewRequest(req))
@@ -107,7 +108,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			PartitionId: g.partition,
 		}
 		g.log.Info("boot", "req", req)
-		resp, err := g.apiclient.Infrav2().Boot().Boot(ctx, connect.NewRequest(&infrav2.BootServiceBootRequest{}))
+		resp, err := g.apiclient.Infrav2().Boot().Boot(ctx, connect.NewRequest(req))
 		if err != nil {
 			g.log.Error("boot", "error", err)
 			return nil, err
