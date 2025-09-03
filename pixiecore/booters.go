@@ -31,7 +31,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/metal-stack/api/go/client"
-	"github.com/metal-stack/api/go/metalstack/infra/v2"
+	infrav2 "github.com/metal-stack/api/go/metalstack/infra/v2"
 
 	"github.com/metal-stack/pixie/api"
 )
@@ -91,8 +91,8 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	if m.GUID != "" {
 		// Very first dhcp call which contains Machine UUID, tell metal-api this uuid
 		req := &infrav2.BootServiceDhcpRequest{
-			Uuid: string(m.GUID),
-			PartitionId: g.partition,
+			Uuid:      string(m.GUID),
+			Partition: g.partition,
 		}
 		g.log.Info("dhcp", "req", req)
 		_, err := g.apiclient.Infrav2().Boot().Dhcp(ctx, connect.NewRequest(req))
@@ -104,8 +104,8 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	} else {
 		// machine asks for a dhcp answer, ask metal-api for a proper response in this partition
 		req := &infrav2.BootServiceBootRequest{
-			Mac:         m.MAC.String(),
-			PartitionId: g.partition,
+			Mac:       m.MAC.String(),
+			Partition: g.partition,
 		}
 		g.log.Info("boot", "req", req)
 		resp, err := g.apiclient.Infrav2().Boot().Boot(ctx, connect.NewRequest(req))

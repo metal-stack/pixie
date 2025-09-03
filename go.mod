@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/metal-stack/api v0.0.19-0.20250903123459-76b300f1eee1
+	github.com/metal-stack/api v0.0.19-0.20250903124535-eeb8f8f82166
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.1.0
 	github.com/prometheus/client_golang v1.23.0
