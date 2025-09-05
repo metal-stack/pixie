@@ -1,4 +1,6 @@
 # be aware that bookworm has a newer gcc which can not compile the older ipxe
+# newer ipxe can only be used if https://github.com/metal-stack/pixie/issues/34
+# is not happening anymore
 FROM debian:bullseye AS ipxe-builder
 WORKDIR /work
 COPY . .
