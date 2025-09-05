@@ -103,6 +103,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		r = rawSpec{}
 	} else {
 		// machine asks for a dhcp answer, ask metal-api for a proper response in this partition
+		// TODO maybe simple fetch the partition and remove this endpoint from the api
 		req := &infrav2.BootServiceBootRequest{
 			Mac:       m.MAC.String(),
 			Partition: g.partition,
