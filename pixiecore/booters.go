@@ -29,7 +29,6 @@ import (
 	"text/template"
 	"time"
 
-	"connectrpc.com/connect"
 	"github.com/metal-stack/api/go/client"
 	infrav2 "github.com/metal-stack/api/go/metalstack/infra/v2"
 
@@ -95,7 +94,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			Partition: g.partition,
 		}
 		g.log.Info("dhcp", "req", req)
-		_, err := g.apiclient.Infrav2().Boot().Dhcp(ctx, connect.NewRequest(req))
+		_, err := g.apiclient.Infrav2().Boot().Dhcp(ctx, req)
 		if err != nil {
 			g.log.Error("boot", "error", err)
 			return nil, err
@@ -109,21 +108,21 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 			Partition: g.partition,
 		}
 		g.log.Info("boot", "req", req)
-		resp, err := g.apiclient.Infrav2().Boot().Boot(ctx, connect.NewRequest(req))
+		resp, err := g.apiclient.Infrav2().Boot().Boot(ctx, req)
 		if err != nil {
 			g.log.Error("boot", "error", err)
 			return nil, err
 		}
 		g.log.Info("boot", "resp", resp)
 
-		cmdline := []string{*resp.Msg.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}
 
 		r = rawSpec{
-			Kernel:  resp.Msg.Kernel,
-			Initrd:  resp.Msg.InitRamDisks,
+			Kernel:  resp.Kernel,
+			Initrd:  resp.InitRamDisks,
 			Cmdline: strings.Join(cmdline, " "),
 		}
 	}
