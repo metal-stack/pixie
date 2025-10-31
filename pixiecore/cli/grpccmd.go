@@ -20,6 +20,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/metal-stack/api/go/client"
+
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
@@ -42,15 +44,19 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("unable to create metal-api config: %s", err)
 		}
-		client, err := pixiecore.NewGrpcClient(s.Log, metalAPIConfig)
+		apiclient, err := client.New(&client.DialConfig{
+			BaseURL: metalAPIConfig.MetalAPIServerUrl,
+			Token:   metalAPIConfig.MetalAPIServerToken,
+		})
 		if err != nil {
-			fatalf("unable to create grpc client: %s", err)
+			fatalf("error creating metal-apiserver client: %s", err)
 		}
+
 		partition, err := cmd.Flags().GetString("partition")
 		if err != nil {
-			fatalf("Error reading flag: %s", err)
+			fatalf("error reading flag: %s", err)
 		}
-		booter, err := pixiecore.GRPCBooter(s.Log, client, partition, metalAPIConfig)
+		booter, err := pixiecore.GRPCBooter(s.Log, apiclient, partition, metalAPIConfig)
 		if err != nil {
 			fatalf("unable to create grpc booter: %s", err)
 		}
@@ -68,10 +74,8 @@ func init() {
 
 	grpcCmd.Flags().String("pixie-api-url", "", "base url of pixie itself")
 
-	grpcCmd.Flags().String("grpc-ca-cert", "", "Path to the grpc ca cert file")
-	grpcCmd.Flags().String("grpc-cert", "", "Path to the grpc client cert file")
-	grpcCmd.Flags().String("grpc-key", "", "Path to the grpc client key file")
-	grpcCmd.Flags().String("grpc-address", "", "address of the grpc server")
+	grpcCmd.Flags().String("metal-apiserver-url", "", "url of the metal-apiserver")
+	grpcCmd.Flags().String("metal-apiserver-token", "", "token to access the metal-apiserver")
 	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
 	grpcCmd.Flags().StringSlice("ntp-servers", nil, "custom ntp-servers")
@@ -88,41 +92,15 @@ func init() {
 }
 
 func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
-	grpcCACertFile, err := cmd.Flags().GetString("grpc-ca-cert")
+	metalApiServerUrl, err := cmd.Flags().GetString("metal-apiserver-url")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
-	caCert, err := os.ReadFile(grpcCACertFile)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read ca-cert %w", err)
-	}
-
-	grpcClientCertFile, err := cmd.Flags().GetString("grpc-cert")
-	if err != nil {
-		return nil, fmt.Errorf("error reading flag: %w", err)
-	}
-	clientCert, err := os.ReadFile(grpcClientCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read cert %w", err)
-	}
-
-	grpcClientKeyFile, err := cmd.Flags().GetString("grpc-key")
-	if err != nil {
-		return nil, fmt.Errorf("unable to read key %w", err)
-	}
-	clientKey, err := os.ReadFile(grpcClientKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	grpcAddress, err := cmd.Flags().GetString("grpc-address")
+	metalApiServerToken, err := cmd.Flags().GetString("metal-apiserver-token")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 
-	hmac, err := cmd.Flags().GetString("metal-api-view-hmac")
-	if err != nil {
-		return nil, fmt.Errorf("error reading flag: %w", err)
-	}
 	metalAPIUrl, err := cmd.Flags().GetString("metal-api-url")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
@@ -220,16 +198,13 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	}
 
 	return &api.MetalConfig{
-		Debug:       metalHammerDebug,
-		GRPCAddress: grpcAddress,
-		MetalAPIUrl: metalAPIUrl,
-		PixieAPIURL: pixieAPIUrl,
-		CACert:      string(caCert),
-		Cert:        string(clientCert),
-		Key:         string(clientKey),
-		HMAC:        hmac,
-		NTPServers:  ntpServers,
-		Logging:     logging,
-		Partition:   partition,
+		Debug:               metalHammerDebug,
+		MetalAPIServerUrl:   metalApiServerUrl,
+		MetalAPIServerToken: metalApiServerToken,
+		MetalAPIUrl:         metalAPIUrl,
+		PixieAPIURL:         pixieAPIUrl,
+		NTPServers:          ntpServers,
+		Logging:             logging,
+		Partition:           partition,
 	}, nil
 }

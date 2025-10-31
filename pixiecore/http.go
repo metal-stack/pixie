@@ -225,6 +225,10 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 }
 
 func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
+
+	// TODO: Create a token for the metal-hammer which contains the metalRoles and > 2 days of validity,
+	// requires adoption of this call to contain the machine-uuid from the metal-hammer
+
 	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
 	if err != nil {
 		s.Log.Error("handleCerts unable to marshal grpc config", "error", err)
