@@ -85,6 +85,9 @@ func init() {
 	grpcCmd.Flags().String("metal-hammer-logging-key", "", "set metal-hammer to send logs to a remote endpoint and authenticate with this key")
 	grpcCmd.Flags().Bool("metal-hammer-logging-tls-insecure", false, "set metal-hammer to send logs to a remote endpoint without verifying the tls certificate")
 	grpcCmd.Flags().String("metal-hammer-logging-type", "loki", "set metal-hammer to send logs to a remote endpoint with this logging type")
+
+	// metal-hammer oci configs
+	grpcCmd.Flags().StringSlice("metal-hammer-oci-configs", nil, "multiple metal-hammer oci configs. comma-separated key-value pairs (registry_url=...,username=...,password=...). registry URL is mandatory, login credentials are optional depending on whether the oci image is public.")
 }
 
 func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
@@ -219,6 +222,43 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		}
 	}
 
+	metalHammerOciConfigs, err := cmd.Flags().GetStringSlice("metal-hammer-oci-configs")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+
+	var ociConfigs []*api.OciConfig
+
+	for _, c := range metalHammerOciConfigs {
+		var ociConfig *api.OciConfig
+
+		parts := strings.SplitSeq(c, ",")
+		for p := range parts {
+			kv := strings.SplitN(strings.TrimSpace(p), "=", 2)
+			if len(kv) != 2 {
+				return nil, fmt.Errorf("invalid key-value pair in OCI config: %q", p)
+			}
+
+			k := strings.ToLower(strings.TrimSpace(kv[0]))
+			v := strings.TrimSpace(kv[1])
+			switch k {
+			case "registry_url":
+				if v == "" {
+					return nil, fmt.Errorf("no registry url specified for oci config: %s", c)
+				}
+				ociConfig.RegistryURL = v
+			case "username":
+				ociConfig.Username = v
+			case "password":
+				ociConfig.Password = v
+			default:
+				return nil, fmt.Errorf("unknown key %q in OCI config", k)
+			}
+		}
+
+		ociConfigs = append(ociConfigs, ociConfig)
+	}
+
 	return &api.MetalConfig{
 		Debug:       metalHammerDebug,
 		GRPCAddress: grpcAddress,
@@ -231,5 +271,6 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		NTPServers:  ntpServers,
 		Logging:     logging,
 		Partition:   partition,
+		OciConfig:   ociConfigs,
 	}, nil
 }
