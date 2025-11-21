@@ -162,6 +162,8 @@ func (s *Server) validateDHCP(pkt *dhcp4.Packet) (mach Machine, fwtype Firmware,
 	if err != nil {
 		return mach, 0, fmt.Errorf("error decoding client GUID (option 97): %w", err)
 	}
+
+	s.Log.Info("dhcp", "firmwaretype", fwtype, "mach", mach)
 	return mach, fwtype, nil
 }
 

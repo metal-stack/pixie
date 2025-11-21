@@ -122,6 +122,8 @@ func (s *Server) validatePXE(pkt *dhcp4.Packet) (fwtype Firmware, err error) {
 		return 0, errors.New("malformed client GUID (option 97), wrong size")
 	}
 
+	s.Log.Info("pxe", "firmwaretype", fwtype)
+
 	return fwtype, nil
 }
 

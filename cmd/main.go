@@ -23,8 +23,9 @@ import (
 func main() {
 	cli.Ipxe[pixiecore.FirmwareX86PC] = ipxe.MustGet("undionly.kpxe")
 	cli.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustGet("ipxe-i386.efi")
-	cli.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("ipxe-x86_64.efi")
+	cli.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("snponly.efi")
 	cli.Ipxe[pixiecore.FirmwareEFIBC] = ipxe.MustGet("ipxe-x86_64.efi")
-	cli.Ipxe[pixiecore.FirmwareX86Ipxe] = ipxe.MustGet("ipxe.pxe")
+	// FIXME just a workaround for dell server
+	cli.Ipxe[pixiecore.FirmwareX86Ipxe] = ipxe.MustGet("snponly.efi")
 	cli.CLI()
 }
