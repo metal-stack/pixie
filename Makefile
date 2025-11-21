@@ -47,9 +47,10 @@ ipxe:
 	)
 	cp ipxe/branding.h ipxe/ipxe/src/config/local/branding.h
 	(cd ipxe/ipxe/src &&\
-		make bin/ipxe.pxe bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-i386-efi/ipxe.efi EMBED=../../../pixiecore/boot.ipxe)
+		make bin/ipxe.pxe bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi bin-i386-efi/ipxe.efi EMBED=../../../pixiecore/boot.ipxe)
 	(rm -rf ipxe/ipxe/bin && mkdir ipxe/ipxe/bin)
 	mv -f ipxe/ipxe/src/bin/ipxe.pxe ipxe/ipxe/bin/ipxe.pxe
+	mv -f ipxe/ipxe/src/bin-x86_64-efi/snponly.efi ipxe/ipxe/bin/snponly.efi
 	mv -f ipxe/ipxe/src/bin/undionly.kpxe ipxe/ipxe/bin/undionly.kpxe
 	mv -f ipxe/ipxe/src/bin-x86_64-efi/ipxe.efi ipxe/ipxe/bin/ipxe-x86_64.efi
 	mv -f ipxe/ipxe/src/bin-i386-efi/ipxe.efi ipxe/ipxe/bin/ipxe-i386.efi
