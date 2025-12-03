@@ -48,7 +48,7 @@ type CertificateAuth struct {
 
 type OciConfig struct {
 	// URL pointing to the oci registry
-	RegistryURL string `json:"registry_url"`
+	RegistryURL string `json:"registry_url,omitempty"`
 	// Username that is capable of logging in to the registry
 	Username string `json:"username,omitempty"`
 	// Password for the user
