@@ -196,9 +196,6 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	urlTemplate := fmt.Sprintf("http://%s/_/file?name=%%s&type=%%s&mac=%%s", serverHost)
 	var b bytes.Buffer
 	b.WriteString("#!ipxe\n")
-	b.WriteString("set console ttyS0\n")
-	b.WriteString("iseq ${manufacturer} \"Dell Inc.\" && set console ttyS0\n")
-	b.WriteString("iseq ${manufacturer} \"Supermicro\" && set console ttyS1\n")
 	u := fmt.Sprintf(urlTemplate, url.QueryEscape(string(spec.Kernel)), "kernel", url.QueryEscape(mach.MAC.String()))
 	fmt.Fprintf(&b, "kernel --name kernel %s\n", u)
 	for i, initrd := range spec.Initrd {
@@ -222,7 +219,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("expanding cmdline %q: %w", spec.Cmdline, err)
 	}
-	// b.WriteString("console=ttyS0,115200n8 ")
+	b.WriteString("console=ttyS0,115200n8 ")
 	b.WriteString(cmdline)
 	b.WriteByte('\n')
 
