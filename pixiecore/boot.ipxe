@@ -46,6 +46,11 @@ goto loop
 # Got a filename from ProxyDHCP, that's the actual boot script,
 # off we go!
 :boot
+wget ${filename} script
+# Print contents
+echo ---- BEGIN SCRIPT ----
+echo ${script}
+echo ---- END SCRIPT ----
 chain ${filename}
 
 # Failure at this point probably means Pixie changed its mind
