@@ -21,6 +21,9 @@ set user-class pixiecore
 
 echo metal-stack pixie
 
+smbios --type 1 --get manufacturer && set vendor ${manufacturer}
+echo manufacturer ${manufacturer}
+
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
 :loop
