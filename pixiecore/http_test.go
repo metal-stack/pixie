@@ -67,7 +67,7 @@ func TestIpxe(t *testing.T) {
 
 	expected := `#!ipxe
 set console ttyS0
-iseq ${manufacturer} Supermicro && set console ttyS1
+iseq ${manufacturer} Supermicro && set console ttyS1 ||
 kernel --name kernel http://localhost:1234/_/file?name=k-01%3A02%3A03%3A04%3A05%3A06-0&type=kernel&mac=01%3A02%3A03%3A04%3A05%3A06
 initrd --name initrd0 http://localhost:1234/_/file?name=i1-01%3A02%3A03%3A04%3A05%3A06-0&type=initrd&mac=01%3A02%3A03%3A04%3A05%3A06
 initrd --name initrd1 http://localhost:1234/_/file?name=i2-01%3A02%3A03%3A04%3A05%3A06-0&type=initrd&mac=01%3A02%3A03%3A04%3A05%3A06
@@ -94,7 +94,7 @@ boot kernel initrd=initrd0 initrd=initrd1 console=${console},115200n8 thing=http
 
 	expected = `#!ipxe
 set console ttyS0
-iseq ${manufacturer} Supermicro && set console ttyS1
+iseq ${manufacturer} Supermicro && set console ttyS1 ||
 kernel --name kernel http://localhost:1234/_/file?name=k-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=kernel&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
 initrd --name initrd0 http://localhost:1234/_/file?name=i1-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=initrd&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
 initrd --name initrd1 http://localhost:1234/_/file?name=i2-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=initrd&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
