@@ -74,7 +74,7 @@ initrd --name initrd0 http://localhost:1234/_/file?name=i1-01%3A02%3A03%3A04%3A0
 initrd --name initrd1 http://localhost:1234/_/file?name=i2-01%3A02%3A03%3A04%3A05%3A06-0&type=initrd&mac=01%3A02%3A03%3A04%3A05%3A06
 imgfetch --name ready http://localhost:1234/_/booting?mac=01%3A02%3A03%3A04%3A05%3A06 ||
 imgfree ready ||
-boot kernel initrd=initrd0 initrd=initrd1 console=ttyS0,115200n8 thing=http://localhost:1234/_/file?name=f-01%3A02%3A03%3A04%3A05%3A06-0 foo=bar
+boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?name=f-01%3A02%3A03%3A04%3A05%3A06-0 foo=bar
 `
 	if rr.Body.String() != expected {
 		t.Fatalf("Wrong iPXE script\nwant: %s\ngot:  %s", expected, rr.Body.String())
@@ -102,7 +102,7 @@ initrd --name initrd0 http://localhost:1234/_/file?name=i1-fe%3Afe%3Afe%3Afe%3Af
 initrd --name initrd1 http://localhost:1234/_/file?name=i2-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1&type=initrd&mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe
 imgfetch --name ready http://localhost:1234/_/booting?mac=fe%3Afe%3Afe%3Afe%3Afe%3Afe ||
 imgfree ready ||
-boot kernel initrd=initrd0 initrd=initrd1 console=ttyS0,115200n8 thing=http://localhost:1234/_/file?name=f-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1 foo=bar
+boot kernel initrd=initrd0 initrd=initrd1 thing=http://localhost:1234/_/file?name=f-fe%3Afe%3Afe%3Afe%3Afe%3Afe-1 foo=bar
 `
 	if rr.Body.String() != expected {
 		t.Fatalf("Wrong iPXE script\nwant: %s\ngot:  %s", expected, rr.Body.String())
