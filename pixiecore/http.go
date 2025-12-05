@@ -214,6 +214,12 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	f := func(id string) string {
 		return fmt.Sprintf("http://%s/_/file?name=%s", serverHost, url.QueryEscape(id))
 	}
+	b.WriteString("set console ttyS0\n")
+	b.WriteString("iseq ${manufacturer} \"Dell Inc.\" && set console ttyS0\n")
+	b.WriteString("iseq ${manufacturer} \"Supermicro\" && set console ttyS1\n")
+	b.WriteString("echo Manufacturer: ${manufacturer}\n")
+	b.WriteString("echo Console: ${console}\n")
+	b.WriteString("console=${console},115200n8 ")
 	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
 	if err != nil {
 		return nil, fmt.Errorf("expanding cmdline %q: %w", spec.Cmdline, err)
