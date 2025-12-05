@@ -115,6 +115,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}
+		cmdline = append(cmdline, "console=ttyS0,115200n8")
 
 		r = rawSpec{
 			Kernel:  resp.GetKernel(),

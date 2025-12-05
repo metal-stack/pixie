@@ -222,7 +222,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("expanding cmdline %q: %w", spec.Cmdline, err)
 	}
-	b.WriteString("console=ttyS0,115200n8 ")
+	// b.WriteString("console=ttyS0,115200n8 ")
 	b.WriteString(cmdline)
 	b.WriteByte('\n')
 
