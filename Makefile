@@ -31,7 +31,7 @@ test:
 
 .PHONY: lint
 lint:
-	$(GOMODULECMD) tool vet .
+	$(GOMODULECMD) vet ./...
 
 
 IPXE_COMMIT_SHA := $(shell cat ipxe/IPXE_COMMIT_SHA)
