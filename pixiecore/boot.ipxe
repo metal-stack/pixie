@@ -23,8 +23,6 @@ echo metal-stack pixie
 
 echo Manufacturer: ${manufacturer}
 
-echo Detected console type: ${console}
-
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
 :loop
