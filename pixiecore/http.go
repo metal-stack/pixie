@@ -199,6 +199,7 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	b.WriteString("set console ttyS1\n")
 	b.WriteString("set sp:hex 20 && set sp ${sp:string}\n")
 	b.WriteString("iseq ${manufacturer} Dell${sp}Inc. && set console ttyS0 ||\n")
+	b.WriteString("iseq ${manufacturer} Giga${sp}Computing && set console ttyS0 ||\n")
 	u := fmt.Sprintf(urlTemplate, url.QueryEscape(string(spec.Kernel)), "kernel", url.QueryEscape(mach.MAC.String()))
 	fmt.Fprintf(&b, "kernel --name kernel %s\n", u)
 	for i, initrd := range spec.Initrd {
