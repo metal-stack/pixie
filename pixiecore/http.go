@@ -196,10 +196,6 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	urlTemplate := fmt.Sprintf("http://%s/_/file?name=%%s&type=%%s&mac=%%s", serverHost)
 	var b bytes.Buffer
 	b.WriteString("#!ipxe\n")
-	b.WriteString("set console ttyS1\n")
-	b.WriteString("set sp:hex 20 && set sp ${sp:string}\n")
-	b.WriteString("iseq ${manufacturer} Dell${sp}Inc. && set console ttyS0 ||\n")
-	b.WriteString("iseq ${manufacturer} Giga${sp}Computing && set console ttyS0 ||\n")
 	u := fmt.Sprintf(urlTemplate, url.QueryEscape(string(spec.Kernel)), "kernel", url.QueryEscape(mach.MAC.String()))
 	fmt.Fprintf(&b, "kernel --name kernel %s\n", u)
 	for i, initrd := range spec.Initrd {
@@ -218,7 +214,6 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	f := func(id string) string {
 		return fmt.Sprintf("http://%s/_/file?name=%s", serverHost, url.QueryEscape(id))
 	}
-
 	cmdline, err := expandCmdline(spec.Cmdline, template.FuncMap{"ID": f})
 	if err != nil {
 		return nil, fmt.Errorf("expanding cmdline %q: %w", spec.Cmdline, err)
