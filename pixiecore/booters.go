@@ -101,8 +101,7 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		}
 		r = rawSpec{}
 	} else {
-		// machine asks for a dhcp answer, ask metal-api for a proper response in this partition
-		// TODO maybe simple fetch the partition and remove this endpoint from the api
+		// machine asks for a dhcp answer, ask metal-apiserver for a proper response in this partition
 		req := &infrav2.BootServiceBootRequest{
 			Mac:       m.MAC.String(),
 			Partition: g.partition,
@@ -115,7 +114,14 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		}
 		g.log.Info("boot", "resp", resp)
 
-		cmdline := []string{*resp.Cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		var cmdline []string
+
+		if resp.Cmdline != nil {
+			cmdline = append(cmdline, *resp.Cmdline)
+		}
+
+		cmdline = append(cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIUrl))
+
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}

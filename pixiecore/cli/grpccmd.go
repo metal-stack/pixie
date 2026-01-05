@@ -202,7 +202,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		MetalAPIServerUrl:   metalApiServerUrl,
 		MetalAPIServerToken: metalApiServerToken,
 		MetalAPIUrl:         metalAPIUrl,
-		PixieAPIURL:         pixieAPIUrl,
+		PixieAPIUrl:         pixieAPIUrl,
 		NTPServers:          ntpServers,
 		Logging:             logging,
 		Partition:           partition,

@@ -29,10 +29,10 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Set up Go 1.25
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: "1.25"
         cache: false
