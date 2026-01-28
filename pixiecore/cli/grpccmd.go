@@ -227,10 +227,13 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 
-	var ociConfigs []*api.OciConfig
+	ociConfigs := make(map[string]*api.OciCredentials)
 
 	for _, c := range metalHammerOciConfigs {
-		var ociConfig *api.OciConfig
+		var (
+			ociCredentials *api.OciCredentials
+			registryURL    string
+		)
 
 		parts := strings.SplitSeq(c, ",")
 		for p := range parts {
@@ -246,17 +249,17 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 				if v == "" {
 					return nil, fmt.Errorf("no registry url specified for oci config: %s", c)
 				}
-				ociConfig.RegistryURL = v
+				registryURL = v
 			case "username":
-				ociConfig.Username = v
+				ociCredentials.Username = v
 			case "password":
-				ociConfig.Password = v
+				ociCredentials.Password = v
 			default:
 				return nil, fmt.Errorf("unknown key %q in OCI config", k)
 			}
 		}
 
-		ociConfigs = append(ociConfigs, ociConfig)
+		ociConfigs[registryURL] = ociCredentials
 	}
 
 	return &api.MetalConfig{
@@ -271,6 +274,6 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		NTPServers:  ntpServers,
 		Logging:     logging,
 		Partition:   partition,
-		OciConfig:   ociConfigs,
+		OciConfigs:  ociConfigs,
 	}, nil
 }
