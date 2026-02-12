@@ -18,6 +18,7 @@ package cli // import "github.com/metal-stack/pixie/cli"
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 
 	"github.com/metal-stack/pixie/pixiecore"
@@ -142,9 +143,7 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		MetricsAddress: metricsAddr,
 		DHCPNoBind:     dhcpNoBind,
 	}
-	for fwtype, bs := range Ipxe {
-		ret.Ipxe[fwtype] = bs
-	}
+	maps.Copy(ret.Ipxe, Ipxe)
 	if ipxeBios != "" {
 		ret.Ipxe[pixiecore.FirmwareX86PC] = mustFile(ipxeBios)
 	}
