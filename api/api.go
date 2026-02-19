@@ -48,9 +48,9 @@ type CertificateAuth struct {
 
 type OciCredentials struct {
 	// Username that is capable of logging in to the registry
-	Username string `json:"username,omitempty"`
+	Username string `json:"username,omitempty" yaml:"username,omitempty"`
 	// Password for the user
-	Password string `json:"password,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
 }
 
 // LogType defines which logging backend should be used

@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 
+	yaml "github.com/goccy/go-yaml"
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
@@ -222,44 +223,38 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		}
 	}
 
-	metalHammerOciConfigs, err := cmd.Flags().GetStringSlice("metal-hammer-oci-configs")
+	metalHammerOciConfigFilePath, err := cmd.Flags().GetString("metal-hammer-oci-config-file-path")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
 
 	ociConfigs := make(map[string]*api.OciCredentials)
-
-	for _, c := range metalHammerOciConfigs {
-		var (
-			ociCredentials *api.OciCredentials
-			registryURL    string
-		)
-
-		parts := strings.SplitSeq(c, ",")
-		for p := range parts {
-			kv := strings.SplitN(strings.TrimSpace(p), "=", 2)
-			if len(kv) != 2 {
-				return nil, fmt.Errorf("invalid key-value pair in OCI config: %q", p)
-			}
-
-			k := strings.ToLower(strings.TrimSpace(kv[0]))
-			v := strings.TrimSpace(kv[1])
-			switch k {
-			case "registry_url":
-				if v == "" {
-					return nil, fmt.Errorf("no registry url specified for oci config: %s", c)
-				}
-				registryURL = v
-			case "username":
-				ociCredentials.Username = v
-			case "password":
-				ociCredentials.Password = v
-			default:
-				return nil, fmt.Errorf("unknown key %q in OCI config", k)
-			}
+	if metalHammerOciConfigFilePath != "" {
+		metalHammerOciConfigFileContent, err := os.ReadFile(metalHammerOciConfigFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving oci configs file: %w", err)
 		}
 
-		ociConfigs[registryURL] = ociCredentials
+		type MetalHammerOciConfig struct {
+			RegistryURL string `yaml:"registry-url"`
+			Credentials *api.OciCredentials
+		}
+		type MetalHammerOciConfigs struct {
+			OciConfigs []MetalHammerOciConfig `yaml:"oci-configs"`
+		}
+		var metalHammerOciConfigs MetalHammerOciConfigs
+		err = yaml.Unmarshal(metalHammerOciConfigFileContent, &metalHammerOciConfigs)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing oci configs: %w", err)
+		}
+
+		for _, config := range metalHammerOciConfigs.OciConfigs {
+			if config.RegistryURL == "" {
+				return nil, fmt.Errorf("no registry url specified for oci config: %+v", config)
+			}
+
+			ociConfigs[config.RegistryURL] = config.Credentials
+		}
 	}
 
 	return &api.MetalConfig{
