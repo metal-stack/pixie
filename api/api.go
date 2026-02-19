@@ -14,7 +14,7 @@ type MetalConfig struct {
 	Partition   string   `json:"partition"`
 	// Logging contains logging configurations passed to metal-hammer
 	Logging   *Logging                   `json:"logging,omitempty"`
-	OciConfigs map[string]*OciCredentials `json:"oci_config,omitempty"`
+	OciConfigs map[string]*OciCredentials `json:"oci_configs,omitempty"`
 }
 
 type Logging struct {
@@ -48,9 +48,9 @@ type CertificateAuth struct {
 
 type OciCredentials struct {
 	// Username that is capable of logging in to the registry
-	Username string `json:"username,omitempty"`
+	Username string `json:"username,omitempty" yaml:"username,omitempty"`
 	// Password for the user
-	Password string `json:"password,omitempty"`
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
 }
 
 // LogType defines which logging backend should be used
