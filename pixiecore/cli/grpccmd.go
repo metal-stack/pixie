@@ -19,8 +19,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/metal-stack/api/go/client"
+	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
+	"github.com/metal-stack/v"
 
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
@@ -62,6 +65,18 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		}
 		s.Booter = booter
 		s.MetalConfig = metalAPIConfig
+
+		// Ping apiserver every 5min
+		apiclient.Ping(cmd.Context(), &client.PingConfig{
+			ComponentType: apiv2.ComponentType_COMPONENT_TYPE_PIXIECORE,
+			StartedAt:     time.Now(),
+			Version: apiv2.Version{
+				Version:   v.Version,
+				Revision:  v.Revision,
+				GitSha1:   v.GitSHA1,
+				BuildDate: v.BuildDate,
+			},
+		})
 
 		fmt.Println(s.Serve())
 	}}
