@@ -3,7 +3,7 @@ module github.com/metal-stack/pixie
 go 1.26
 
 require (
-	github.com/metal-stack/api v0.0.51
+	github.com/metal-stack/api v0.0.52
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.1.0
 	github.com/prometheus/client_golang v1.23.2
@@ -11,7 +11,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.48.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -34,7 +34,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
-	github.com/prometheus/procfs v0.19.2 // indirect
+	github.com/prometheus/procfs v0.20.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect

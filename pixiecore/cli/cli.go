@@ -64,6 +64,7 @@ func fatalf(msg string, args ...any) {
 func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolP("debug", "d", false, "Log more things that aren't directly related to booting a recognized client")
 	cmd.Flags().StringP("listen-addr", "l", "0.0.0.0", "IPv4 address to listen on")
+	cmd.Flags().String("hostname", "", "hostname where pixiecore is running to identify uniquely at the metal-apiserver")
 	cmd.Flags().IntP("port", "p", 80, "Port to listen on for HTTP")
 	cmd.Flags().String("metrics-listen-addr", "0.0.0.0", "IPv4 address of the metrics server to listen on")
 	cmd.Flags().Int("metrics-port", 2113, "Metrics server port")

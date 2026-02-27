@@ -66,10 +66,19 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		s.Booter = booter
 		s.MetalConfig = metalAPIConfig
 
+		hostname, err := cmd.Flags().GetString("hostname")
+		if err != nil {
+			fatalf("error reading flag: %s", err)
+		}
+		if hostname == "" {
+			hostname = "please-set-hostname"
+		}
+
 		// Ping apiserver every 5min
 		apiclient.Ping(cmd.Context(), &client.PingConfig{
 			ComponentType: apiv2.ComponentType_COMPONENT_TYPE_PIXIECORE,
 			StartedAt:     time.Now(),
+			Identifier:    &hostname,
 			Version: apiv2.Version{
 				Version:   v.Version,
 				Revision:  v.Revision,
