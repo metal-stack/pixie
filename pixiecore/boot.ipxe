@@ -21,6 +21,16 @@ set user-class pixiecore
 
 echo metal-stack pixie
 
+echo Manufacturer: ${manufacturer}
+
+# Detect serial console based on manufacturer.
+# Implicitly ttyS1 is used as console for Supermicro.
+
+set console ttyS1
+set sp:hex 20 && set sp ${sp:string}
+iseq ${manufacturer} Dell${sp}Inc. && set console ttyS0 ||
+iseq ${manufacturer} Giga${sp}Computing && set console ttyS0 ||
+
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
 :loop
