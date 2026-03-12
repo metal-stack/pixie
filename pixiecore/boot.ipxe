@@ -30,6 +30,7 @@ set console ttyS1
 set sp:hex 20 && set sp ${sp:string}
 iseq ${manufacturer} Dell${sp}Inc. && set console ttyS0 ||
 iseq ${manufacturer} Giga${sp}Computing && set console ttyS0 ||
+iseq ${manufacturer} QEMU && set console ttyS0 ||
 
 # Try to get a filename from ProxyDHCP, retrying a couple of times if
 # we fail.
