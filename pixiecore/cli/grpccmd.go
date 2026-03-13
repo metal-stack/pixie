@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 
+	yaml "github.com/goccy/go-yaml"
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
@@ -85,6 +86,9 @@ func init() {
 	grpcCmd.Flags().String("metal-hammer-logging-key", "", "set metal-hammer to send logs to a remote endpoint and authenticate with this key")
 	grpcCmd.Flags().Bool("metal-hammer-logging-tls-insecure", false, "set metal-hammer to send logs to a remote endpoint without verifying the tls certificate")
 	grpcCmd.Flags().String("metal-hammer-logging-type", "loki", "set metal-hammer to send logs to a remote endpoint with this logging type")
+
+	// metal-hammer oci configs
+	grpcCmd.Flags().StringSlice("metal-hammer-oci-configs", nil, "multiple metal-hammer oci configs. comma-separated key-value pairs (registry_url=...,username=...,password=...). registry URL is mandatory, login credentials are optional depending on whether the oci image is public.")
 }
 
 func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
@@ -219,6 +223,40 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		}
 	}
 
+	metalHammerOciConfigFilePath, err := cmd.Flags().GetString("metal-hammer-oci-config-file-path")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+
+	ociConfigs := make(map[string]*api.OciCredentials)
+	if metalHammerOciConfigFilePath != "" {
+		metalHammerOciConfigFileContent, err := os.ReadFile(metalHammerOciConfigFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving oci configs file: %w", err)
+		}
+
+		type MetalHammerOciConfig struct {
+			RegistryURL string `yaml:"registry-url"`
+			Credentials *api.OciCredentials
+		}
+		type MetalHammerOciConfigs struct {
+			OciConfigs []MetalHammerOciConfig `yaml:"oci-configs"`
+		}
+		var metalHammerOciConfigs MetalHammerOciConfigs
+		err = yaml.Unmarshal(metalHammerOciConfigFileContent, &metalHammerOciConfigs)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing oci configs: %w", err)
+		}
+
+		for _, config := range metalHammerOciConfigs.OciConfigs {
+			if config.RegistryURL == "" {
+				return nil, fmt.Errorf("no registry url specified for oci config: %+v", config)
+			}
+
+			ociConfigs[config.RegistryURL] = config.Credentials
+		}
+	}
+
 	return &api.MetalConfig{
 		Debug:       metalHammerDebug,
 		GRPCAddress: grpcAddress,
@@ -231,5 +269,6 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 		NTPServers:  ntpServers,
 		Logging:     logging,
 		Partition:   partition,
+		OciConfigs:  ociConfigs,
 	}, nil
 }
