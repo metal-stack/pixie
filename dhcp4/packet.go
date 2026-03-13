@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"sort"
 )
@@ -197,9 +198,7 @@ func (p *Packet) Marshal() ([]byte, error) {
 	ret.Write([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 
 	opts := make(Options, len(p.Options)+1)
-	for k, v := range p.Options {
-		opts[k] = v
-	}
+	maps.Copy(opts, p.Options)
 	opts[53] = []byte{byte(p.Type)}
 	if optsInSname {
 		opts, err = opts.marshalLimited(ret, 64, true)
@@ -339,9 +338,9 @@ func Unmarshal(bs []byte) (*Packet, error) {
 }
 
 func nullStr(bs []byte) (string, bool) {
-	i := bytes.IndexByte(bs, 0)
-	if i == -1 {
+	before, _, ok := bytes.Cut(bs, []byte{0})
+	if !ok {
 		return "", false
 	}
-	return string(bs[:i]), true
+	return string(before), true
 }
