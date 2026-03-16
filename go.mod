@@ -3,6 +3,7 @@ module github.com/metal-stack/pixie
 go 1.25
 
 require (
+	github.com/goccy/go-yaml v1.19.2
 	github.com/metal-stack/metal-api v0.42.4
 	github.com/metal-stack/v v1.0.3
 	github.com/pin/tftp/v3 v3.1.0
