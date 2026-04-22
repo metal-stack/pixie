@@ -26,6 +26,9 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
+	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
@@ -227,6 +230,25 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 }
 
 func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
+	// TODO check if we can restrict to the machine uuid only, request must therefor contain the uuid.
+	// 3 days max lifetime because hammer reboots every 2 days max.
+	resp, err := s.ApiClient.Apiv2().Token().Create(r.Context(), &apiv2.TokenServiceCreateRequest{
+		Description: "token for metal-hammer",
+		MachineRoles: map[string]apiv2.MachineRole{
+			"*": apiv2.MachineRole_MACHINE_ROLE_EDITOR,
+		},
+		Expires: durationpb.New(3 * 24 * time.Hour),
+	})
+	if err != nil {
+		s.Log.Error("unable to create a token for the metal-hammer", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// store to created secret to be shipped to metal-hammer
+	s.MetalConfig.MetalAPIServerTokenForHammer = resp.Secret
+	// remove token of pixiecore
+	s.MetalConfig.MetalAPIServerToken = ""
+
 	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
 	if err != nil {
 		s.Log.Error("handleCerts unable to marshal grpc config", "error", err)

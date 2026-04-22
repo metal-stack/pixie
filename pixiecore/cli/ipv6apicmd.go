@@ -55,7 +55,7 @@ var ipv6ApiCmd = &cobra.Command{
 		}
 		dnsServerAddresses := make([]net.IP, 0)
 		if cmd.Flags().Changed("dns-servers") {
-			for _, dnsServerAddress := range strings.Split(dnsServers, ",") {
+			for dnsServerAddress := range strings.SplitSeq(dnsServers, ",") {
 				dnsServerAddresses = append(dnsServerAddresses, net.ParseIP(dnsServerAddress))
 			}
 		}
