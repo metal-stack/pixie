@@ -46,7 +46,7 @@ func (s *Server) serveHTTP(mux *http.ServeMux) {
 	mux.HandleFunc("/_/ipxe", s.handleIpxe)
 	mux.HandleFunc("/_/file", s.handleFile)
 	mux.HandleFunc("/_/booting", s.handleBooting)
-	mux.HandleFunc("/certs", s.handleCerts)
+	mux.HandleFunc("/config/{id}", s.handleConfig)
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
@@ -229,13 +229,18 @@ func ipxeScript(mach Machine, spec *Spec, serverHost string) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
-	// TODO check if we can restrict to the machine uuid only, request must therefor contain the uuid.
+func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	// request must be in the form of /config/7ba734c9-6145-4b7a-817c-8b5c72fb7057
+	// with the machineUUID as path parameter
 	// 3 days max lifetime because hammer reboots every 2 days max.
+
+	machineUUID := r.PathValue("id")
+	s.Log.Debug("handleConfig", "machine-uuid", machineUUID)
+
 	resp, err := s.ApiClient.Apiv2().Token().Create(r.Context(), &apiv2.TokenServiceCreateRequest{
 		Description: "token for metal-hammer",
 		MachineRoles: map[string]apiv2.MachineRole{
-			"*": apiv2.MachineRole_MACHINE_ROLE_EDITOR,
+			machineUUID: apiv2.MachineRole_MACHINE_ROLE_EDITOR,
 		},
 		Expires: durationpb.New(3 * 24 * time.Hour),
 	})
@@ -251,15 +256,15 @@ func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
 
 	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
 	if err != nil {
-		s.Log.Error("handleCerts unable to marshal grpc config", "error", err)
+		s.Log.Error("handleConfig unable to marshal grpc config", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.Log.Debug("handleCerts return grpc config")
+	s.Log.Debug("handleConfig return grpc config")
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(js)
 	if err != nil {
-		s.Log.Error("handleCerts unable to write grpc config to response", "error", err)
+		s.Log.Error("handleConfig unable to write grpc config to response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
