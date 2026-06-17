@@ -13,7 +13,8 @@ type MetalConfig struct {
 	NTPServers  []string `json:"ntp_servers,omitempty"`
 	Partition   string   `json:"partition"`
 	// Logging contains logging configurations passed to metal-hammer
-	Logging *Logging `json:"logging,omitempty"`
+	Logging   *Logging                   `json:"logging,omitempty"`
+	OciConfigs map[string]*OciCredentials `json:"oci_configs,omitempty"`
 }
 
 type Logging struct {
@@ -43,6 +44,13 @@ type CertificateAuth struct {
 	Key string `json:"key,omitempty"`
 	// InsecureSkipVerify if no certificate validation should be made
 	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
+}
+
+type OciCredentials struct {
+	// Username that is capable of logging in to the registry
+	Username string `json:"username,omitempty" yaml:"username,omitempty"`
+	// Password for the user
+	Password string `json:"password,omitempty" yaml:"password,omitempty"`
 }
 
 // LogType defines which logging backend should be used
