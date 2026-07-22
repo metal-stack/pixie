@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"sort"
 )
@@ -134,9 +135,7 @@ func (o Options) Marshal() ([]byte, error) {
 // Copy returns a shallow copy of o.
 func (o Options) Copy() Options {
 	ret := make(Options, len(o))
-	for k, v := range o {
-		ret[k] = v
-	}
+	maps.Copy(ret, o)
 	return ret
 }
 

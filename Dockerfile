@@ -14,7 +14,7 @@ RUN apt update \
     make \
  && make ipxe
 
-FROM golang:1.25-trixie AS builder
+FROM golang:1.26-trixie AS builder
 WORKDIR /work
 COPY . .
 COPY --from=ipxe-builder /work/ipxe/ipxe /work/ipxe/ipxe
