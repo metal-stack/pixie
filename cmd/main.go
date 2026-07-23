@@ -22,9 +22,9 @@ import (
 
 func main() {
 	cli.Ipxe[pixiecore.FirmwareX86PC] = ipxe.MustGet("undionly.kpxe")
-	cli.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustGet("ipxe-i386.efi")
-	cli.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("ipxe-x86_64.efi")
-	cli.Ipxe[pixiecore.FirmwareEFIBC] = ipxe.MustGet("ipxe-x86_64.efi")
+	cli.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustGet("snponly-i386.efi")
+	cli.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("snponly-x86_64.efi")
+	cli.Ipxe[pixiecore.FirmwareEFIBC] = ipxe.MustGet("snponly-x86_64.efi")
 	cli.Ipxe[pixiecore.FirmwareX86Ipxe] = ipxe.MustGet("ipxe.pxe")
 	cli.CLI()
 }
