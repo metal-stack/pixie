@@ -26,6 +26,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/metal-stack/api/go/client"
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
@@ -206,6 +207,12 @@ type Server struct {
 	events   map[string][]machineEvent
 
 	MetalConfig *api.MetalConfig
+	// ApiClient to talk to the metal-apiserver
+	ApiClient client.Client
+
+	// MetalHammer tenant for which the token must be created
+	// This is a uuid
+	MetalHammerTenantLogin string
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to
