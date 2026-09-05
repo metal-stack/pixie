@@ -249,12 +249,14 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// store to created secret to be shipped to metal-hammer
-	s.MetalConfig.MetalAPIServerTokenForHammer = resp.Secret
-	// remove token of pixiecore
-	s.MetalConfig.MetalAPIServerToken = ""
 
-	js, err := json.MarshalIndent(s.MetalConfig, "", "  ")
+	metalConfig := s.MetalConfig
+	// store to created secret to be shipped to metal-hammer
+	metalConfig.MetalAPIServerTokenForHammer = resp.Secret
+	// remove token of pixiecore
+	metalConfig.MetalAPIServerToken = ""
+
+	js, err := json.MarshalIndent(metalConfig, "", "  ")
 	if err != nil {
 		s.Log.Error("handleConfig unable to marshal grpc config", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
