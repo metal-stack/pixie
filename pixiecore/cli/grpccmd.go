@@ -48,9 +48,26 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("unable to create metal-api config: %s", err)
 		}
+
+		tokenPersister, err := client.NewFilesystemTokenPersister(metalAPIConfig.MetalAPIServerTokenPath)
+		if err != nil {
+			fatalf("error creating token persister: %s", err)
+		}
+
+		token, err := os.ReadFile(metalAPIConfig.MetalAPIServerTokenPath)
+		if err != nil {
+			fatalf("error reading token: %s", err)
+		}
+
+		cleantoken := strings.TrimSpace(string(token))
+
 		apiclient, err := client.New(&client.DialConfig{
 			BaseURL: metalAPIConfig.MetalAPIServerUrl,
-			Token:   metalAPIConfig.MetalAPIServerToken,
+			Token:   cleantoken,
+			TokenRenewal: &client.TokenRenewal{
+				PersistTokenFn: tokenPersister,
+			},
+			UserAgent: "pixie",
 		})
 		if err != nil {
 			fatalf("error creating metal-apiserver client: %s", err)
@@ -114,9 +131,9 @@ func init() {
 	grpcCmd.Flags().String("pixie-api-url", "", "base url of pixie itself")
 
 	grpcCmd.Flags().String("metal-apiserver-url", "", "url of the metal-apiserver")
-	grpcCmd.Flags().String("metal-apiserver-token", "", "token to access the metal-apiserver")
-	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access")
-	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
+	grpcCmd.Flags().String("metal-apiserver-token-path", "", "path to token to access the metal-apiserver")
+	grpcCmd.Flags().String("metal-api-view-hmac", "", "hmac with metal-api view access") // FIXME remove
+	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")               // FIXME remove
 	grpcCmd.Flags().StringSlice("ntp-servers", nil, "custom ntp-servers")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
 
@@ -135,7 +152,7 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
-	metalApiServerToken, err := cmd.Flags().GetString("metal-apiserver-token")
+	metalApiServerTokenPath, err := cmd.Flags().GetString("metal-apiserver-token-path")
 	if err != nil {
 		return nil, fmt.Errorf("error reading flag: %w", err)
 	}
@@ -237,13 +254,13 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	}
 
 	return &api.MetalConfig{
-		Debug:               metalHammerDebug,
-		MetalAPIServerUrl:   metalApiServerUrl,
-		MetalAPIServerToken: metalApiServerToken,
-		MetalAPIUrl:         metalAPIUrl,
-		PixieAPIUrl:         pixieAPIUrl,
-		NTPServers:          ntpServers,
-		Logging:             logging,
-		Partition:           partition,
+		Debug:                   metalHammerDebug,
+		MetalAPIServerUrl:       metalApiServerUrl,
+		MetalAPIServerTokenPath: metalApiServerTokenPath,
+		MetalAPIUrl:             metalAPIUrl,
+		PixieAPIUrl:             pixieAPIUrl,
+		NTPServers:              ntpServers,
+		Logging:                 logging,
+		Partition:               partition,
 	}, nil
 }

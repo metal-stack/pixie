@@ -257,8 +257,8 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	metalConfig := s.MetalConfig
 	// store to created secret to be shipped to metal-hammer
 	metalConfig.MetalAPIServerTokenForHammer = resp.Secret
-	// remove token of pixiecore
-	metalConfig.MetalAPIServerToken = ""
+	// remove token path of pixiecore
+	metalConfig.MetalAPIServerTokenPath = ""
 
 	js, err := json.MarshalIndent(metalConfig, "", "  ")
 	if err != nil {

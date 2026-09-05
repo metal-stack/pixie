@@ -4,7 +4,7 @@ package api
 type MetalConfig struct {
 	Debug                        bool     `json:"debug"`
 	MetalAPIServerUrl            string   `json:"metal_apiserver_url,omitempty"`
-	MetalAPIServerToken          string   `json:"metal_apiserver_token,omitempty"`
+	MetalAPIServerTokenPath      string   `json:"metal_apiserver_token_path,omitempty"`
 	MetalAPIServerTokenForHammer string   `json:"metal_apiserver_token_for_hammer,omitempty"`
 	MetalAPIUrl                  string   `json:"metal_api_url,omitempty"`
 	PixieAPIUrl                  string   `json:"pixie_api_url"`
