@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/metal-stack/api/go/client"
+	adminv2 "github.com/metal-stack/api/go/metalstack/admin/v2"
 	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
 	"github.com/metal-stack/v"
 
@@ -73,6 +74,20 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if hostname == "" {
 			hostname = "please-set-hostname"
 		}
+
+		tlr, err := s.ApiClient.Adminv2().Tenant().List(cmd.Context(), &adminv2.TenantServiceListRequest{
+			Query: &apiv2.TenantQuery{
+				Name: new("metal-hammer"),
+			},
+		})
+		if err != nil {
+			fatalf("unable to get tenant id of metal-hammer: %s", err)
+		}
+		if len(tlr.Tenants) != 1 {
+			fatalf("not exactly one tenant found with name metal-hammer")
+		}
+
+		s.MetalHammerTenantLogin = tlr.Tenants[0].Login
 
 		// Ping apiserver every 5min
 		apiclient.Ping(cmd.Context(), &client.PingConfig{

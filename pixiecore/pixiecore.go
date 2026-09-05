@@ -209,6 +209,10 @@ type Server struct {
 	MetalConfig *api.MetalConfig
 	// ApiClient to talk to the metal-apiserver
 	ApiClient client.Client
+
+	// MetalHammer tenant for which the token must be created
+	// This is a uuid
+	MetalHammerTenantLogin string
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to

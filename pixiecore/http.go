@@ -27,6 +27,7 @@ import (
 	"text/template"
 	"time"
 
+	adminv2 "github.com/metal-stack/api/go/metalstack/admin/v2"
 	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -237,12 +238,15 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	machineUUID := r.PathValue("id")
 	s.Log.Debug("handleConfig", "machine-uuid", machineUUID)
 
-	resp, err := s.ApiClient.Apiv2().Token().Create(r.Context(), &apiv2.TokenServiceCreateRequest{
-		Description: "token for metal-hammer",
-		MachineRoles: map[string]apiv2.MachineRole{
-			machineUUID: apiv2.MachineRole_MACHINE_ROLE_EDITOR,
+	resp, err := s.ApiClient.Adminv2().Token().Create(r.Context(), &adminv2.TokenServiceCreateRequest{
+		User: &s.MetalHammerTenantLogin,
+		TokenCreateRequest: &apiv2.TokenServiceCreateRequest{
+			Description: "token for metal-hammer",
+			MachineRoles: map[string]apiv2.MachineRole{
+				machineUUID: apiv2.MachineRole_MACHINE_ROLE_EDITOR,
+			},
+			Expires: durationpb.New(3 * 24 * time.Hour),
 		},
-		Expires: durationpb.New(3 * 24 * time.Hour),
 	})
 	if err != nil {
 		s.Log.Error("unable to create a token for the metal-hammer", "error", err)
