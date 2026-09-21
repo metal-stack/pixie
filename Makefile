@@ -12,10 +12,10 @@ ifneq ($(wildcard Makefile.defaults),)
 include Makefile.defaults
 endif
 
-all: ipxe pixie
+all: test ipxe pixie
 
 .PHONY: pixie
-pixie: test
+pixie:
 	go build -tags netgo,osusergo \
 		 -ldflags "$(LINKMODE) -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 								   -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \

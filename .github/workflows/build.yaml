@@ -1,0 +1,54 @@
+---
+name: metal-stack component release
+
+on:
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+  push:
+    branches:
+      - main
+
+jobs:
+  draft:
+    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@v1
+
+  # unfortunately building this binary is complicated because of required dependencies on the host
+  # it's all wrapped inside the container build instead including test execution
+  container-build:
+    uses: metal-stack/actions-common/.github/workflows/container-build.yaml@v1
+    secrets: inherit
+
+  # TODO: it would be great if the lint step from actions-common could be used
+  go-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Ensure code is fmted
+        run: |
+          go fmt ./...
+          git diff --exit-code --compact-summary
+
+      - name: fake ipxe binary
+        run: |
+          mkdir -p ipxe/ipxe/bin
+          touch ipxe/ipxe/bin/ipxe.bin
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9
+
+      - name: remove fake ipxe binary
+        run: |
+          rm -rf ipxe/ipxe
