@@ -29,7 +29,8 @@ import (
 	"text/template"
 	"time"
 
-	v1 "github.com/metal-stack/metal-api/pkg/api/v1"
+	"github.com/metal-stack/api/go/client"
+	infrav2 "github.com/metal-stack/api/go/metalstack/infra/v2"
 	"github.com/metal-stack/pixie/api"
 )
 
@@ -50,9 +51,9 @@ func APIBooter(url string, timeout time.Duration) (Booter, error) {
 
 	return ret, nil
 }
-func GRPCBooter(log *slog.Logger, client *GrpcClient, partition string, metalAPIConfig *api.MetalConfig) (Booter, error) {
+func GRPCBooter(log *slog.Logger, v2client client.Client, partition string, metalAPIConfig *api.MetalConfig) (Booter, error) {
 	ret := &grpcbooter{
-		grpc:      client,
+		v2client:  v2client,
 		partition: partition,
 		log:       log,
 		config:    metalAPIConfig,
@@ -72,7 +73,8 @@ type apibooter struct {
 
 type grpcbooter struct {
 	apibooter
-	grpc      *GrpcClient
+	// v1client  *GrpcClient
+	v2client  client.Client
 	config    *api.MetalConfig
 	partition string
 	log       *slog.Logger
@@ -87,11 +89,11 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 	var r rawSpec
 	if m.GUID != "" {
 		// Very first dhcp call which contains Machine UUID, tell metal-api this uuid
-		req := &v1.BootServiceDhcpRequest{
-			Uuid: string(m.GUID),
-		}
-		g.log.Info("dhcp", "req", req)
-		_, err := g.grpc.BootService().Dhcp(ctx, req)
+		g.log.Info("dhcp", "machine-guid", m.GUID)
+		_, err := g.v2client.Infrav2().Boot().Dhcp(ctx, &infrav2.BootServiceDhcpRequest{
+			Uuid:      m.GUID,
+			Partition: g.partition,
+		})
 		if err != nil {
 			g.log.Error("boot", "error", err)
 			return nil, err
@@ -99,19 +101,25 @@ func (g *grpcbooter) BootSpec(m Machine) (*Spec, error) {
 		r = rawSpec{}
 	} else {
 		// machine asks for a dhcp answer, ask metal-api for a proper response in this partition
-		req := &v1.BootServiceBootRequest{
-			Mac:         m.MAC.String(),
-			PartitionId: g.partition,
-		}
-		g.log.Info("boot", "req", req)
-		resp, err := g.grpc.BootService().Boot(ctx, req)
+		g.log.Info("boot", "machine-mac", m.MAC.String())
+		resp, err := g.v2client.Infrav2().Boot().Boot(ctx, &infrav2.BootServiceBootRequest{
+			Mac:       m.MAC.String(),
+			Partition: g.partition,
+		})
 		if err != nil {
 			g.log.Error("boot", "error", err)
 			return nil, err
 		}
 		g.log.Info("boot", "resp", resp)
 
-		cmdline := []string{resp.GetCmdline(), fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL)}
+		var cmdline []string
+
+		if resp.Cmdline != nil {
+			cmdline = append(cmdline, *resp.Cmdline)
+		}
+
+		cmdline = append(cmdline, fmt.Sprintf("PIXIE_API_URL=%s", g.config.PixieAPIURL))
+
 		if g.config.Debug {
 			cmdline = append(cmdline, "DEBUG=1")
 		}

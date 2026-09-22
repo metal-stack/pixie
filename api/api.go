@@ -12,6 +12,13 @@ type MetalConfig struct {
 	HMAC        string   `json:"hmac,omitempty"`
 	NTPServers  []string `json:"ntp_servers,omitempty"`
 	Partition   string   `json:"partition"`
+
+	// metal-apiserver related fields
+	MetalAPIServerUrl       string `json:"metal_apiserver_url"`
+	MetalAPIServerTokenFile string `json:"-"`
+	MetalHammerTenant       string `json:"-"`
+	MetalHammerToken        string `json:"metal_hammer_token"`
+
 	// Logging contains logging configurations passed to metal-hammer
 	Logging *Logging `json:"logging,omitempty"`
 }

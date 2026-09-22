@@ -16,12 +16,17 @@ package cli
 
 import (
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/metal-stack/api/go/client"
+	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/pixiecore"
+	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 )
 
@@ -42,20 +47,54 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		if err != nil {
 			fatalf("unable to create metal-api config: %s", err)
 		}
-		client, err := pixiecore.NewGrpcClient(s.Log, metalAPIConfig)
+
+		tokenPersister, err := client.NewFilesystemTokenPersister(metalAPIConfig.MetalAPIServerTokenFile)
 		if err != nil {
-			fatalf("unable to create grpc client: %s", err)
+			fatalf("error creating token persister: %s", err)
 		}
+
+		token, err := os.ReadFile(metalAPIConfig.MetalAPIServerTokenFile)
+		if err != nil {
+			fatalf("error reading token: %s", err)
+		}
+
+		v2client, err := client.New(&client.DialConfig{
+			BaseURL:   metalAPIConfig.MetalAPIServerUrl,
+			Token:     strings.TrimSpace(string(token)),
+			UserAgent: "pixie",
+			Log:       slog.Default(),
+			TokenRenewal: &client.TokenRenewal{
+				PersistTokenFn: tokenPersister,
+			},
+		})
+		if err != nil {
+			fatalf("failed to create metal-apiserver client: %s", err)
+		}
+
 		partition, err := cmd.Flags().GetString("partition")
 		if err != nil {
-			fatalf("Error reading flag: %s", err)
+			fatalf("error reading flag: %s", err)
 		}
-		booter, err := pixiecore.GRPCBooter(s.Log, client, partition, metalAPIConfig)
+
+		booter, err := pixiecore.GRPCBooter(s.Log, v2client, partition, metalAPIConfig)
 		if err != nil {
 			fatalf("unable to create grpc booter: %s", err)
 		}
+
 		s.Booter = booter
 		s.MetalConfig = metalAPIConfig
+		s.V2Client = v2client
+
+		v2client.Ping(cmd.Context(), &client.PingConfig{
+			ComponentType: apiv2.ComponentType_COMPONENT_TYPE_METAL_BMC,
+			StartedAt:     time.Now(),
+			Version: apiv2.Version{
+				Version:   v.Version,
+				Revision:  v.Revision,
+				GitSha1:   v.GitSHA1,
+				BuildDate: v.BuildDate,
+			},
+		})
 
 		fmt.Println(s.Serve())
 	}}
@@ -76,6 +115,10 @@ func init() {
 	grpcCmd.Flags().String("metal-api-url", "", "url to access metal-api")
 	grpcCmd.Flags().StringSlice("ntp-servers", nil, "custom ntp-servers")
 	grpcCmd.Flags().Bool("metal-hammer-debug", true, "set metal-hammer to debug")
+
+	grpcCmd.Flags().String("metal-apiserver-url", "", "url to access the metal-apiserver")
+	grpcCmd.Flags().String("metal-apiserver-token-file", "", "token file path to access the metal-apiserver")
+	grpcCmd.Flags().String("metal-hammer-tenant", "", "the metal-hammer tenant in the metal-apiserver for which tokens will be issued")
 
 	// metal-hammer remote logging configuration
 	grpcCmd.Flags().String("metal-hammer-logging-endpoint", "", "set metal-hammer to send logs to this endpoint")
@@ -139,6 +182,24 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse pixie-api-url: %w", err)
 	}
+
+	metalApiServerUrl, err := cmd.Flags().GetString("metal-apiserver-url")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	_, err = url.Parse(metalApiServerUrl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse metal-apiserver-url: %w", err)
+	}
+	metalApiServerTokenFile, err := cmd.Flags().GetString("metal-apiserver-token-file")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+	metalHammerTenant, err := cmd.Flags().GetString("metal-hammer-tenant")
+	if err != nil {
+		return nil, fmt.Errorf("error reading flag: %w", err)
+	}
+
 	ntpServers, err := cmd.Flags().GetStringSlice("ntp-servers")
 	if err != nil {
 		return nil, fmt.Errorf("unable reading ntp-servers flag: %w", err)
@@ -220,16 +281,19 @@ func getMetalAPIConfig(cmd *cobra.Command) (*api.MetalConfig, error) {
 	}
 
 	return &api.MetalConfig{
-		Debug:       metalHammerDebug,
-		GRPCAddress: grpcAddress,
-		MetalAPIUrl: metalAPIUrl,
-		PixieAPIURL: pixieAPIUrl,
-		CACert:      string(caCert),
-		Cert:        string(clientCert),
-		Key:         string(clientKey),
-		HMAC:        hmac,
-		NTPServers:  ntpServers,
-		Logging:     logging,
-		Partition:   partition,
+		Debug:                   metalHammerDebug,
+		GRPCAddress:             grpcAddress,
+		MetalAPIUrl:             metalAPIUrl,
+		PixieAPIURL:             pixieAPIUrl,
+		CACert:                  string(caCert),
+		Cert:                    string(clientCert),
+		Key:                     string(clientKey),
+		HMAC:                    hmac,
+		NTPServers:              ntpServers,
+		Logging:                 logging,
+		Partition:               partition,
+		MetalAPIServerUrl:       metalApiServerUrl,
+		MetalAPIServerTokenFile: metalApiServerTokenFile,
+		MetalHammerTenant:       metalHammerTenant,
 	}, nil
 }
