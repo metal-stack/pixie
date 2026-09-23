@@ -1,7 +1,4 @@
-# be aware that bookworm has a newer gcc which can not compile the older ipxe
-# newer ipxe can only be used if https://github.com/metal-stack/pixie/issues/34
-# is not happening anymore
-FROM debian:bullseye AS ipxe-builder
+FROM debian:13 AS ipxe-builder
 WORKDIR /work
 COPY . .
 RUN apt update \
@@ -14,11 +11,11 @@ RUN apt update \
     make \
  && make ipxe
 
-FROM golang:1.25-trixie AS builder
+FROM golang:1.27-trixie AS builder
 WORKDIR /work
 COPY . .
 COPY --from=ipxe-builder /work/ipxe/ipxe /work/ipxe/ipxe
-RUN make pixie
+RUN make test pixie
 
 FROM gcr.io/distroless/static
 COPY --from=builder /work/build/pixie /pixie
