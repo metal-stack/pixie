@@ -86,7 +86,7 @@ the Pixiecore boot API. The specification can be found at <TODO>.`,
 		s.V2Client = v2client
 
 		v2client.Ping(cmd.Context(), &client.PingConfig{
-			ComponentType: apiv2.ComponentType_COMPONENT_TYPE_METAL_BMC,
+			ComponentType: apiv2.ComponentType_COMPONENT_TYPE_PIXIECORE,
 			StartedAt:     time.Now(),
 			Version: apiv2.Version{
 				Version:   v.Version,
