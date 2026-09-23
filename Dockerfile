@@ -14,8 +14,6 @@ RUN apt update \
 FROM golang:1.27-trixie AS builder
 WORKDIR /work
 COPY . .
-# to be able to figure out the build version:
-COPY .git .git
 COPY --from=ipxe-builder /work/ipxe/ipxe /work/ipxe/ipxe
 RUN make test pixie
 
