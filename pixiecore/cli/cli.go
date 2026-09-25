@@ -21,6 +21,7 @@ import (
 	"maps"
 	"os"
 
+	"github.com/metal-stack/pixie/ipxe"
 	"github.com/metal-stack/pixie/pixiecore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -69,6 +70,7 @@ func serverConfigFlags(cmd *cobra.Command) {
 	cmd.Flags().Int("metrics-port", 2113, "Metrics server port")
 	cmd.Flags().Int("status-port", 0, "HTTP port for status information (can be the same as --port)")
 	cmd.Flags().Bool("dhcp-no-bind", false, "Handle DHCP traffic without binding to the DHCP server port")
+	cmd.Flags().String("ipxe-type", "", "UEFI PXE build type to serve: ipxe or snponly")
 	cmd.Flags().String("ipxe-bios", "", "Path to an iPXE binary for BIOS/UNDI")
 	cmd.Flags().String("ipxe-ipxe", "", "Path to an iPXE binary for chainloading from another iPXE")
 	cmd.Flags().String("ipxe-efi32", "", "Path to an iPXE binary for 32-bit UEFI")
@@ -113,6 +115,10 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
 	}
+	ipxeType, err := cmd.Flags().GetString("ipxe-type")
+	if err != nil {
+		fatalf("Error reading flag: %s", err)
+	}
 	ipxeBios, err := cmd.Flags().GetString("ipxe-bios")
 	if err != nil {
 		fatalf("Error reading flag: %s", err)
@@ -144,6 +150,18 @@ func serverFromFlags(cmd *cobra.Command) *pixiecore.Server {
 		DHCPNoBind:     dhcpNoBind,
 	}
 	maps.Copy(ret.Ipxe, Ipxe)
+	switch ipxeType {
+	case "", "ipxe":
+		ret.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustGet("ipxe-i386.efi")
+		ret.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("ipxe-x86_64.efi")
+		ret.Ipxe[pixiecore.FirmwareEFIBC] = ipxe.MustGet("ipxe-x86_64.efi")
+	case "snponly":
+		ret.Ipxe[pixiecore.FirmwareEFI32] = ipxe.MustGet("snponly-i386.efi")
+		ret.Ipxe[pixiecore.FirmwareEFI64] = ipxe.MustGet("snponly-x86_64.efi")
+		ret.Ipxe[pixiecore.FirmwareEFIBC] = ipxe.MustGet("snponly-x86_64.efi")
+	default:
+		fatalf("unsupported pxe type %q: must be one of: ipxe, snponly", ipxeType)
+	}
 	if ipxeBios != "" {
 		ret.Ipxe[pixiecore.FirmwareX86PC] = mustFile(ipxeBios)
 	}
