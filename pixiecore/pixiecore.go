@@ -26,6 +26,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/metal-stack/api/go/client"
 	"github.com/metal-stack/pixie/api"
 	"github.com/metal-stack/pixie/dhcp4"
 	"github.com/metal-stack/v"
@@ -206,6 +207,9 @@ type Server struct {
 	events   map[string][]machineEvent
 
 	MetalConfig *api.MetalConfig
+
+	// V2Client to talk to the metal-apiserver
+	V2Client client.Client
 }
 
 // Serve listens for machines attempting to boot, and uses Booter to

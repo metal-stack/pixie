@@ -26,6 +26,10 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
+	infrav2 "github.com/metal-stack/api/go/metalstack/infra/v2"
+	"github.com/metal-stack/pixie/api"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func serveHTTP(l net.Listener, handlers ...func(*http.ServeMux)) error {
@@ -44,6 +48,7 @@ func (s *Server) serveHTTP(mux *http.ServeMux) {
 	mux.HandleFunc("/_/file", s.handleFile)
 	mux.HandleFunc("/_/booting", s.handleBooting)
 	mux.HandleFunc("/certs", s.handleCerts)
+	mux.HandleFunc("/config/{id}", s.handleConfig)
 }
 
 func (s *Server) handleIpxe(w http.ResponseWriter, r *http.Request) {
@@ -238,6 +243,56 @@ func (s *Server) handleCerts(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write(js)
 	if err != nil {
 		s.Log.Error("handleCerts unable to write grpc config to response", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	// request must be in the form of /config/7ba734c9-6145-4b7a-817c-8b5c72fb7057
+	// with the machineUUID as path parameter
+	// 3 days max lifetime because hammer reboots every 2 days max.
+
+	machineUUID := r.PathValue("id")
+	s.Log.Debug("handle metal-hammer v2 config request", "machine-uuid", machineUUID)
+
+	resp, err := s.V2Client.Infrav2().Boot().MachineToken(r.Context(), &infrav2.BootServiceMachineTokenRequest{
+		User:    s.MetalConfig.MetalHammerTenant,
+		Uuid:    machineUUID,
+		Expires: durationpb.New(3 * 24 * time.Hour),
+	})
+	if err != nil {
+		s.Log.Error("unable to create a token for the metal-hammer", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	payload := &api.V2MetalHammerConfigPayload{
+		Client: api.Client{
+			ApiUrl: s.MetalConfig.MetalAPIServerUrl,
+			Token:  resp.Secret,
+		},
+		Partition: s.MetalConfig.Partition,
+		Logging:   s.MetalConfig.Logging,
+	}
+
+	if len(s.MetalConfig.NTPServers) > 0 {
+		payload.NTPServers = s.MetalConfig.NTPServers
+	}
+
+	js, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		s.Log.Error("handle config unable to marshal grpc config", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.Log.Debug("handle config return grpc config")
+	w.Header().Set("Content-Type", "application/json")
+
+	_, err = w.Write(js)
+	if err != nil {
+		s.Log.Error("handle config unable to write response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
