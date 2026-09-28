@@ -43,13 +43,6 @@ type Client struct {
 	ApiUrl string `json:"metal_apiserver_url"`
 	// Token contains the token for the client
 	Token string `json:"metal_hammer_token"`
-
-	// CACert contains the ca for the client
-	CACert *string `json:"ca_cert,omitempty"`
-	// Cert contains the cert for the client
-	Cert *string `json:"cert,omitempty"`
-	// Key contains the cert key for the client
-	Key *string `json:"key,omitempty"`
 }
 
 type Logging struct {

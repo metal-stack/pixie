@@ -276,16 +276,6 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		Logging:   s.MetalConfig.Logging,
 	}
 
-	if s.MetalConfig.CACert != "" {
-		payload.Client.CACert = &s.MetalConfig.CACert
-	}
-	if s.MetalConfig.Cert != "" {
-		payload.Client.Cert = &s.MetalConfig.Cert
-	}
-	if s.MetalConfig.Key != "" {
-		payload.Client.Key = &s.MetalConfig.Key
-	}
-
 	if len(s.MetalConfig.NTPServers) > 0 {
 		payload.NTPServers = s.MetalConfig.NTPServers
 	}
