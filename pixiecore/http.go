@@ -28,6 +28,7 @@ import (
 	"time"
 
 	infrav2 "github.com/metal-stack/api/go/metalstack/infra/v2"
+	"github.com/metal-stack/pixie/api"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -253,7 +254,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	// 3 days max lifetime because hammer reboots every 2 days max.
 
 	machineUUID := r.PathValue("id")
-	s.Log.Debug("handleConfig", "machine-uuid", machineUUID)
+	s.Log.Debug("handle metal-hammer v2 config request", "machine-uuid", machineUUID)
 
 	resp, err := s.V2Client.Infrav2().Boot().MachineToken(r.Context(), &infrav2.BootServiceMachineTokenRequest{
 		User:    s.MetalConfig.MetalHammerTenant,
@@ -266,21 +267,42 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metalConfig := s.MetalConfig
-	// store to created secret to be shipped to metal-hammer
-	metalConfig.MetalHammerToken = resp.Secret
+	payload := &api.V2MetalHammerConfigPayload{
+		Client: api.Client{
+			ApiUrl: s.MetalConfig.MetalAPIServerUrl,
+			Token:  resp.Secret,
+		},
+		Partition: s.MetalConfig.Partition,
+		Logging:   s.MetalConfig.Logging,
+	}
 
-	js, err := json.MarshalIndent(metalConfig, "", "  ")
+	if s.MetalConfig.CACert != "" {
+		payload.Client.CACert = &s.MetalConfig.CACert
+	}
+	if s.MetalConfig.Cert != "" {
+		payload.Client.Cert = &s.MetalConfig.Cert
+	}
+	if s.MetalConfig.Key != "" {
+		payload.Client.Key = &s.MetalConfig.Key
+	}
+
+	if len(s.MetalConfig.NTPServers) > 0 {
+		payload.NTPServers = s.MetalConfig.NTPServers
+	}
+
+	js, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
-		s.Log.Error("handleConfig unable to marshal grpc config", "error", err)
+		s.Log.Error("handle config unable to marshal grpc config", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	s.Log.Debug("handleConfig return grpc config")
+
+	s.Log.Debug("handle config return grpc config")
 	w.Header().Set("Content-Type", "application/json")
+
 	_, err = w.Write(js)
 	if err != nil {
-		s.Log.Error("handleConfig unable to write grpc config to response", "error", err)
+		s.Log.Error("handle config unable to write response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
